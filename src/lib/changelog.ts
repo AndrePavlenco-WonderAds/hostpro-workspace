@@ -15,6 +15,22 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.4.0",
+    date: "2026-05-30",
+    title:
+      "Persistência real (Vercel Blob) · home com cards · admin overview · termo GANHOS/CUSTOS",
+    highlights: [
+      "**🗄 Persistência real com Vercel Blob.** Store privado `hostpro-data` ligado ao projecto, `BLOB_READ_WRITE_TOKEN` injectado nos três ambientes. `src/lib/pnl-store.ts` substituiu o stub in-memory por leitura/escrita em `data/pnl.json`: `getAllEntries` é cacheado com tag `pnl-data`, mutações invalidam via `updateTag` (a nova API do Next 16 para read-your-own-writes em server actions). Primeira leitura sem ficheiro semeia automaticamente a partir do `pnl-seed.ts` (as 81 entradas do One For One House importadas do Google Sheet) — assim podes adicionar a tua primeira entrada sem perder histórico.",
+      "**✍️ CRUD completo nas tabelas.** O modal *em construção* foi-se. `+ Adicionar entrada/custo/pagamento` abre agora um diálogo real com data (default hoje), descrição/janela de estadia, valor, pessoa (dropdown), IVA com sugestão automática de 6 % para entradas, e os flags certos para cada tipo (Out of account, Pago, Recebido, No banco, IVA Vault). Submit chama uma server action que valida → escreve no Blob → revalida. Cada linha do P&L tem um 🗑 no fim — clica uma vez para armar (anel rosa), clica de novo para apagar.",
+      "**🏠 Home reorganizada.** A descrição longa por baixo do claim desapareceu — agora estão os 3 cards de alojamento directamente na primeira página, e o botão *Admin view* fica logo abaixo. A rota `/alojamentos` foi removida (passou a ser redundante); cada card vai directo para `/alojamentos/[slug]`, e o back-link da página de alojamento aponta para `/`.",
+      "**🗺 Localizações corrigidas.** Sweet Escape 2 e Sweet Escape 5 — **Monte Estoril** (eram São João do Estoril). One For One House — **São João do Estoril** (era Cascais). Descrição do One For One House passa a ser *\"Apartamento grande premium de 3 quartos em São João do Estoril\"*.",
+      "**🏷 Terminologia: REVENUE → GANHOS, EXPENSES → CUSTOS.** Em todos os tiles (`OverviewTiles`), barras de tendência (`DashboardStats`), labels de cards, e secção do P&L (\"Despesas\" passou a \"Custos\"). A categoria das entradas em si (\"Entradas\") fica como está — é o termo do spreadsheet.",
+      "**📊 Dashboard de alojamento mais focado.** Saíram os cards *Maior despesa de sempre* e *IVA acumulado*. *Maior reserva de sempre* passou a *Maior reserva — Mai 2026* (scoped ao mês actualmente visível). *Ganhos acumulados* ganhou subtítulo *Desde 01/01/{ano}* e ocupa a largura total. *Profit acumulado* mantém-se com a margem em %.",
+      "**🛠 /admin agora é uma página a sério.** Overview do mês actual com tiles cruzados de todos os alojamentos, secção YTD ({ano}) com Ganhos/Custos/Profit/Margem, cartões de comparação por alojamento (com Δ vs mês anterior + link directo para cada página), Top 5 reservas e Top 5 custos de sempre, tabela de actividade recente (últimas 10 entradas cruzando propriedades) e um *roadmap de integrações* com o pedido das credenciais Talkguest + URLs iCal do Airbnb e Booking.",
+      "**🔌 Integração automática de reservas — plano.** Talkguest (channel manager) é a fonte primária se tiverem API REST + webhooks; cobertura mínima sem API é iCal por listing de Airbnb e Booking, sincronizado por Vercel Cron diário. Detalhes na secção `Integrações automáticas — roadmap` em `/admin`.",
+    ],
+  },
+  {
     version: "0.3.0",
     date: "2026-05-29",
     title:

@@ -47,15 +47,12 @@ export default async function PropertyPage({
   if (!property) notFound();
 
   const { m } = await searchParams;
-  const entries = getEntries(property.slug);
+  const entries = await getEntries(property.slug);
 
-  // Pick the month: explicit ?m=, else the most-recent-with-data, else current.
   const monthsWithData = listMonths(entries);
   const fallback = monthsWithData[0] ?? currentMonthKey();
   const month: MonthKey = (m && /^\d{4}-\d{2}$/.test(m) ? (m as MonthKey) : fallback);
 
-  // Picker options: every month that has data + current ± 1 so you can scroll
-  // forwards even with no entries yet.
   const pickerOptions = listMonths(entries, [
     currentMonthKey(),
     shiftMonth(currentMonthKey(), -1),
@@ -68,7 +65,6 @@ export default async function PropertyPage({
 
   return (
     <div className="min-h-screen bg-brand-navy-dark">
-      {/* Hero header with property photo */}
       <section className="relative h-56 sm:h-72">
         <Image
           src={property.photo}
@@ -83,10 +79,10 @@ export default async function PropertyPage({
         <div className="absolute inset-x-0 top-0 px-6 pt-6 sm:px-10 sm:pt-8">
           <div className="mx-auto flex w-full max-w-6xl items-center justify-between">
             <Link
-              href="/alojamentos"
+              href="/"
               className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/30 px-3 py-1.5 text-xs font-semibold text-white/85 backdrop-blur-sm transition hover:border-brand-cyan hover:text-white"
             >
-              ← Alojamentos
+              ← Início
             </Link>
             <span className="rounded-full bg-black/30 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/85 ring-1 ring-white/15 backdrop-blur-sm">
               {property.location}
@@ -107,66 +103,60 @@ export default async function PropertyPage({
       </section>
 
       <main className="mx-auto w-full max-w-6xl px-6 py-10 sm:px-10 sm:py-12">
-        {entries.length === 0 ? (
-          <EmptyState />
-        ) : (
-          <>
-            {/* Top — dashboard */}
-            <section>
+        <section>
+          <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-white/45">
+            Dashboard
+          </h2>
+          <div className="mt-4">
+            {entries.length === 0 ? (
+              <EmptyStateInline />
+            ) : (
+              <DashboardStats
+                entries={entries}
+                monthEntries={monthEntries}
+                monthKey={month}
+              />
+            )}
+          </div>
+        </section>
+
+        <section className="mt-16">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
               <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-white/45">
-                Dashboard
+                P&amp;L mensal
               </h2>
-              <div className="mt-4">
-                <DashboardStats entries={entries} />
-              </div>
-            </section>
+              <p className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+                {monthLabel(month)}
+              </p>
+            </div>
+            <MonthPicker
+              current={month}
+              options={pickerOptions}
+              basePath={`/alojamentos/${property.slug}`}
+            />
+          </div>
 
-            {/* Monthly P&L */}
-            <section className="mt-16">
-              <div className="flex flex-wrap items-end justify-between gap-4">
-                <div>
-                  <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-white/45">
-                    P&amp;L mensal
-                  </h2>
-                  <p className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-                    {monthLabel(month)}
-                  </p>
-                </div>
-                <MonthPicker
-                  current={month}
-                  options={pickerOptions}
-                  basePath={`/alojamentos/${property.slug}`}
-                />
-              </div>
+          <div className="mt-6">
+            <OverviewTiles totals={totals} previous={previous} />
+          </div>
 
-              <div className="mt-6">
-                <OverviewTiles totals={totals} previous={previous} />
-              </div>
-
-              <div className="mt-10">
-                <PnLTable entries={monthEntries} propertySlug={property.slug} />
-              </div>
-            </section>
-          </>
-        )}
+          <div className="mt-10">
+            <PnLTable entries={monthEntries} propertySlug={property.slug} />
+          </div>
+        </section>
       </main>
     </div>
   );
 }
 
-function EmptyState() {
+function EmptyStateInline() {
   return (
-    <div className="mx-auto max-w-xl rounded-3xl border border-white/10 bg-white/[0.03] p-10 text-center backdrop-blur-md">
-      <span className="rounded-full border border-brand-cyan/40 bg-brand-cyan/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-brand-cyan">
-        Sem dados
-      </span>
-      <h2 className="mt-5 text-2xl font-semibold tracking-tight text-white">
-        Ainda nada para mostrar
-      </h2>
-      <p className="mt-3 text-sm text-white/65">
-        Quando lançares a primeira despesa ou reserva, o dashboard e o P&amp;L
-        deste alojamento começam a popular. A persistência completa fica pronta
-        em v0.4.0 — para já, a estrutura está toda no sítio.
+    <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-8 text-center backdrop-blur-md">
+      <p className="text-sm text-white/55">
+        Ainda sem entradas registadas. Usa os botões{" "}
+        <span className="text-brand-cyan">+ Adicionar</span> na tabela em baixo
+        para começar.
       </p>
     </div>
   );

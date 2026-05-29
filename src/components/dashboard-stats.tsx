@@ -1,47 +1,48 @@
-// All-time records + a tiny monthly bar trend.
-// Renders directly from PnLEntry list (server component, no client state).
+// All-time + month-scoped records + a monthly bar trend (ganhos vs custos).
+// Server component, pure rendering from PnLEntry list.
 
 import {
-  biggestEntrada,
-  biggestDespesa,
   bestMonth,
+  biggestEntrada,
   monthlyBreakdown,
   aggregate,
 } from "@/lib/pnl-math";
 import type { PnLEntry } from "@/lib/pnl-types";
 import { eur } from "@/lib/money";
-import { ddmmyyyy, monthLabel, monthLabelShort } from "@/lib/dates";
+import { ddmmyyyy, monthLabel, monthLabelShort, type MonthKey } from "@/lib/dates";
 
-export function DashboardStats({ entries }: { entries: PnLEntry[] }) {
-  const biggestE = biggestEntrada(entries);
-  const biggestD = biggestDespesa(entries);
+export function DashboardStats({
+  entries,
+  monthEntries,
+  monthKey,
+}: {
+  /** All entries for this property — used for YTD aggregates + monthly trend. */
+  entries: PnLEntry[];
+  /** Entries scoped to the currently-displayed month — used for the month-scoped records. */
+  monthEntries: PnLEntry[];
+  monthKey: MonthKey;
+}) {
+  const biggestEMonth = biggestEntrada(monthEntries);
   const best = bestMonth(entries);
-  const all = aggregate(entries);
+
+  // YTD = entries in the same year as the currently displayed month.
+  const ytdYear = monthKey.slice(0, 4);
+  const ytdEntries = entries.filter((e) => e.date.startsWith(ytdYear));
+  const ytd = aggregate(ytdEntries);
   const breakdown = monthlyBreakdown(entries);
 
   return (
     <div className="grid gap-3 lg:grid-cols-3">
       <Record
         icon="🏆"
-        label="Maior reserva de sempre"
-        value={biggestE ? eur(biggestE.entry.amount) : "—"}
+        label={`Maior reserva — ${monthLabelShort(monthKey)}`}
+        value={biggestEMonth ? eur(biggestEMonth.entry.amount) : "—"}
         sub={
-          biggestE
-            ? `${biggestE.entry.kind === "entrada" ? biggestE.entry.stayWindow ?? "—" : "—"} · ${ddmmyyyy(biggestE.entry.date)}`
-            : "Ainda sem reservas registadas"
+          biggestEMonth
+            ? `${biggestEMonth.entry.kind === "entrada" ? biggestEMonth.entry.stayWindow ?? "—" : "—"} · ${ddmmyyyy(biggestEMonth.entry.date)}`
+            : "Sem reservas neste mês"
         }
         accent="cyan"
-      />
-      <Record
-        icon="💸"
-        label="Maior despesa de sempre"
-        value={biggestD ? eur(biggestD.entry.amount) : "—"}
-        sub={
-          biggestD
-            ? `${biggestD.entry.description} · ${ddmmyyyy(biggestD.entry.date)}`
-            : "Sem despesas registadas"
-        }
-        accent="rose"
       />
       <Record
         icon="📅"
@@ -50,31 +51,27 @@ export function DashboardStats({ entries }: { entries: PnLEntry[] }) {
         sub={best ? monthLabel(best.key) : "Sem dados ainda"}
         accent="green"
       />
-
-      <Record
-        icon="📊"
-        label="Receita acumulada"
-        value={eur(all.revenue)}
-        sub={`${all.entryCount} entradas registadas`}
-      />
-      <Record
-        icon="🧾"
-        label="IVA acumulado"
-        value={eur(all.iva)}
-        sub="A ir para o IVA Vault"
-      />
       <Record
         icon="🏷️"
         label="Profit acumulado"
-        value={eur(all.profit)}
-        sub={`Margem ${all.revenue > 0 ? ((all.profit / all.revenue) * 100).toFixed(1) : "0.0"}%`}
-        accent={all.profit >= 0 ? "green" : "red"}
+        value={eur(ytd.profit)}
+        sub={`Margem ${ytd.revenue > 0 ? ((ytd.profit / ytd.revenue) * 100).toFixed(1) : "0.0"}%`}
+        accent={ytd.profit >= 0 ? "green" : "red"}
+      />
+
+      <Record
+        icon="📊"
+        label="Ganhos acumulados"
+        value={eur(ytd.revenue)}
+        sub={`Desde 01/01/${ytdYear} · ${ytdEntries.length} entradas`}
+        accent="cyan"
+        className="lg:col-span-3"
       />
 
       <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-4 backdrop-blur-md lg:col-span-3">
         <header className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
-            Tendência mensal · profit
+            Tendência mensal · ganhos vs custos
           </p>
           <p className="text-[11px] text-white/40">{breakdown.length} meses</p>
         </header>
@@ -90,12 +87,14 @@ function Record({
   value,
   sub,
   accent,
+  className = "",
 }: {
   icon: string;
   label: string;
   value: string;
   sub: string;
   accent?: "cyan" | "rose" | "green" | "red";
+  className?: string;
 }) {
   const accentClass =
     accent === "cyan"
@@ -108,14 +107,12 @@ function Record({
             ? "text-rose-300"
             : "text-white";
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-4 backdrop-blur-md">
+    <div className={`rounded-2xl border border-white/10 bg-white/[0.025] p-4 backdrop-blur-md ${className}`}>
       <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
         <span aria-hidden>{icon}</span>
         {label}
       </div>
-      <p className={`mt-3 text-2xl font-semibold tracking-tight ${accentClass}`}>
-        {value}
-      </p>
+      <p className={`mt-3 text-2xl font-semibold tracking-tight ${accentClass}`}>{value}</p>
       <p className="mt-1 text-xs text-white/55">{sub}</p>
     </div>
   );
@@ -128,9 +125,7 @@ function TrendBars({
 }) {
   if (breakdown.length === 0) {
     return (
-      <p className="mt-6 text-center text-sm text-white/45">
-        Sem histórico ainda.
-      </p>
+      <p className="mt-6 text-center text-sm text-white/45">Sem histórico ainda.</p>
     );
   }
   const max = Math.max(
@@ -147,32 +142,22 @@ function TrendBars({
             <span className="col-span-2 text-white/55">{monthLabelShort(b.key)}</span>
             <div className="col-span-9 space-y-1">
               <div className="flex items-center gap-2">
-                <span className="w-12 shrink-0 text-[10px] uppercase tracking-wider text-brand-cyan/80">
-                  rev
+                <span className="w-14 shrink-0 text-[10px] uppercase tracking-wider text-brand-cyan/80">
+                  ganhos
                 </span>
                 <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/5">
-                  <div
-                    className="h-full bg-brand-cyan/85"
-                    style={{ width: `${revW}%` }}
-                  />
+                  <div className="h-full bg-brand-cyan/85" style={{ width: `${revW}%` }} />
                 </div>
-                <span className="w-20 shrink-0 text-right text-white/70">
-                  {eur(b.totals.revenue)}
-                </span>
+                <span className="w-20 shrink-0 text-right text-white/70">{eur(b.totals.revenue)}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="w-12 shrink-0 text-[10px] uppercase tracking-wider text-rose-300/80">
-                  exp
+                <span className="w-14 shrink-0 text-[10px] uppercase tracking-wider text-rose-300/80">
+                  custos
                 </span>
                 <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/5">
-                  <div
-                    className="h-full bg-rose-400/70"
-                    style={{ width: `${expW}%` }}
-                  />
+                  <div className="h-full bg-rose-400/70" style={{ width: `${expW}%` }} />
                 </div>
-                <span className="w-20 shrink-0 text-right text-white/70">
-                  {eur(b.totals.totalExpenses)}
-                </span>
+                <span className="w-20 shrink-0 text-right text-white/70">{eur(b.totals.totalExpenses)}</span>
               </div>
             </div>
             <span

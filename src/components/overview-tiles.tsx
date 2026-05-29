@@ -11,13 +11,13 @@ export function OverviewTiles({
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
       <Tile
-        label="Revenue"
+        label="Ganhos"
         value={eur(totals.revenue)}
         accent="cyan"
         delta={previous ? totals.revenue - previous.revenue : undefined}
       />
       <Tile
-        label="Despesas"
+        label="Custos"
         value={eur(totals.expenses)}
         delta={previous ? totals.expenses - previous.expenses : undefined}
         deltaInverted

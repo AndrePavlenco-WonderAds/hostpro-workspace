@@ -36,17 +36,16 @@ export function PropertyCard({
         <h3 className="text-lg font-semibold tracking-tight text-white">
           {property.name}
         </h3>
-        <p className="line-clamp-2 text-sm text-white/55">
-          {property.description}
-        </p>
 
-        <div className="mt-auto grid grid-cols-2 gap-2 pt-3">
-          <Mini label="Receita / mês" value={hasData ? monthRevenue : "—"} accent="cyan" />
+        <div className="mt-1 grid grid-cols-2 gap-2">
+          <Mini label="Ganhos / mês" value={hasData ? monthRevenue : "—"} accent="cyan" />
           <Mini label="Profit / mês" value={hasData ? monthProfit : "—"} />
         </div>
 
         <div className="flex items-center justify-between pt-2 text-xs">
-          <span className="text-white/45">Abrir página →</span>
+          <span className="text-white/45 transition group-hover:text-white">
+            Abrir página →
+          </span>
           {!hasData && (
             <span className="rounded-full border border-amber-300/30 bg-amber-300/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-200">
               Sem dados

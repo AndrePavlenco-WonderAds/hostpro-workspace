@@ -23,7 +23,6 @@ export function UnlockForm({ next }: { next: string }) {
         const json = await res.json().catch(() => ({}));
         throw new Error(json.error ?? "Password incorrecta");
       }
-      // Cookie is set — go where the user was originally headed.
       router.replace(next || "/");
       router.refresh();
     } catch (err) {
@@ -37,14 +36,9 @@ export function UnlockForm({ next }: { next: string }) {
       onSubmit={submit}
       className="w-full max-w-sm space-y-3 rounded-2xl border border-white/10 bg-white/[0.045] p-7 backdrop-blur-xl shadow-[0_30px_80px_-30px_rgba(0,0,0,0.6)]"
     >
-      <div className="text-center">
-        <h1 className="text-2xl font-semibold tracking-tight text-white">
-          HostPro Workspace
-        </h1>
-        <p className="mt-1.5 text-sm text-white/55">
-          Acesso restrito. Insere a password para continuar.
-        </p>
-      </div>
+      <p className="text-center text-sm text-white/55">
+        Acesso restrito. Insere a password para continuar.
+      </p>
 
       <input
         type="password"

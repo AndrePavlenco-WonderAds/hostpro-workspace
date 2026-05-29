@@ -1,5 +1,5 @@
 // Per-month P&L for one property, broken into three sections
-// (Entradas / Despesas / Funcionário) so the schema matches the spreadsheet
+// (Entradas / Custos / Funcionário) so the schema matches the spreadsheet
 // mental model exactly.
 
 import { ddmmyyyy } from "@/lib/dates";
@@ -10,7 +10,8 @@ import type {
   EntradaEntry,
   FuncionarioEntry,
 } from "@/lib/pnl-types";
-import { AddEntryButton } from "./add-entry-button";
+import { AddEntryDialog } from "./add-entry-dialog";
+import { DeleteEntryButton } from "./delete-entry-button";
 
 export function PnLTable({
   entries,
@@ -32,21 +33,21 @@ export function PnLTable({
         accent="cyan"
         emoji="💰"
         count={entradas.length}
-        onAdd={<AddEntryButton kind="entrada" property={propertySlug} />}
+        onAdd={<AddEntryDialog kind="entrada" property={propertySlug} />}
         empty="Nenhuma entrada registada neste mês."
       >
-        {entradas.length > 0 && <EntradaTable rows={entradas} />}
+        {entradas.length > 0 && <EntradaTable rows={entradas} property={propertySlug} />}
       </Section>
 
       <Section
-        title="Despesas"
+        title="Custos"
         accent="rose"
         emoji="💸"
         count={despesas.length}
-        onAdd={<AddEntryButton kind="despesa" property={propertySlug} />}
-        empty="Sem despesas neste mês."
+        onAdd={<AddEntryDialog kind="despesa" property={propertySlug} />}
+        empty="Sem custos neste mês."
       >
-        {despesas.length > 0 && <DespesaTable rows={despesas} />}
+        {despesas.length > 0 && <DespesaTable rows={despesas} property={propertySlug} />}
       </Section>
 
       <Section
@@ -54,10 +55,10 @@ export function PnLTable({
         accent="amber"
         emoji="👷"
         count={funcionario.length}
-        onAdd={<AddEntryButton kind="funcionario" property={propertySlug} />}
+        onAdd={<AddEntryDialog kind="funcionario" property={propertySlug} />}
         empty="Sem pagamentos a funcionários neste mês."
       >
-        {funcionario.length > 0 && <FuncionarioTable rows={funcionario} />}
+        {funcionario.length > 0 && <FuncionarioTable rows={funcionario} property={propertySlug} />}
       </Section>
     </div>
   );
@@ -95,9 +96,7 @@ function Section({
           <span aria-hidden className="text-xl">
             {emoji}
           </span>
-          <h2 className="text-base font-semibold text-white sm:text-lg">
-            {title}
-          </h2>
+          <h2 className="text-base font-semibold text-white sm:text-lg">{title}</h2>
           <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/55">
             {count} {count === 1 ? "entrada" : "entradas"}
           </span>
@@ -106,9 +105,7 @@ function Section({
       </header>
       <div className="border-t border-white/5">
         {count === 0 ? (
-          <p className="px-5 py-8 text-center text-sm text-white/45 sm:px-6">
-            {empty}
-          </p>
+          <p className="px-5 py-8 text-center text-sm text-white/45 sm:px-6">{empty}</p>
         ) : (
           children
         )}
@@ -120,9 +117,7 @@ function Section({
 function tableWrap(children: React.ReactNode) {
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-white/5 text-sm">
-        {children}
-      </table>
+      <table className="min-w-full divide-y divide-white/5 text-sm">{children}</table>
     </div>
   );
 }
@@ -205,7 +200,7 @@ function StatusChip({
   );
 }
 
-function EntradaTable({ rows }: { rows: EntradaEntry[] }) {
+function EntradaTable({ rows, property }: { rows: EntradaEntry[]; property: string }) {
   const sorted = [...rows].sort((a, b) => (a.date < b.date ? -1 : 1));
   return tableWrap(
     <>
@@ -217,6 +212,7 @@ function EntradaTable({ rows }: { rows: EntradaEntry[] }) {
           <Th align="right">Valor</Th>
           <Th align="right">IVA</Th>
           <Th align="center">Estado</Th>
+          <Th align="center"> </Th>
         </tr>
       </thead>
       <tbody className="divide-y divide-white/5">
@@ -240,6 +236,9 @@ function EntradaTable({ rows }: { rows: EntradaEntry[] }) {
                 <StatusChip label="IVA Vault" active={r.inIvaVault} tone="good" />
               </div>
             </Td>
+            <Td align="center">
+              <DeleteEntryButton id={r.id} property={property} />
+            </Td>
           </tr>
         ))}
       </tbody>
@@ -247,7 +246,7 @@ function EntradaTable({ rows }: { rows: EntradaEntry[] }) {
   );
 }
 
-function DespesaTable({ rows }: { rows: DespesaEntry[] }) {
+function DespesaTable({ rows, property }: { rows: DespesaEntry[]; property: string }) {
   const sorted = [...rows].sort((a, b) => (a.date < b.date ? -1 : 1));
   return tableWrap(
     <>
@@ -258,6 +257,7 @@ function DespesaTable({ rows }: { rows: DespesaEntry[] }) {
           <Th>Pessoa</Th>
           <Th align="right">Valor</Th>
           <Th align="center">Conta</Th>
+          <Th align="center"> </Th>
         </tr>
       </thead>
       <tbody className="divide-y divide-white/5">
@@ -278,6 +278,9 @@ function DespesaTable({ rows }: { rows: DespesaEntry[] }) {
                 tone={r.outOfAccount ? "warn" : "neutral"}
               />
             </Td>
+            <Td align="center">
+              <DeleteEntryButton id={r.id} property={property} />
+            </Td>
           </tr>
         ))}
       </tbody>
@@ -285,7 +288,7 @@ function DespesaTable({ rows }: { rows: DespesaEntry[] }) {
   );
 }
 
-function FuncionarioTable({ rows }: { rows: FuncionarioEntry[] }) {
+function FuncionarioTable({ rows, property }: { rows: FuncionarioEntry[]; property: string }) {
   const sorted = [...rows].sort((a, b) => (a.date < b.date ? -1 : 1));
   return tableWrap(
     <>
@@ -296,6 +299,7 @@ function FuncionarioTable({ rows }: { rows: FuncionarioEntry[] }) {
           <Th>Pessoa</Th>
           <Th align="right">Valor</Th>
           <Th align="center">Estado</Th>
+          <Th align="center"> </Th>
         </tr>
       </thead>
       <tbody className="divide-y divide-white/5">
@@ -318,6 +322,9 @@ function FuncionarioTable({ rows }: { rows: FuncionarioEntry[] }) {
                   tone={r.outOfAccount ? "warn" : "neutral"}
                 />
               </div>
+            </Td>
+            <Td align="center">
+              <DeleteEntryButton id={r.id} property={property} />
             </Td>
           </tr>
         ))}
