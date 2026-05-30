@@ -1,6 +1,11 @@
 // Per-month P&L for one property, broken into three sections
 // (Entradas / Custos / Funcionário) so the schema matches the spreadsheet
 // mental model exactly.
+//
+// v0.5.3 — chips de estado e pill da pessoa passam a ser clicáveis para
+// permitir editar inline sem abrir o modal completo. Cada um chama uma
+// server action específica (toggleFlagAction / changePersonAction) com
+// optimistic UI.
 
 import { ddmmyyyy } from "@/lib/dates";
 import { eur } from "@/lib/money";
@@ -13,6 +18,8 @@ import type {
 import { AddEntryDialog } from "./add-entry-dialog";
 import { DeleteEntryButton } from "./delete-entry-button";
 import { EditEntryButton } from "./edit-entry-button";
+import { ToggleChip } from "./toggle-chip";
+import { PersonPillEditable } from "./person-pill-editable";
 
 export function PnLTable({
   entries,
@@ -37,7 +44,9 @@ export function PnLTable({
         onAdd={<AddEntryDialog kind="entrada" property={propertySlug} />}
         empty="Nenhuma entrada registada neste mês."
       >
-        {entradas.length > 0 && <EntradaTable rows={entradas} property={propertySlug} />}
+        {entradas.length > 0 && (
+          <EntradaTable rows={entradas} property={propertySlug} />
+        )}
       </Section>
 
       <Section
@@ -48,7 +57,9 @@ export function PnLTable({
         onAdd={<AddEntryDialog kind="despesa" property={propertySlug} />}
         empty="Sem custos neste mês."
       >
-        {despesas.length > 0 && <DespesaTable rows={despesas} property={propertySlug} />}
+        {despesas.length > 0 && (
+          <DespesaTable rows={despesas} property={propertySlug} />
+        )}
       </Section>
 
       <Section
@@ -59,7 +70,9 @@ export function PnLTable({
         onAdd={<AddEntryDialog kind="funcionario" property={propertySlug} />}
         empty="Sem pagamentos a funcionários neste mês."
       >
-        {funcionario.length > 0 && <FuncionarioTable rows={funcionario} property={propertySlug} />}
+        {funcionario.length > 0 && (
+          <FuncionarioTable rows={funcionario} property={propertySlug} />
+        )}
       </Section>
     </div>
   );
@@ -156,51 +169,6 @@ function Td({
   );
 }
 
-function PersonPill({ person }: { person: string }) {
-  const tone =
-    person === "André"
-      ? "bg-brand-cyan/15 text-brand-cyan ring-brand-cyan/30"
-      : person === "Carol"
-        ? "bg-fuchsia-400/15 text-fuchsia-200 ring-fuchsia-400/30"
-        : "bg-amber-300/15 text-amber-200 ring-amber-300/30";
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ${tone}`}
-    >
-      {person}
-    </span>
-  );
-}
-
-function StatusChip({
-  label,
-  active,
-  tone = "neutral",
-}: {
-  label: string;
-  active: boolean;
-  tone?: "neutral" | "good" | "warn";
-}) {
-  if (!active) {
-    return (
-      <span className="inline-flex items-center rounded-full bg-white/[0.04] px-2 py-0.5 text-[10px] font-medium text-white/35 ring-1 ring-white/10">
-        {label}
-      </span>
-    );
-  }
-  const cls =
-    tone === "good"
-      ? "bg-emerald-400/15 text-emerald-200 ring-emerald-400/30"
-      : tone === "warn"
-        ? "bg-amber-300/15 text-amber-200 ring-amber-300/30"
-        : "bg-white/[0.08] text-white/80 ring-white/15";
-  return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ${cls}`}>
-      {label}
-    </span>
-  );
-}
-
 function EntradaTable({ rows, property }: { rows: EntradaEntry[]; property: string }) {
   const sorted = [...rows].sort((a, b) => (a.date < b.date ? -1 : 1));
   return tableWrap(
@@ -222,7 +190,11 @@ function EntradaTable({ rows, property }: { rows: EntradaEntry[]; property: stri
             <Td className="text-white/65">{ddmmyyyy(r.date)}</Td>
             <Td className="text-white">{r.stayWindow ?? r.description}</Td>
             <Td>
-              <PersonPill person={r.person} />
+              <PersonPillEditable
+                entryId={r.id}
+                property={property}
+                person={r.person}
+              />
             </Td>
             <Td align="right" className="font-semibold text-brand-cyan">
               {eur(r.amount)}
@@ -232,13 +204,34 @@ function EntradaTable({ rows, property }: { rows: EntradaEntry[]; property: stri
             </Td>
             <Td align="center">
               <div className="flex flex-wrap justify-center gap-1">
-                <StatusChip label="Recebido" active={r.recebido} tone="good" />
-                <StatusChip label="No banco" active={r.noBanco} tone="good" />
-                <StatusChip label="IVA Vault" active={r.inIvaVault} tone="good" />
+                <ToggleChip
+                  entryId={r.id}
+                  property={property}
+                  flag="recebido"
+                  active={r.recebido}
+                  label="Recebido"
+                  tone="good"
+                />
+                <ToggleChip
+                  entryId={r.id}
+                  property={property}
+                  flag="noBanco"
+                  active={r.noBanco}
+                  label="No banco"
+                  tone="good"
+                />
+                <ToggleChip
+                  entryId={r.id}
+                  property={property}
+                  flag="inIvaVault"
+                  active={r.inIvaVault}
+                  label="IVA Vault"
+                  tone="good"
+                />
               </div>
             </Td>
             <Td align="center">
-              <div className="inline-flex items-center gap-0.5">
+              <div className="inline-flex items-center gap-1">
                 <EditEntryButton entry={r} />
                 <DeleteEntryButton id={r.id} property={property} />
               </div>
@@ -258,7 +251,7 @@ function DespesaTable({ rows, property }: { rows: DespesaEntry[]; property: stri
         <tr>
           <Th>Data</Th>
           <Th>Descrição</Th>
-          <Th>Pessoa</Th>
+          <Th>Pessoa pagou</Th>
           <Th align="right">Valor</Th>
           <Th align="center">Conta</Th>
           <Th align="center"> </Th>
@@ -270,20 +263,27 @@ function DespesaTable({ rows, property }: { rows: DespesaEntry[]; property: stri
             <Td className="text-white/65">{ddmmyyyy(r.date)}</Td>
             <Td className="text-white">{r.description}</Td>
             <Td>
-              <PersonPill person={r.person} />
+              <PersonPillEditable
+                entryId={r.id}
+                property={property}
+                person={r.person}
+              />
             </Td>
             <Td align="right" className="font-semibold text-rose-200">
               −{eur(r.amount)}
             </Td>
             <Td align="center">
-              <StatusChip
+              <ToggleChip
+                entryId={r.id}
+                property={property}
+                flag="outOfAccount"
+                active={r.outOfAccount}
                 label={r.outOfAccount ? "Conta empresa" : "Conta pessoal"}
-                active
                 tone={r.outOfAccount ? "neutral" : "warn"}
               />
             </Td>
             <Td align="center">
-              <div className="inline-flex items-center gap-0.5">
+              <div className="inline-flex items-center gap-1">
                 <EditEntryButton entry={r} />
                 <DeleteEntryButton id={r.id} property={property} />
               </div>
@@ -303,7 +303,7 @@ function FuncionarioTable({ rows, property }: { rows: FuncionarioEntry[]; proper
         <tr>
           <Th>Data</Th>
           <Th>Descrição</Th>
-          <Th>Pessoa</Th>
+          <Th>Pessoa pagou</Th>
           <Th align="right">Valor</Th>
           <Th align="center">Estado</Th>
           <Th align="center"> </Th>
@@ -315,23 +315,40 @@ function FuncionarioTable({ rows, property }: { rows: FuncionarioEntry[]; proper
             <Td className="text-white/65">{ddmmyyyy(r.date)}</Td>
             <Td className="text-white">{r.description}</Td>
             <Td>
-              <PersonPill person={r.person} />
+              <PersonPillEditable
+                entryId={r.id}
+                property={property}
+                person={r.person}
+              />
             </Td>
             <Td align="right" className="font-semibold text-amber-200">
               −{eur(r.amount)}
             </Td>
             <Td align="center">
               <div className="flex flex-wrap justify-center gap-1">
-                <StatusChip label="Pago" active={r.pago} tone="good" />
-                <StatusChip
-                  label={r.outOfAccount ? "Out of account" : "Conta HostPro"}
-                  active
-                  tone={r.outOfAccount ? "warn" : "neutral"}
+                <ToggleChip
+                  entryId={r.id}
+                  property={property}
+                  flag="pago"
+                  active={r.pago}
+                  label="Pago"
+                  tone="good"
+                />
+                <ToggleChip
+                  entryId={r.id}
+                  property={property}
+                  flag="outOfAccount"
+                  active={r.outOfAccount}
+                  label={r.outOfAccount ? "Conta empresa" : "Conta pessoal"}
+                  tone={r.outOfAccount ? "neutral" : "warn"}
                 />
               </div>
             </Td>
             <Td align="center">
-              <DeleteEntryButton id={r.id} property={property} />
+              <div className="inline-flex items-center gap-1">
+                <EditEntryButton entry={r} />
+                <DeleteEntryButton id={r.id} property={property} />
+              </div>
             </Td>
           </tr>
         ))}

@@ -15,6 +15,18 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.5.3",
+    date: "2026-05-30",
+    title:
+      "Chips de estado clicáveis · pessoa editável inline · fix Funcionário sem botão editar",
+    highlights: [
+      "**👆 Chips de estado agora são botões.** *Recebido · No banco · IVA Vault* (entradas), *Pago · Conta empresa/pessoal* (funcionário), *Conta empresa/pessoal* (custos) — todos clicáveis directamente na linha. Carrega → toggle imediato (optimistic) → server action `toggleFlagAction` grava no Blob → revalida. Acabou abrir o modal só para marcar uma reserva como recebida.",
+      "**🎯 Pessoa também é editável inline.** A pill colorida (André cyan · Carol fuchsia · Alex amber · Lilia violeta) ganha um pequeno ▾ — clica e abre dropdown com os 4 nomes para trocar quem pagou. Outside-click fecha. Server action nova: `changePersonAction(id, newPerson, property)`.",
+      "**🪲 Funcionário ficou sem botão Editar em v0.5.1.** Um dos 3 `Edit` falhou silenciosamente quando reescrevi as 3 tabelas (o `String to replace not found` que ignorei) e a coluna acabou só com Apagar. Corrigido — todas as linhas têm Editar + Apagar lado-a-lado.",
+      "**🛠 Também corrigi a tabela Funcionário a usar labels antigas** *Out of account* / *Conta HostPro* — agora usa as labels novas (*Conta empresa* / *Conta pessoal*) consistentes com a tabela de Custos.",
+    ],
+  },
+  {
     version: "0.5.2",
     date: "2026-05-30",
     title:

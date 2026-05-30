@@ -207,3 +207,21 @@ export async function toggleFlagAction(
   revalidatePath("/admin");
   return { ok: true };
 }
+
+// ---------- change person (inline pill dropdown) ----------
+
+export async function changePersonAction(
+  id: string,
+  next: string,
+  property: string,
+): Promise<ActionResult> {
+  if (!isPerson(next)) return { ok: false, error: "Pessoa inválida" };
+  try {
+    await updateEntry(id, { person: next } as never);
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Erro" };
+  }
+  revalidatePath(`/alojamentos/${property}`);
+  revalidatePath("/admin");
+  return { ok: true };
+}
