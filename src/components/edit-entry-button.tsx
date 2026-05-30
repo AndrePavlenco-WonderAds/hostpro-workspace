@@ -51,9 +51,10 @@ export function EditEntryButton({ entry }: { entry: PnLEntry }) {
         type="button"
         onClick={() => setOpen(true)}
         title="Editar entrada"
-        className="inline-flex h-7 w-7 items-center justify-center rounded-full text-xs text-white/35 transition hover:bg-white/[0.06] hover:text-brand-cyan"
+        className="inline-flex h-8 items-center gap-1 rounded-full border border-brand-cyan/40 bg-brand-cyan/10 px-3 text-xs font-semibold text-brand-cyan transition hover:border-brand-cyan hover:bg-brand-cyan/20"
       >
-        ✎
+        <span aria-hidden className="text-sm leading-none">✎</span>
+        Editar
       </button>
 
       {open && (

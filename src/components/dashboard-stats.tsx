@@ -135,8 +135,8 @@ function YearChart({
   breakdown: ReturnType<typeof monthlyBreakdown>;
   year: string;
 }) {
-  // Build all 12 months of the year — empty months render as thin grey bars
-  // so the chart shape stays comparable as the year fills up.
+  // Build all 12 months — ganhos + custos side-by-side per month so it's easy
+  // to eyeball months where custos blew past revenue.
   const byKey = new Map(breakdown.map((b) => [b.key, b]));
   const months = Array.from({ length: 12 }, (_, i) => {
     const k = `${year}-${String(i + 1).padStart(2, "0")}` as MonthKey;
@@ -145,36 +145,112 @@ function YearChart({
       key: k,
       monthNum: String(i + 1).padStart(2, "0"),
       revenue: found?.totals.revenue ?? 0,
+      expenses: found?.totals.totalExpenses ?? 0,
     };
   });
-  const max = Math.max(...months.map((m) => m.revenue), 100);
+  const raw = Math.max(
+    ...months.map((m) => Math.max(m.revenue, m.expenses)),
+    500,
+  );
+  // Round up to a clean step so the gridlines read nicely (500, 1000, 1500…).
+  const step = raw <= 2000 ? 500 : raw <= 5000 ? 1000 : 2000;
+  const max = Math.ceil(raw / step) * step;
+  const lines = Array.from(
+    { length: Math.round(max / step) + 1 },
+    (_, i) => i * step,
+  ).reverse(); // top → bottom
+
+  const CHART_HEIGHT = 144; // ~h-36 in px
 
   return (
-    <div className="flex items-end gap-1.5">
-      {months.map((m, i) => {
-        const h = (m.revenue / max) * 100;
-        const hasData = m.revenue > 0;
-        return (
-          <div key={m.key} className="flex flex-1 flex-col items-center">
-            {/* Fixed-height column so the bar's % height resolves correctly */}
-            <div className="relative h-24 w-full">
+    <div className="flex gap-2">
+      {/* Y-axis */}
+      <div
+        className="flex flex-col justify-between pr-1 text-right text-[9px] text-white/40"
+        style={{ height: CHART_HEIGHT }}
+      >
+        {lines.map((v) => (
+          <span key={v} className="leading-none">
+            {v >= 1000 ? `${(v / 1000).toFixed(v % 1000 === 0 ? 0 : 1)}k€` : `${v}€`}
+          </span>
+        ))}
+      </div>
+
+      {/* Chart area */}
+      <div className="flex flex-1 flex-col">
+        <div
+          className="relative flex items-end gap-1.5"
+          style={{ height: CHART_HEIGHT }}
+        >
+          {/* Gridlines */}
+          {lines.map((v) => (
+            <div
+              key={v}
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 border-t border-white/[0.06]"
+              style={{ bottom: `${(v / max) * 100}%` }}
+            />
+          ))}
+
+          {/* Month columns */}
+          {months.map((m, i) => {
+            const hRev = (m.revenue / max) * 100;
+            const hExp = (m.expenses / max) * 100;
+            return (
               <div
-                className={`absolute inset-x-0 bottom-0 origin-bottom rounded-t-sm ${
-                  hasData ? "bg-brand-cyan/85" : "bg-white/[0.08]"
-                } animate-bar-grow`}
-                style={{
-                  height: `${Math.max(h, 4)}%`,
-                  animationDelay: `${i * 70}ms`,
-                }}
-                title={`${m.monthNum}/${year}: ${eur(m.revenue)}`}
-              />
-            </div>
-            <span className="mt-1 text-[9px] uppercase tracking-wider text-white/40">
+                key={m.key}
+                className="relative flex h-full flex-1 items-end justify-center gap-0.5"
+                title={`${m.monthNum}/${year} · ganhos ${eur(m.revenue)} · custos ${eur(m.expenses)}`}
+              >
+                {/* Ganhos */}
+                <div
+                  className={`origin-bottom flex-1 rounded-t-sm animate-bar-grow ${
+                    m.revenue > 0 ? "bg-brand-cyan/85" : "bg-white/[0.05]"
+                  }`}
+                  style={{
+                    height: `${Math.max(hRev, m.revenue > 0 ? 4 : 0)}%`,
+                    animationDelay: `${i * 70}ms`,
+                  }}
+                />
+                {/* Custos */}
+                <div
+                  className={`origin-bottom flex-1 rounded-t-sm animate-bar-grow ${
+                    m.expenses > 0 ? "bg-rose-400/75" : "bg-white/[0.05]"
+                  }`}
+                  style={{
+                    height: `${Math.max(hExp, m.expenses > 0 ? 4 : 0)}%`,
+                    animationDelay: `${i * 70 + 35}ms`,
+                  }}
+                />
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Month labels */}
+        <div className="mt-2 flex gap-1.5">
+          {months.map((m) => (
+            <span
+              key={m.key}
+              className="flex-1 text-center text-[9px] uppercase tracking-wider text-white/40"
+            >
               {m.monthNum}
             </span>
-          </div>
-        );
-      })}
+          ))}
+        </div>
+
+        {/* Legend */}
+        <div className="mt-3 flex items-center justify-end gap-4 text-[10px] text-white/55">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-sm bg-brand-cyan/85" />
+            Ganhos
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-sm bg-rose-400/75" />
+            Custos
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

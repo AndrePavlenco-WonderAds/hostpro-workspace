@@ -3,15 +3,15 @@
 // Storage shape: single JSON file `data/pnl.json` at the root of the Hobby
 // Blob store (`hostpro-data`, public access — pathname is never exposed to
 // the browser, only server actions know it). On first read we seed from
-// SEED_ENTRIES (mirrors Andre's Google Sheet). All mutations go through
-// `addEntry` / `deleteEntry` and revalidate the relevant routes.
+// SEED_ENTRIES (mirrors Andre's Google Sheet).
 //
-// Concurrency: addPathnameSuffix is false so every put overwrites the same
-// file. Single-user use, no races worth chasing today.
+// v0.5.2 — dropped `unstable_cache` because mutations were sometimes
+// taking a full request cycle to surface back. Blob reads are cheap (single
+// HTTP fetch, same region as the function) so caching on top buys little
+// for a single-user admin app and complicates read-your-own-writes.
 
 import "server-only";
-import { list, put, del } from "@vercel/blob";
-import { unstable_cache, updateTag } from "next/cache";
+import { list, put } from "@vercel/blob";
 import { SEED_ENTRIES } from "./pnl-seed";
 import type { PropertySlug } from "./properties";
 import type {
@@ -24,7 +24,6 @@ import type {
 } from "./pnl-types";
 
 const BLOB_PATH = "data/pnl.json";
-const CACHE_TAG = "pnl-data";
 
 // ---------- low-level Blob I/O ----------
 
@@ -51,27 +50,19 @@ async function writeBlob(entries: PnLEntry[]): Promise<void> {
   });
 }
 
-// ---------- cached read ----------
-
-const getAllEntriesCached = unstable_cache(
-  async (): Promise<PnLEntry[]> => {
-    const stored = await readBlob();
-    if (stored) return stored;
-    // First time touching the store — seed it so all readers see the same
-    // baseline going forward.
-    try {
-      await writeBlob(SEED_ENTRIES);
-    } catch {
-      // No-token / build-time path: just return the seed in memory.
-    }
-    return SEED_ENTRIES;
-  },
-  ["pnl-all"],
-  { tags: [CACHE_TAG], revalidate: 60 },
-);
+// ---------- reads ----------
 
 export async function getAllEntries(): Promise<PnLEntry[]> {
-  return getAllEntriesCached();
+  const stored = await readBlob();
+  if (stored) return stored;
+  // First time touching the store — seed it so all readers see the same
+  // baseline going forward.
+  try {
+    await writeBlob(SEED_ENTRIES);
+  } catch {
+    // No-token / build-time path: just return the seed in memory.
+  }
+  return SEED_ENTRIES;
 }
 
 export async function getEntries(slug: PropertySlug): Promise<PnLEntry[]> {
@@ -97,33 +88,27 @@ function nextId(existing: PnLEntry[], kind: EntryKind): string {
 }
 
 export async function addEntry(input: NewEntryInput): Promise<PnLEntry> {
-  const all = await readBlob() ?? [...SEED_ENTRIES];
+  const all = (await readBlob()) ?? [...SEED_ENTRIES];
   const id = input.id ?? nextId(all, input.kind);
   const entry = { ...input, id } as PnLEntry;
-  const next = [...all, entry];
-  await writeBlob(next);
-  updateTag(CACHE_TAG);
+  await writeBlob([...all, entry]);
   return entry;
 }
 
 export async function deleteEntry(id: string): Promise<void> {
-  const all = await readBlob() ?? [...SEED_ENTRIES];
-  const next = all.filter((e) => e.id !== id);
-  await writeBlob(next);
-  updateTag(CACHE_TAG);
+  const all = (await readBlob()) ?? [...SEED_ENTRIES];
+  await writeBlob(all.filter((e) => e.id !== id));
 }
 
 export async function updateEntry(
   id: string,
   patch: Partial<PnLEntry>,
 ): Promise<void> {
-  const all = await readBlob() ?? [...SEED_ENTRIES];
+  const all = (await readBlob()) ?? [...SEED_ENTRIES];
   const next = all.map((e) =>
     e.id === id ? ({ ...e, ...patch } as PnLEntry) : e,
   );
   await writeBlob(next);
-  updateTag(CACHE_TAG);
 }
 
-// Re-export types so consumers don't reach into the seed file.
 export type { Person, PnLEntry, EntryKind };

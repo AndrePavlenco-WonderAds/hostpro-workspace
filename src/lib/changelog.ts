@@ -15,6 +15,17 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.5.2",
+    date: "2026-05-30",
+    title:
+      "Save reflecte logo · botões maiores · YearChart com custos lado-a-lado e eixo Y",
+    highlights: [
+      "**⚡ Editar/apagar reflecte instantaneamente.** `unstable_cache` em `pnl-store.ts` estava a aguentar leituras antigas até 60 s mesmo com `updateTag`. Saiu — agora cada `getAllEntries()` lê directo do Vercel Blob. `revalidatePath` + `router.refresh()` no client basta para a página actualizar logo após guardar. Custo extra: 1 fetch ao Blob por page-load (~50 ms na mesma região), trade-off saudável para o tráfego deste app.",
+      "**🖍 Botão *Editar* MUITO mais visível.** Era um lápis cinzento de 7px — passou a uma pill cyan com borda+fundo translúcidos, texto 'Editar' explícito ao lado do ✎. O *Apagar* matched: pill cinzenta com 🗑+'Apagar', vira vermelha+'Confirmar' no primeiro clique e completa no segundo. Cabem os dois lado-a-lado em qualquer linha sem partir o layout.",
+      "**📊 *Ganhos acumulados* — barras lado-a-lado + eixo Y em €.** Cada mês mostra agora duas barras (cyan = ganhos, vermelha = custos), o que torna óbvio quando os custos comeram um mês inteiro. Eixo vertical à esquerda com gridlines a 500€/1k€/etc. (step auto-escolhido: 500€ até €2k, 1k€ até €5k, 2k€ acima). Legenda *Ganhos · Custos* discreta no canto inferior direito. Animação `bar-grow` mantém-se, com 35 ms de delay entre a barra de ganhos e a de custos do mesmo mês para o efeito de cascata.",
+    ],
+  },
+  {
     version: "0.5.1",
     date: "2026-05-30",
     title:

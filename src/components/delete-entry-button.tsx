@@ -34,13 +34,16 @@ export function DeleteEntryButton({
       onClick={handleClick}
       disabled={pending}
       title={confirming ? "Clica novamente para confirmar" : "Apagar entrada"}
-      className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-xs transition disabled:opacity-50 ${
+      className={`inline-flex h-8 items-center gap-1 rounded-full border px-3 text-xs font-semibold transition disabled:opacity-50 ${
         confirming
-          ? "bg-rose-500/20 text-rose-300 ring-1 ring-rose-400/40"
-          : "text-white/35 hover:bg-white/[0.06] hover:text-rose-300"
+          ? "border-rose-400/60 bg-rose-500/25 text-rose-200"
+          : "border-white/15 bg-white/[0.04] text-white/55 hover:border-rose-400/50 hover:bg-rose-500/10 hover:text-rose-200"
       }`}
     >
-      {pending ? "…" : confirming ? "✓?" : "🗑"}
+      <span aria-hidden className="text-sm leading-none">
+        {pending ? "…" : confirming ? "✓" : "🗑"}
+      </span>
+      {confirming ? "Confirmar" : "Apagar"}
     </button>
   );
 }
