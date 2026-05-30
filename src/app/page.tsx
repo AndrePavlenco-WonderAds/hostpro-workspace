@@ -7,12 +7,12 @@ import { currentMonthKey } from "@/lib/dates";
 import { eur } from "@/lib/money";
 import { getCurrentVersion } from "@/lib/changelog";
 import { PropertyCard } from "@/components/property-card";
+import { Typewriter } from "@/components/typewriter";
 
 export default async function Home() {
   const version = getCurrentVersion();
   const current = currentMonthKey();
 
-  // Pre-compute monthly totals for the cards.
   const cards = await Promise.all(
     PROPERTIES.map(async (p) => {
       const entries = await getEntries(p.slug);
@@ -30,7 +30,7 @@ export default async function Home() {
   );
 
   return (
-    <div className="relative flex min-h-screen flex-col overflow-hidden bg-brand-navy-dark">
+    <div className="relative flex h-screen flex-col overflow-hidden bg-brand-navy-dark">
       {/* Blurred hero photo behind everything. */}
       <Image
         src="/hero-living-room.jpg"
@@ -38,31 +38,27 @@ export default async function Home() {
         fill
         priority
         sizes="100vw"
-        className="object-cover scale-110 blur-2xl opacity-30"
+        className="object-cover scale-110 blur-2xl opacity-50"
       />
       {/* Navy wash so the content stays legible. */}
-      <div className="absolute inset-0 bg-gradient-to-b from-brand-navy-dark/75 via-brand-navy-dark/85 to-brand-navy-dark/95" />
+      <div className="absolute inset-0 bg-gradient-to-b from-brand-navy-dark/55 via-brand-navy-dark/70 to-brand-navy-dark/85" />
 
-      <main className="relative z-10 flex flex-1 flex-col items-center px-6 py-14 sm:py-20">
-        <div className="flex w-full max-w-6xl flex-col items-center gap-10 text-center">
-          {/* Logo + claim */}
+      <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 py-6">
+        <div className="flex w-full max-w-6xl flex-col items-center gap-6 text-center">
           <Image
             src="/hostpro-logo-white.png"
             alt="HostPro"
-            width={300}
-            height={82}
+            width={240}
+            height={66}
             priority
           />
-          <div className="h-1 w-14 rounded-full bg-brand-cyan" />
+          <div className="h-1 w-12 rounded-full bg-brand-cyan" />
 
-          <h1 className="text-4xl font-semibold leading-[1.05] tracking-tight text-white sm:text-5xl">
-            O seu alojamento,
-            <br />
-            nas melhores mãos.
+          <h1 className="text-2xl font-semibold tracking-tight text-white whitespace-nowrap sm:text-3xl">
+            <Typewriter text="O seu alojamento, nas melhores mãos." />
           </h1>
 
-          {/* Property cards row — clicks straight into each property's page */}
-          <section className="mt-4 grid w-full gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <section className="mt-1 grid w-full gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {cards.map((c) => (
               <PropertyCard
                 key={c.property.slug}
@@ -74,18 +70,17 @@ export default async function Home() {
             ))}
           </section>
 
-          {/* Admin CTA below the cards */}
           <Link
             href="/admin"
-            className="mt-4 inline-flex items-center gap-2 rounded-full bg-brand-cyan px-6 py-3 text-sm font-semibold text-brand-navy shadow-[0_15px_40px_-12px_rgba(0,181,226,0.7)] transition hover:opacity-90"
+            className="mt-1 inline-flex items-center gap-2 rounded-full bg-brand-cyan px-6 py-2.5 text-sm font-semibold text-brand-navy shadow-[0_15px_40px_-12px_rgba(0,181,226,0.7)] transition hover:opacity-90"
           >
-            Admin view
+            Visão Geral
             <span aria-hidden>→</span>
           </Link>
         </div>
       </main>
 
-      <footer className="relative z-10 flex items-center justify-center gap-3 px-6 pb-8 text-[11px] uppercase tracking-[0.22em] text-white/40">
+      <footer className="relative z-10 flex items-center justify-center gap-3 px-6 pb-4 text-[11px] uppercase tracking-[0.22em] text-white/40">
         <span>HostPro Workspace</span>
         <span aria-hidden className="text-white/20">·</span>
         <Link href="/changelog" className="transition hover:text-brand-cyan">

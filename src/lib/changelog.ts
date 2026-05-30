@@ -15,6 +15,23 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.4.1",
+    date: "2026-05-30",
+    title:
+      "Home sem scroll com typewriter · tiles a vermelho · Lucro · Lilia · admin 100% pt-PT",
+    highlights: [
+      "**🏠 Home compactada para caber numa só viewport.** `h-screen overflow-hidden`, paddings encolhidos, logo mais pequeno (240×66), barra cyan mais curta. O fundo já estava lá mas com `opacity-30` ficava quase invisível — subiu para `opacity-50` e o overlay navy passou de 75/85/95 para 55/70/85. Botão CTA agora diz **\"Visão Geral\"** em vez de \"Admin view\".",
+      "**⌨️ Claim com efeito de máquina de escrever.** O h1 \"O seu alojamento, nas melhores mãos.\" deixou de partir em duas linhas (`whitespace-nowrap`, tamanho desceu para `text-2xl sm:text-3xl`) e é renderizado por um novo `<Typewriter>` client component que escreve um caracter de cada vez com cursor a piscar quando termina.",
+      "**🏘 Sweet Escape 2 com foto diferente.** A imagem antes era da Sweet Escape 5 (mesma pasta) — agora aponta para a cozinha (`IMG_5935`) para visualmente se distinguirem. **🔴 Precisas de me enviar fotos reais do Sweet Escape 2** — `/Desktop/HOSTPRO/Apartamentos/Sweet Escapes/2º` só tem PDFs (contratos, RNAL, caderneta), nenhuma foto. Quando me mandares, troco.",
+      "**🔴 Tiles de custo agora vermelhos.** `Custos`, `Funcionário` e `IVA` no `OverviewTiles` herdaram `accent=\"red\"`. **`Profit` foi renomeado para `Lucro`** no tile final, e no dashboard de cada alojamento o card *Profit acumulado* passou a *Lucro acumulado* (vermelho automático quando negativo, verde quando positivo).",
+      "**📊 Ganhos acumulados ganhou gráfico mensal.** O tile cresce em duas colunas — esquerda mantém o valor + subtítulo *Desde 01/01/{ano} · N entradas*; direita renderiza 12 barras (Jan→Dez) com a receita de cada mês do ano corrente. Meses sem dados aparecem em barras finas cinza para a forma do ano se manter comparável à medida que se preenche. Label do tile agora explicita *Ganhos acumulados em {ano}*.",
+      "**👥 Lilia entrou na equipa.** `PEOPLE` em `pnl-types.ts` passou de `[\"André\", \"Carol\", \"Alex\"]` para `[\"André\", \"Carol\", \"Alex\", \"Lilia\"]` — aparece no dropdown de todos os formulários e no `PersonPill` da tabela.",
+      "**💸 \"Pessoa\" → \"Pessoa pagou\" para custos e funcionário.** Form dialog e cabeçalho das tabelas alteram dinamicamente o label só nas secções `Custos` e `Funcionário`. Em `Entradas` mantém-se `Pessoa` (é quem recebeu a reserva, não quem pagou).",
+      "**🏢 Etiqueta \"Out of account\" abolida.** Checkbox do formulário passou a `Saiu da conta da empresa` (PT-PT directo). Chip da tabela: quando ligada → `Conta empresa` (neutro), quando desligada → `Conta pessoal` (amber, sinaliza reembolso pendente).",
+      "**🇵🇹 /admin agora é 100 % pt-PT.** Tinha vestígios de inglês — `Admin overview`, `YTD`, `Live · v0.4.0`, `Top X expenses ever` mascarado, `Ganhos YTD` etc. Tudo passou: *Visão geral · Acumulado de 2026 · Ganhos 2026 · Custos 2026 · Lucro 2026 · Margem · Por alojamento · Ao vivo*. Card de comparação por alojamento mostra `Lucro {ano}` em vez de `YTD {valor}`. Memória gravada: *HostPro Workspace é estritamente pt-PT, nada de inglês mesmo para dev-speak.*",
+    ],
+  },
+  {
     version: "0.4.0",
     date: "2026-05-30",
     title:

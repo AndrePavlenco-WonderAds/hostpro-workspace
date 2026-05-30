@@ -6,7 +6,6 @@ import { getAllEntries } from "@/lib/pnl-store";
 import {
   aggregate,
   aggregateMonth,
-  filterMonth,
   monthlyBreakdown,
 } from "@/lib/pnl-math";
 import { currentMonthKey, monthLabel, shiftMonth, ddmmyyyy } from "@/lib/dates";
@@ -15,7 +14,7 @@ import type { PnLEntry, EntradaEntry } from "@/lib/pnl-types";
 import { OverviewTiles } from "@/components/overview-tiles";
 
 export const metadata = {
-  title: "Admin — HostPro Workspace",
+  title: "Visão Geral — HostPro Workspace",
 };
 
 export default async function AdminPage() {
@@ -29,7 +28,6 @@ export default async function AdminPage() {
   const ytdYear = month.slice(0, 4);
   const ytd = aggregate(all.filter((e) => e.date.startsWith(ytdYear)));
 
-  // Per-property breakdown for the current month + YTD.
   const perProperty = PROPERTIES.map((p) => {
     const entries = all.filter((e) => e.property === p.slug);
     return {
@@ -47,7 +45,7 @@ export default async function AdminPage() {
     .sort((a, b) => b.amount - a.amount)
     .slice(0, 5);
 
-  const topCostsEntries = [...all]
+  const topCustos = [...all]
     .filter((e) => e.kind !== "entrada")
     .sort((a, b) => b.amount - a.amount)
     .slice(0, 5);
@@ -68,20 +66,19 @@ export default async function AdminPage() {
               ← Início
             </Link>
             <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-              Admin overview
+              Visão geral
             </h1>
             <p className="mt-2 text-sm text-white/55 sm:text-base">
               Operação consolidada dos {PROPERTIES.length} alojamentos em{" "}
-              <strong className="text-white">{monthLabel(month)}</strong> e{" "}
-              YTD {ytdYear}.
+              <strong className="text-white">{monthLabel(month)}</strong> e
+              acumulado de {ytdYear}.
             </p>
           </div>
           <span className="rounded-full border border-brand-cyan/40 bg-brand-cyan/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-brand-cyan">
-            Live · v0.4.0
+            Ao vivo · v0.4.1
           </span>
         </header>
 
-        {/* Tiles — todos os alojamentos, mês actual */}
         <section className="mt-10">
           <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-white/45">
             {monthLabel(month)} · todos os alojamentos
@@ -91,16 +88,15 @@ export default async function AdminPage() {
           </div>
         </section>
 
-        {/* YTD top tiles */}
         <section className="mt-12">
           <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-white/45">
-            YTD {ytdYear}
+            Acumulado de {ytdYear}
           </h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-4">
-            <YtdTile label="Ganhos YTD" value={eur(ytd.revenue)} accent="cyan" />
-            <YtdTile label="Custos YTD" value={eur(ytd.totalExpenses)} accent="rose" />
+            <YtdTile label={`Ganhos ${ytdYear}`} value={eur(ytd.revenue)} accent="cyan" />
+            <YtdTile label={`Custos ${ytdYear}`} value={eur(ytd.totalExpenses)} accent="red" />
             <YtdTile
-              label="Profit YTD"
+              label={`Lucro ${ytdYear}`}
               value={eur(ytd.profit)}
               accent={ytd.profit >= 0 ? "green" : "red"}
               emphasis
@@ -113,19 +109,22 @@ export default async function AdminPage() {
           </div>
         </section>
 
-        {/* Per-property comparison */}
         <section className="mt-12">
           <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-white/45">
             Por alojamento
           </h2>
           <div className="mt-4 grid gap-4 lg:grid-cols-3">
             {perProperty.map((row) => (
-              <PropertyComparisonCard key={row.property.slug} row={row} monthLabel={monthLabel(month)} />
+              <PropertyComparisonCard
+                key={row.property.slug}
+                row={row}
+                monthLabel={monthLabel(month)}
+                year={ytdYear}
+              />
             ))}
           </div>
         </section>
 
-        {/* Top widgets */}
         <section className="mt-12 grid gap-4 lg:grid-cols-2">
           <TopList
             title="Top 5 reservas (sempre)"
@@ -142,7 +141,7 @@ export default async function AdminPage() {
           <TopList
             title="Top 5 custos (sempre)"
             emoji="💸"
-            rows={topCostsEntries.map((e) => ({
+            rows={topCustos.map((e) => ({
               key: e.id,
               property: e.property,
               left: e.description,
@@ -153,7 +152,6 @@ export default async function AdminPage() {
           />
         </section>
 
-        {/* Recent activity */}
         <section className="mt-12">
           <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-white/45">
             Actividade recente
@@ -178,7 +176,6 @@ export default async function AdminPage() {
           </div>
         </section>
 
-        {/* Integrations roadmap */}
         <IntegrationsRoadmap />
       </div>
     </div>
@@ -199,11 +196,9 @@ function YtdTile({
   const accentCls =
     accent === "cyan"
       ? "text-brand-cyan"
-      : accent === "rose"
-        ? "text-rose-200"
-        : accent === "green"
-          ? "text-emerald-300"
-          : "text-rose-300";
+      : accent === "rose" || accent === "red"
+        ? "text-rose-300"
+        : "text-emerald-300";
   return (
     <div
       className={`rounded-2xl border bg-white/[0.025] p-4 backdrop-blur-md ${
@@ -221,6 +216,7 @@ function YtdTile({
 function PropertyComparisonCard({
   row,
   monthLabel,
+  year,
 }: {
   row: {
     property: typeof PROPERTIES[number];
@@ -230,6 +226,7 @@ function PropertyComparisonCard({
     count: number;
   };
   monthLabel: string;
+  year: string;
 }) {
   const { property, month, prev, ytd } = row;
   const profitDelta = month.profit - prev.profit;
@@ -248,15 +245,15 @@ function PropertyComparisonCard({
       <div className="flex flex-col gap-3 p-4">
         <h3 className="text-base font-semibold text-white">{property.name}</h3>
         <Row label={`Ganhos ${monthLabel}`} value={eur(month.revenue)} accent="cyan" />
-        <Row label={`Custos ${monthLabel}`} value={eur(month.totalExpenses)} />
+        <Row label={`Custos ${monthLabel}`} value={eur(month.totalExpenses)} accent="red" />
         <Row
-          label="Profit"
+          label="Lucro"
           value={eur(month.profit)}
           accent={month.profit >= 0 ? "green" : "red"}
           delta={profitDelta}
         />
         <div className="mt-2 flex items-center justify-between border-t border-white/5 pt-3 text-[11px] text-white/55">
-          <span>YTD {eur(ytd.profit)}</span>
+          <span>Lucro {year} {eur(ytd.profit)}</span>
           <span className="transition group-hover:text-brand-cyan">Abrir →</span>
         </div>
       </div>
@@ -383,18 +380,18 @@ function IntegrationsRoadmap() {
       </h2>
       <p className="mt-3 text-sm text-white/65">
         Estratégia para deixar de inserir reservas à mão. Três fontes a ligar
-        nesta ordem:
+        por esta ordem:
       </p>
       <ol className="mt-4 space-y-3 text-sm">
         <Step
           num={1}
           title="Talkguest (channel manager)"
-          desc="A fonte mais valiosa — agrega Airbnb, Booking e directas num só feed. Se tiverem API REST + webhooks, é só ligar e o app puxa cada nova reserva automaticamente. Precisamos do token API."
+          desc="A fonte mais valiosa — agrega Airbnb, Booking e directas num só feed. Se tiverem API REST e webhooks, é só ligar e o app puxa cada nova reserva automaticamente. Precisamos do token da API."
         />
         <Step
           num={2}
           title="Airbnb iCal por listing"
-          desc="Cobertura mínima sem API: cada listing tem URL .ics com datas + reserva-id. Vercel Cron diário sincroniza, cria entradas como 'rascunho' (precisas confirmar valor)."
+          desc="Cobertura mínima sem API: cada listing tem URL .ics com datas + reserva-id. Vercel Cron diário sincroniza, cria entradas como rascunho (precisas confirmar o valor)."
         />
         <Step
           num={3}
@@ -404,7 +401,7 @@ function IntegrationsRoadmap() {
       </ol>
       <p className="mt-5 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-xs text-rose-200">
         🔴 Para arrancar, preciso de:
-        <br />· chave API do Talkguest (ou confirmação que não há e usamos iCal apenas)
+        <br />· chave da API do Talkguest (ou confirmação que não há e usamos só iCal)
         <br />· URL iCal de cada listing Airbnb (Sweet Escape 2, 5 e One For One House)
         <br />· URL iCal de cada listing Booking.com
       </p>

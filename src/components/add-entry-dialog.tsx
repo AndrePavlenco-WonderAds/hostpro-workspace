@@ -155,7 +155,13 @@ export function AddEntryDialog({
                   className="form-input"
                 />
               </Field>
-              <Field label="Pessoa">
+              <Field
+                label={
+                  kind === "despesa" || kind === "funcionario"
+                    ? "Pessoa pagou"
+                    : "Pessoa"
+                }
+              >
                 <select name="person" defaultValue="André" className="form-input">
                   {PEOPLE.map((p) => (
                     <option key={p} value={p}>
@@ -182,12 +188,12 @@ export function AddEntryDialog({
 
             <div className="space-y-2">
               {kind === "despesa" && (
-                <Check name="outOfAccount" label="Out of account (saiu de conta pessoal)" />
+                <Check name="outOfAccount" label="Saiu da conta da empresa" />
               )}
               {kind === "funcionario" && (
                 <>
                   <Check name="pago" label="Já pago" defaultChecked />
-                  <Check name="outOfAccount" label="Out of account" />
+                  <Check name="outOfAccount" label="Saiu da conta da empresa" />
                 </>
               )}
               {kind === "entrada" && (

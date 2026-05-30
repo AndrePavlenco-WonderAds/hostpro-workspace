@@ -19,23 +19,26 @@ export function OverviewTiles({
       <Tile
         label="Custos"
         value={eur(totals.expenses)}
+        accent="red"
         delta={previous ? totals.expenses - previous.expenses : undefined}
         deltaInverted
       />
       <Tile
         label="Funcionário"
         value={eur(totals.employees)}
+        accent="red"
         delta={previous ? totals.employees - previous.employees : undefined}
         deltaInverted
       />
       <Tile
         label="IVA"
         value={eur(totals.iva)}
+        accent="red"
         delta={previous ? totals.iva - previous.iva : undefined}
         deltaInverted
       />
       <Tile
-        label="Profit"
+        label="Lucro"
         value={eur(totals.profit)}
         accent={totals.profit >= 0 ? "green" : "red"}
         emphasis

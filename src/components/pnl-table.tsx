@@ -273,9 +273,9 @@ function DespesaTable({ rows, property }: { rows: DespesaEntry[]; property: stri
             </Td>
             <Td align="center">
               <StatusChip
-                label={r.outOfAccount ? "Out of account" : "Conta HostPro"}
+                label={r.outOfAccount ? "Conta empresa" : "Conta pessoal"}
                 active
-                tone={r.outOfAccount ? "warn" : "neutral"}
+                tone={r.outOfAccount ? "neutral" : "warn"}
               />
             </Td>
             <Td align="center">

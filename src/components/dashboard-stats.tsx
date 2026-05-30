@@ -16,20 +16,18 @@ export function DashboardStats({
   monthEntries,
   monthKey,
 }: {
-  /** All entries for this property — used for YTD aggregates + monthly trend. */
   entries: PnLEntry[];
-  /** Entries scoped to the currently-displayed month — used for the month-scoped records. */
   monthEntries: PnLEntry[];
   monthKey: MonthKey;
 }) {
   const biggestEMonth = biggestEntrada(monthEntries);
   const best = bestMonth(entries);
 
-  // YTD = entries in the same year as the currently displayed month.
   const ytdYear = monthKey.slice(0, 4);
   const ytdEntries = entries.filter((e) => e.date.startsWith(ytdYear));
   const ytd = aggregate(ytdEntries);
   const breakdown = monthlyBreakdown(entries);
+  const ytdBreakdown = breakdown.filter((b) => b.key.startsWith(ytdYear));
 
   return (
     <div className="grid gap-3 lg:grid-cols-3">
@@ -53,21 +51,33 @@ export function DashboardStats({
       />
       <Record
         icon="🏷️"
-        label="Profit acumulado"
+        label="Lucro acumulado"
         value={eur(ytd.profit)}
         sub={`Margem ${ytd.revenue > 0 ? ((ytd.profit / ytd.revenue) * 100).toFixed(1) : "0.0"}%`}
         accent={ytd.profit >= 0 ? "green" : "red"}
       />
 
-      <Record
-        icon="📊"
-        label="Ganhos acumulados"
-        value={eur(ytd.revenue)}
-        sub={`Desde 01/01/${ytdYear} · ${ytdEntries.length} entradas`}
-        accent="cyan"
-        className="lg:col-span-3"
-      />
+      {/* Ganhos acumulados — full-width, with monthly bar chart on the right */}
+      <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-4 backdrop-blur-md lg:col-span-3">
+        <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] sm:items-center">
+          <div>
+            <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
+              <span aria-hidden>📊</span>
+              Ganhos acumulados em {ytdYear}
+            </div>
+            <p className="mt-3 text-2xl font-semibold tracking-tight text-brand-cyan">
+              {eur(ytd.revenue)}
+            </p>
+            <p className="mt-1 text-xs text-white/55">
+              Desde 01/01/{ytdYear} · {ytdEntries.length} entradas
+            </p>
+          </div>
 
+          <YearChart breakdown={ytdBreakdown} year={ytdYear} />
+        </div>
+      </div>
+
+      {/* Full monthly tendência table */}
       <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-4 backdrop-blur-md lg:col-span-3">
         <header className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
@@ -87,14 +97,12 @@ function Record({
   value,
   sub,
   accent,
-  className = "",
 }: {
   icon: string;
   label: string;
   value: string;
   sub: string;
   accent?: "cyan" | "rose" | "green" | "red";
-  className?: string;
 }) {
   const accentClass =
     accent === "cyan"
@@ -107,13 +115,53 @@ function Record({
             ? "text-rose-300"
             : "text-white";
   return (
-    <div className={`rounded-2xl border border-white/10 bg-white/[0.025] p-4 backdrop-blur-md ${className}`}>
+    <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-4 backdrop-blur-md">
       <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
         <span aria-hidden>{icon}</span>
         {label}
       </div>
       <p className={`mt-3 text-2xl font-semibold tracking-tight ${accentClass}`}>{value}</p>
       <p className="mt-1 text-xs text-white/55">{sub}</p>
+    </div>
+  );
+}
+
+function YearChart({
+  breakdown,
+  year,
+}: {
+  breakdown: ReturnType<typeof monthlyBreakdown>;
+  year: string;
+}) {
+  // Render all 12 months of the year, filling in zeros for months with no data
+  // so the shape of the year stays comparable as data grows.
+  const byKey = new Map(breakdown.map((b) => [b.key, b]));
+  const months = Array.from({ length: 12 }, (_, i) => {
+    const k = `${year}-${String(i + 1).padStart(2, "0")}` as MonthKey;
+    return byKey.get(k) ?? { key: k, label: monthLabelShort(k), totals: { revenue: 0, expenses: 0, employees: 0, iva: 0, totalExpenses: 0, profit: 0, entryCount: 0 } };
+  });
+  const max = Math.max(...months.map((m) => m.totals.revenue), 100);
+
+  return (
+    <div className="flex h-24 items-end gap-1 sm:gap-1.5">
+      {months.map((m) => {
+        const h = (m.totals.revenue / max) * 100;
+        const monthNum = m.key.slice(5);
+        return (
+          <div key={m.key} className="group relative flex flex-1 flex-col items-center justify-end">
+            <div
+              className={`w-full rounded-t-sm transition ${
+                m.totals.revenue > 0 ? "bg-brand-cyan/85" : "bg-white/8"
+              }`}
+              style={{ height: `${Math.max(h, 4)}%` }}
+              title={`${m.label}: ${eur(m.totals.revenue)}`}
+            />
+            <span className="mt-1 text-[9px] uppercase tracking-wider text-white/40">
+              {monthNum}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }

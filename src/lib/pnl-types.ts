@@ -6,8 +6,8 @@
 
 import type { PropertySlug } from "./properties";
 
-export type Person = "André" | "Carol" | "Alex";
-export const PEOPLE: Person[] = ["André", "Carol", "Alex"];
+export type Person = "André" | "Carol" | "Alex" | "Lilia";
+export const PEOPLE: Person[] = ["André", "Carol", "Alex", "Lilia"];
 
 export type EntryKind = "entrada" | "despesa" | "funcionario";
 
