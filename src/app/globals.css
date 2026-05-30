@@ -36,3 +36,54 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
+
+/* Dashboard chart animations — used by <YearChart> and <TrendBars>. */
+@keyframes bar-grow {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+.animate-bar-grow {
+  animation: bar-grow 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes bar-line {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+.animate-bar-line {
+  animation: bar-line 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Shared dark form input — used by add/edit dialogs and the reserva form. */
+.form-input,
+.rsv-input {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.55rem 0.75rem;
+  font-size: 0.875rem;
+  color: white;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.form-input::placeholder,
+.rsv-input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+.form-input:focus,
+.rsv-input:focus {
+  border-color: rgb(0, 181, 226);
+}
+.form-input[type="date"]::-webkit-calendar-picker-indicator,
+.rsv-input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(0.7);
+}

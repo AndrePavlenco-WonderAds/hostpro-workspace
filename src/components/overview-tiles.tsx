@@ -24,7 +24,7 @@ export function OverviewTiles({
         deltaInverted
       />
       <Tile
-        label="Funcionário"
+        label="Funcionários"
         value={eur(totals.employees)}
         accent="red"
         delta={previous ? totals.employees - previous.employees : undefined}

@@ -25,9 +25,9 @@ export function DashboardStats({
 
   const ytdYear = monthKey.slice(0, 4);
   const ytdEntries = entries.filter((e) => e.date.startsWith(ytdYear));
+  const ytdReservas = ytdEntries.filter((e) => e.kind === "entrada").length;
   const ytd = aggregate(ytdEntries);
   const breakdown = monthlyBreakdown(entries);
-  const ytdBreakdown = breakdown.filter((b) => b.key.startsWith(ytdYear));
 
   return (
     <div className="grid gap-3 lg:grid-cols-3">
@@ -51,39 +51,41 @@ export function DashboardStats({
       />
       <Record
         icon="🏷️"
-        label="Lucro acumulado"
+        label={`Lucro acumulado desde início de ${ytdYear}`}
         value={eur(ytd.profit)}
         sub={`Margem ${ytd.revenue > 0 ? ((ytd.profit / ytd.revenue) * 100).toFixed(1) : "0.0"}%`}
         accent={ytd.profit >= 0 ? "green" : "red"}
       />
 
       {/* Ganhos acumulados — full-width, with monthly bar chart on the right */}
-      <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-4 backdrop-blur-md lg:col-span-3">
-        <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] sm:items-center">
+      <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-5 backdrop-blur-md lg:col-span-3">
+        <div className="grid gap-6 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] sm:items-center">
           <div>
             <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
               <span aria-hidden>📊</span>
-              Ganhos acumulados em {ytdYear}
+              Ganhos acumulados desde início de {ytdYear}
             </div>
             <p className="mt-3 text-2xl font-semibold tracking-tight text-brand-cyan">
               {eur(ytd.revenue)}
             </p>
             <p className="mt-1 text-xs text-white/55">
-              Desde 01/01/{ytdYear} · {ytdEntries.length} entradas
+              {ytdReservas} {ytdReservas === 1 ? "reserva" : "reservas"} desde 01/01/{ytdYear}
             </p>
           </div>
 
-          <YearChart breakdown={ytdBreakdown} year={ytdYear} />
+          <YearChart breakdown={breakdown.filter((b) => b.key.startsWith(ytdYear))} year={ytdYear} />
         </div>
       </div>
 
-      {/* Full monthly tendência table */}
-      <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-4 backdrop-blur-md lg:col-span-3">
-        <header className="flex flex-wrap items-center justify-between gap-2">
+      {/* Tendência mensal — full table for every month with data */}
+      <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-5 backdrop-blur-md lg:col-span-3">
+        <header>
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
             Tendência mensal · ganhos vs custos
           </p>
-          <p className="text-[11px] text-white/40">{breakdown.length} meses</p>
+          <p className="mt-1 text-[11px] text-white/40">
+            Desde início de {ytdYear}
+          </p>
         </header>
         <TrendBars breakdown={breakdown} />
       </div>
@@ -133,31 +135,42 @@ function YearChart({
   breakdown: ReturnType<typeof monthlyBreakdown>;
   year: string;
 }) {
-  // Render all 12 months of the year, filling in zeros for months with no data
-  // so the shape of the year stays comparable as data grows.
+  // Build all 12 months of the year — empty months render as thin grey bars
+  // so the chart shape stays comparable as the year fills up.
   const byKey = new Map(breakdown.map((b) => [b.key, b]));
   const months = Array.from({ length: 12 }, (_, i) => {
     const k = `${year}-${String(i + 1).padStart(2, "0")}` as MonthKey;
-    return byKey.get(k) ?? { key: k, label: monthLabelShort(k), totals: { revenue: 0, expenses: 0, employees: 0, iva: 0, totalExpenses: 0, profit: 0, entryCount: 0 } };
+    const found = byKey.get(k);
+    return {
+      key: k,
+      monthNum: String(i + 1).padStart(2, "0"),
+      revenue: found?.totals.revenue ?? 0,
+    };
   });
-  const max = Math.max(...months.map((m) => m.totals.revenue), 100);
+  const max = Math.max(...months.map((m) => m.revenue), 100);
 
   return (
-    <div className="flex h-24 items-end gap-1 sm:gap-1.5">
-      {months.map((m) => {
-        const h = (m.totals.revenue / max) * 100;
-        const monthNum = m.key.slice(5);
+    <div className="flex items-end gap-1.5">
+      {months.map((m, i) => {
+        const h = (m.revenue / max) * 100;
+        const hasData = m.revenue > 0;
         return (
-          <div key={m.key} className="group relative flex flex-1 flex-col items-center justify-end">
-            <div
-              className={`w-full rounded-t-sm transition ${
-                m.totals.revenue > 0 ? "bg-brand-cyan/85" : "bg-white/8"
-              }`}
-              style={{ height: `${Math.max(h, 4)}%` }}
-              title={`${m.label}: ${eur(m.totals.revenue)}`}
-            />
+          <div key={m.key} className="flex flex-1 flex-col items-center">
+            {/* Fixed-height column so the bar's % height resolves correctly */}
+            <div className="relative h-24 w-full">
+              <div
+                className={`absolute inset-x-0 bottom-0 origin-bottom rounded-t-sm ${
+                  hasData ? "bg-brand-cyan/85" : "bg-white/[0.08]"
+                } animate-bar-grow`}
+                style={{
+                  height: `${Math.max(h, 4)}%`,
+                  animationDelay: `${i * 70}ms`,
+                }}
+                title={`${m.monthNum}/${year}: ${eur(m.revenue)}`}
+              />
+            </div>
             <span className="mt-1 text-[9px] uppercase tracking-wider text-white/40">
-              {monthNum}
+              {m.monthNum}
             </span>
           </div>
         );
@@ -180,7 +193,7 @@ function TrendBars({
     ...breakdown.map((b) => Math.max(b.totals.revenue, b.totals.totalExpenses, 100)),
   );
   return (
-    <div className="mt-4 grid gap-2">
+    <div className="mt-5 grid gap-2">
       {breakdown.map((b) => {
         const revW = (b.totals.revenue / max) * 100;
         const expW = (b.totals.totalExpenses / max) * 100;
@@ -194,7 +207,7 @@ function TrendBars({
                   ganhos
                 </span>
                 <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/5">
-                  <div className="h-full bg-brand-cyan/85" style={{ width: `${revW}%` }} />
+                  <div className="h-full origin-left animate-bar-line bg-brand-cyan/85" style={{ width: `${revW}%` }} />
                 </div>
                 <span className="w-20 shrink-0 text-right text-white/70">{eur(b.totals.revenue)}</span>
               </div>
@@ -203,7 +216,7 @@ function TrendBars({
                   custos
                 </span>
                 <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/5">
-                  <div className="h-full bg-rose-400/70" style={{ width: `${expW}%` }} />
+                  <div className="h-full origin-left animate-bar-line bg-rose-400/70" style={{ width: `${expW}%` }} />
                 </div>
                 <span className="w-20 shrink-0 text-right text-white/70">{eur(b.totals.totalExpenses)}</span>
               </div>

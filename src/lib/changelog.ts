@@ -15,6 +15,25 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.5.1",
+    date: "2026-05-30",
+    title:
+      "Editar entradas · gráfico mensal a animar · Obrigado! cabe na página · moradas Sweet Escape",
+    highlights: [
+      "**✎ Cada entrada (Entrada · Custo · Funcionário) tem agora um botão de editar** ao lado do trash. Carrega no lápis — abre um modal pré-preenchido com os valores actuais (data, descrição/janela, pessoa pagou, valor, IVA, todos os flags). Submit chama uma nova `updateEntryAction` em `pnl-actions.ts` que valida, escreve no Vercel Blob e revalida `/`, `/admin` e a página do alojamento. Já não há excel a fugir do app.",
+      "**🟦 Gráfico do tile *Ganhos acumulados* corrigido + animação.** As barras dos 12 meses não apareciam — o `height: %` estava a colapsar porque a coluna intermédia não tinha altura definida. Cada coluna tem agora `h-24` fixos e a barra é absolute-positioned a partir do fundo, com `scaleY(0) → scaleY(1)` em `bar-grow` (cubic-bezier 0.22,1,0.36,1) e `animationDelay = i × 70 ms` por mês para o efeito de chegarem em sequência. As barras finas cinzentas marcam os meses ainda sem dados.",
+      "**📈 Barras de *Tendência mensal* também animam** — `bar-line` faz `scaleX(0) → scaleX(1)` da esquerda para a direita quando carregas a página. Cabeçalho ganhou subtítulo *Desde início de 2026* e o badge *5 meses* desapareceu.",
+      "**🔢 Reservas em vez de entradas.** O subtítulo do tile *Ganhos acumulados* agora diz *`X reservas desde 01/01/{ano}`* — só conta as `kind=entrada` em vez de todas as entries. Para o histórico actual: 41 reservas (era 81 a contar tudo).",
+      "**📝 *Funcionário* → *Funcionários* no plural** no `OverviewTiles`.",
+      "**🏷 Labels mais explícitos** no `DashboardStats`: *Lucro acumulado desde início de {ano}* (era só *Lucro acumulado*), *Ganhos acumulados desde início de {ano}* (era *Ganhos acumulados em {ano}*).",
+      "**📦 Rodapé global com versão** em todas as páginas (`AppFooter` adicionado ao `RootLayout`) — `HostPro Workspace · vX.Y.Z` clicável para `/changelog`. Página de impressão (`/reserva`) esconde-o automaticamente via `print:hidden`.",
+      "**📐 *Obrigado!* já não cai para a 2ª página do PDF.** Reduzi margens verticais da factura (mt-20 → mt-10, py-8 → py-6), apliquei `break-inside: avoid` aos blocos *DADOS BANCÁRIOS* e *footer*, e `break-before: avoid` ao footer para o renderer nunca o empurrar sozinho. Em A4 com a estadia típica cabe tudo numa página.",
+      "**🗺 Moradas da Sweet Escape preenchidas.** SE2 = *Rua do Viveiro 15, 2ºB, 2765-294 Estoril*. SE5 = *Rua do Viveiro 15, 5ºD, 2765-294 Estoril*. One For One House mantém a morada da factura de referência.",
+      "**🖼 Foto principal do One For One House actualizada** para o quarto principal com varanda (`IMG_5537.jpeg`) — luz natural óptima, mais premium do que o twin-bed anterior.",
+      "**🌫 Blur da home reduzido** de `blur-2xl opacity-50` para `blur-lg opacity-55`. O ambiente fica reconhecível sem competir com o conteúdo.",
+    ],
+  },
+  {
     version: "0.5.0",
     date: "2026-05-30",
     title:

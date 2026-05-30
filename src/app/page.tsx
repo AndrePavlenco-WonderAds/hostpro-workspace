@@ -5,12 +5,10 @@ import { getEntries } from "@/lib/pnl-store";
 import { aggregateMonth, monthlyBreakdown } from "@/lib/pnl-math";
 import { currentMonthKey } from "@/lib/dates";
 import { eur } from "@/lib/money";
-import { getCurrentVersion } from "@/lib/changelog";
 import { PropertyCard } from "@/components/property-card";
 import { Typewriter } from "@/components/typewriter";
 
 export default async function Home() {
-  const version = getCurrentVersion();
   const current = currentMonthKey();
 
   const cards = await Promise.all(
@@ -31,17 +29,17 @@ export default async function Home() {
 
   return (
     <div className="relative flex h-screen flex-col overflow-hidden bg-brand-navy-dark">
-      {/* Blurred hero photo behind everything. */}
+      {/* Hero photo behind everything — softer blur per Andre's feedback. */}
       <Image
         src="/hero-living-room.jpg"
         alt=""
         fill
         priority
         sizes="100vw"
-        className="object-cover scale-110 blur-2xl opacity-50"
+        className="object-cover scale-110 blur-lg opacity-55"
       />
       {/* Navy wash so the content stays legible. */}
-      <div className="absolute inset-0 bg-gradient-to-b from-brand-navy-dark/55 via-brand-navy-dark/70 to-brand-navy-dark/85" />
+      <div className="absolute inset-0 bg-gradient-to-b from-brand-navy-dark/50 via-brand-navy-dark/65 to-brand-navy-dark/80" />
 
       <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 py-6">
         <div className="flex w-full max-w-6xl flex-col items-center gap-6 text-center">
@@ -79,14 +77,6 @@ export default async function Home() {
           </Link>
         </div>
       </main>
-
-      <footer className="relative z-10 flex items-center justify-center gap-3 px-6 pb-4 text-[11px] uppercase tracking-[0.22em] text-white/40">
-        <span>HostPro Workspace</span>
-        <span aria-hidden className="text-white/20">·</span>
-        <Link href="/changelog" className="transition hover:text-brand-cyan">
-          v{version}
-        </Link>
-      </footer>
     </div>
   );
 }

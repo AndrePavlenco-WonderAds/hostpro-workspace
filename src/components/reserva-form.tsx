@@ -110,11 +110,28 @@ export function ReservaForm({
             max-width: none !important;
             width: 100% !important;
           }
-          .reserva-print-area, .reserva-print-area * {
+          .reserva-print-area,
+          .reserva-print-area * {
             color: #111 !important;
           }
           .reserva-print-area .preco-noite-original {
             color: #444 !important;
+          }
+          /* Keep the bottom block (Obrigado! + bank info) on the same page as
+             the totals. Without these the renderer would happily push the
+             footer alone to page 2. */
+          .reserva-print-area {
+            font-size: 13px;
+          }
+          .reserva-bank-block,
+          .reserva-footer-block,
+          .reserva-totals-block {
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+          .reserva-footer-block {
+            break-before: avoid;
+            page-break-before: avoid;
           }
         }
       `}</style>
@@ -286,7 +303,7 @@ export function ReservaForm({
         </aside>
 
         {/* Invoice preview */}
-        <section className="reserva-print-area rounded-2xl border border-white/10 bg-white p-10 text-zinc-900 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.45)] sm:p-14">
+        <section className="reserva-print-area rounded-2xl border border-white/10 bg-white p-8 text-zinc-900 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.45)] sm:p-10">
           <InvoiceBody
             propertyName={property.name}
             clientName={clientName}
@@ -403,7 +420,7 @@ function InvoiceBody({
       </header>
 
       {/* CLIENTE | APARTAMENTO */}
-      <section className="mt-10 grid grid-cols-2 gap-6 text-sm">
+      <section className="mt-8 grid grid-cols-2 gap-6 text-sm">
         <div>
           <p className="font-bold uppercase tracking-wide">CLIENTE:</p>
           <p className="mt-2 whitespace-pre-line text-zinc-700">
@@ -421,7 +438,7 @@ function InvoiceBody({
       </section>
 
       {/* Table */}
-      <section className="mt-12">
+      <section className="reserva-totals-block mt-8">
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="border-b border-zinc-300">
@@ -433,14 +450,14 @@ function InvoiceBody({
           </thead>
           <tbody>
             <tr className="border-b border-zinc-200">
-              <td className="py-5 align-top">
+              <td className="py-4 align-top">
                 <p>{propertyName}</p>
                 <p className="text-zinc-700">Check-in: {checkinLabel}</p>
                 {nights > 1 && (
                   <p className="text-zinc-500">{nights} noites</p>
                 )}
               </td>
-              <td className="py-5 text-center">
+              <td className="py-4 text-center">
                 {hasDiscount ? (
                   <span className="preco-noite-original text-zinc-500 line-through">
                     {eurNoSpace(nightlyRate)}
@@ -449,44 +466,44 @@ function InvoiceBody({
                   <span>{eurNoSpace(nightlyRate)}</span>
                 )}
               </td>
-              <td className="py-5 text-center">
+              <td className="py-4 text-center">
                 {hasDiscount ? eurNoSpace(discount) : "—"}
               </td>
-              <td className="py-5 text-right">
+              <td className="py-4 text-right">
                 {eurNoSpace(stayTotal)}
               </td>
             </tr>
 
             <tr className="border-b border-zinc-200">
-              <td className="py-5 align-top">Taxa de Limpeza</td>
+              <td className="py-4 align-top">Taxa de Limpeza</td>
               <td />
               <td />
-              <td className="py-5 text-right">
+              <td className="py-4 text-right">
                 {cleaning > 0 ? eurNoSpace(cleaning) : "-"}
               </td>
             </tr>
 
             <tr>
-              <td colSpan={3} className="py-5 text-center font-bold">
+              <td colSpan={3} className="py-4 text-center font-bold">
                 Subtotal
               </td>
-              <td className="py-5 text-right">{eurNoSpace(subtotal)}</td>
+              <td className="py-4 text-right">{eurNoSpace(subtotal)}</td>
             </tr>
 
             <tr className="border-b border-zinc-300">
-              <td colSpan={3} className="py-5 text-center font-bold">
+              <td colSpan={3} className="py-4 text-center font-bold">
                 Outras Taxas ({otherTaxesPct > 0 ? `+${otherTaxesPct}%` : "-%"})
               </td>
-              <td className="py-5 text-right">
+              <td className="py-4 text-right">
                 {otherTaxesPct > 0 ? eurNoSpace(otherTaxesAmount) : "N/A"}
               </td>
             </tr>
 
             <tr>
-              <td colSpan={3} className="py-8 text-center">
+              <td colSpan={3} className="py-6 text-center">
                 <span className="text-2xl font-bold sm:text-3xl">Total</span>
               </td>
-              <td className="py-8 text-right text-base font-bold">
+              <td className="py-6 text-right text-base font-bold">
                 {eurNoSpace(total)}
               </td>
             </tr>
@@ -495,7 +512,7 @@ function InvoiceBody({
       </section>
 
       {/* Dados Bancários */}
-      <section className="mt-12 text-sm">
+      <section className="reserva-bank-block mt-8 text-sm">
         <p className="font-bold uppercase tracking-wide">DADOS BANCÁRIOS</p>
         <p className="mt-3 text-zinc-700">{banking.bank}</p>
         <p className="text-zinc-700">Beneficiário: {banking.beneficiary}</p>
@@ -503,8 +520,9 @@ function InvoiceBody({
         <p className="text-zinc-700">SWIFT: {banking.swift}</p>
       </section>
 
-      {/* Footer */}
-      <footer className="mt-20 flex items-end justify-between">
+      {/* Footer — kept tight + tagged 'break-before: avoid' so it never
+          gets bumped to a fresh page on its own. */}
+      <footer className="reserva-footer-block mt-10 flex items-end justify-between">
         <p
           className="font-serif text-4xl font-medium text-zinc-900 sm:text-5xl"
           style={{ fontFamily: "var(--font-cormorant), serif" }}

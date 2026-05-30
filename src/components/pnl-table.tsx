@@ -12,6 +12,7 @@ import type {
 } from "@/lib/pnl-types";
 import { AddEntryDialog } from "./add-entry-dialog";
 import { DeleteEntryButton } from "./delete-entry-button";
+import { EditEntryButton } from "./edit-entry-button";
 
 export function PnLTable({
   entries,
@@ -237,7 +238,10 @@ function EntradaTable({ rows, property }: { rows: EntradaEntry[]; property: stri
               </div>
             </Td>
             <Td align="center">
-              <DeleteEntryButton id={r.id} property={property} />
+              <div className="inline-flex items-center gap-0.5">
+                <EditEntryButton entry={r} />
+                <DeleteEntryButton id={r.id} property={property} />
+              </div>
             </Td>
           </tr>
         ))}
@@ -279,7 +283,10 @@ function DespesaTable({ rows, property }: { rows: DespesaEntry[]; property: stri
               />
             </Td>
             <Td align="center">
-              <DeleteEntryButton id={r.id} property={property} />
+              <div className="inline-flex items-center gap-0.5">
+                <EditEntryButton entry={r} />
+                <DeleteEntryButton id={r.id} property={property} />
+              </div>
             </Td>
           </tr>
         ))}

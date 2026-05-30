@@ -115,6 +115,66 @@ export async function addEntryAction(formData: FormData): Promise<ActionResult> 
   return { ok: true };
 }
 
+// ---------- update ----------
+
+export async function updateEntryAction(
+  id: string,
+  formData: FormData,
+): Promise<ActionResult> {
+  const property = asString(formData.get("property"));
+  const kind = asString(formData.get("kind")) as EntryKind;
+  const date = asString(formData.get("date"));
+  const description = asString(formData.get("description"));
+  const person = asString(formData.get("person"));
+  const amount = asNumber(formData.get("amount"));
+
+  if (!isPropertySlug(property)) return { ok: false, error: "Alojamento inválido" };
+  if (!isISODate(date)) return { ok: false, error: "Data inválida (YYYY-MM-DD)" };
+  if (!isPerson(person)) return { ok: false, error: "Pessoa inválida" };
+  if (amount <= 0) return { ok: false, error: "Valor tem de ser positivo" };
+
+  const outOfAccount = formData.get("outOfAccount") === "on";
+
+  try {
+    if (kind === "despesa") {
+      await updateEntry(id, { date, amount, description, person, outOfAccount } as never);
+    } else if (kind === "funcionario") {
+      await updateEntry(id, {
+        date,
+        amount,
+        description,
+        person,
+        outOfAccount,
+        pago: formData.get("pago") === "on",
+      } as never);
+    } else if (kind === "entrada") {
+      const stayWindow = asString(formData.get("stayWindow"));
+      const iva = asNumber(formData.get("iva"));
+      if (!stayWindow) return { ok: false, error: "Janela da estadia obrigatória" };
+      await updateEntry(id, {
+        date,
+        amount,
+        description: stayWindow,
+        person,
+        stayWindow,
+        iva,
+        recebido: formData.get("recebido") === "on",
+        noBanco: formData.get("noBanco") === "on",
+        inIvaVault: formData.get("inIvaVault") === "on",
+      } as never);
+    } else {
+      return { ok: false, error: "Tipo inválido" };
+    }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Erro" };
+  }
+
+  revalidatePath(`/alojamentos/${property}`);
+  revalidatePath("/admin");
+  revalidatePath("/");
+  return { ok: true };
+}
+
 // ---------- delete ----------
 
 export async function deleteEntryAction(id: string, property: string): Promise<ActionResult> {

@@ -30,10 +30,9 @@ export const BILLING: Record<PropertySlug, PropertyBilling> = {
   },
   "sweet-escape-2": {
     addressLines: [
-      "Avenida de Saboia [nº a confirmar]",
-      "2º andar",
-      "Monte Estoril",
-      "Cascais, Lisboa",
+      "Rua do Viveiro 15",
+      "2ºB",
+      "2765-294 Estoril",
       "Portugal",
     ],
     defaultNightlyRate: 100,
@@ -41,10 +40,9 @@ export const BILLING: Record<PropertySlug, PropertyBilling> = {
   },
   "sweet-escape-5": {
     addressLines: [
-      "Avenida de Saboia [nº a confirmar]",
-      "5º andar",
-      "Monte Estoril",
-      "Cascais, Lisboa",
+      "Rua do Viveiro 15",
+      "5ºD",
+      "2765-294 Estoril",
       "Portugal",
     ],
     defaultNightlyRate: 100,
