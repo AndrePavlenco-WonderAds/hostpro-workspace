@@ -15,6 +15,20 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.5.0",
+    date: "2026-05-30",
+    title:
+      "Gerar reserva — formulário com preview ao vivo e imprimir para PDF",
+    highlights: [
+      "**🧾 Cada alojamento ganha uma página de geração de reserva.** Botão `🧾 Gerar reserva` aparece no canto superior direito da página do alojamento, abre `/alojamentos/[slug]/reserva`. Layout: barra de ferramentas em cima (back para o alojamento, título, e o botão grande `🖨 Imprimir / Gravar PDF`); duas colunas em baixo — esquerda é o **formulário**, direita é a **factura ao vivo**. Tudo o que escreves actualiza a preview imediatamente.",
+      "**📋 Campos do formulário** (todos pré-preenchidos com o default certo, editáveis por reserva): Nome do cliente · Check-in (date) · Nº de noites (auto-calcula check-out por baixo) · Preço por noite (€) · Desconto por noite (€) · Taxa de limpeza (€) · Outras taxas (%) · bloco colapsável `Dados bancários` com Banco / Beneficiário / IBAN / SWIFT · Observações (não aparecem no PDF).",
+      "**🖨 Imprimir/Gravar PDF directo do browser, zero infra extra.** `@media print` esconde tudo menos a área da factura, define A4 com 12 mm de margem, força fundo branco e texto preto. Clica no botão, o teu Chrome/Safari mostra o diálogo de impressão — em *Destino* escolhes *Guardar como PDF*. Sem dependências de Puppeteer ou react-pdf.",
+      "**📐 Factura calcada na referência que enviaste.** Topo: ícone HostPro (azul) + **RESERVA** em serif (Cormorant Garamond, importada via `next/font/google`). Bloco `CLIENTE: ` à esquerda + `APARTAMENTO:` à direita com a morada multi-linha. Tabela `Item | Preço Noite | Desconto | Total` — preço por noite com risco quando há desconto, total da estadia automaticamente noites × preço-final. Linhas Taxa de Limpeza, Subtotal, Outras Taxas (-%), Total (grande). `DADOS BANCÁRIOS` por baixo. Rodapé: **Obrigado!** em serif à esquerda e logo HostPro horizontal + *With you all over Portugal* à direita.",
+      "**🏢 Moradas e bancário em `src/lib/property-billing.ts`.** One For One House já tem a morada exacta da factura de referência (Rua Gil Vicente Nº141, R/C B, São João Do Estoril). 🔴 **Para Sweet Escape 2 e 5 falta-me o número da Avenida de Saboia** — coloquei placeholders \"[nº a confirmar]\" que precisas de me dar quando puderes. Os dados bancários (Revolut UAB · André Pavlenco Garnytskyy · IBAN PT50… · SWIFT REVOPTP2) ficaram constantes mas editáveis no form caso queiras enviar via outra conta.",
+      "**🔢 Cálculo automático**: `Final/noite = Preço − Desconto`; `Estadia = Final × Noites`; `Subtotal = Estadia + Limpeza`; `Outras Taxas = Subtotal × %`; `Total = Subtotal + Outras Taxas`. Formatação dos preços calca o PDF (`110€` em vez de `€110,00`).",
+    ],
+  },
+  {
     version: "0.4.1",
     date: "2026-05-30",
     title:

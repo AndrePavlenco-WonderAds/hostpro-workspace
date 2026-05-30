@@ -77,16 +77,24 @@ export default async function PropertyPage({
         <div className="absolute inset-0 bg-gradient-to-t from-brand-navy-dark via-brand-navy-dark/70 to-brand-navy-dark/30" />
 
         <div className="absolute inset-x-0 top-0 px-6 pt-6 sm:px-10 sm:pt-8">
-          <div className="mx-auto flex w-full max-w-6xl items-center justify-between">
+          <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3">
             <Link
               href="/"
               className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/30 px-3 py-1.5 text-xs font-semibold text-white/85 backdrop-blur-sm transition hover:border-brand-cyan hover:text-white"
             >
               ← Início
             </Link>
-            <span className="rounded-full bg-black/30 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/85 ring-1 ring-white/15 backdrop-blur-sm">
-              {property.location}
-            </span>
+            <div className="flex items-center gap-2">
+              <Link
+                href={`/alojamentos/${property.slug}/reserva`}
+                className="inline-flex items-center gap-1.5 rounded-full bg-brand-cyan/95 px-3.5 py-1.5 text-xs font-semibold text-brand-navy shadow-[0_10px_30px_-8px_rgba(0,181,226,0.6)] transition hover:opacity-90"
+              >
+                🧾 Gerar reserva
+              </Link>
+              <span className="rounded-full bg-black/30 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/85 ring-1 ring-white/15 backdrop-blur-sm">
+                {property.location}
+              </span>
+            </div>
           </div>
         </div>
 
