@@ -11,7 +11,7 @@
 // for a single-user admin app and complicates read-your-own-writes.
 
 import "server-only";
-import { list, put } from "@vercel/blob";
+import { list, put, del } from "@vercel/blob";
 import { SEED_ENTRIES } from "./pnl-seed";
 import type { PropertySlug } from "./properties";
 import type {
@@ -23,16 +23,31 @@ import type {
   Person,
 } from "./pnl-types";
 
-const BLOB_PATH = "data/pnl.json";
+const BLOB_PREFIX = "data/pnl";
+const BLOB_BASENAME = "data/pnl.json";
 
 // ---------- low-level Blob I/O ----------
+//
+// Vercel Blob's public CDN serves every blob URL with a hard-coded 60-second
+// cache (Cache-Control: max-age=60) that ignores query-string cache-busting
+// AND request `Cache-Control: no-cache` headers — confirmed empirically on
+// 2026-06-01. Setting `cacheControlMaxAge: 0` on `put` only affects the
+// browser cache header, not the CDN.
+//
+// Workaround: every write goes to a NEW URL via `addRandomSuffix: true`.
+// `list()` returns metadata via the authenticated API (no CDN cache), so we
+// always pick the latest blob by `uploadedAt`. Old blobs are deleted after
+// the write succeeds so the store doesn't grow.
 
 async function readBlob(): Promise<PnLEntry[] | null> {
   if (!process.env.BLOB_READ_WRITE_TOKEN) return null;
-  const { blobs } = await list({ prefix: "data/" });
-  const match = blobs.find((b) => b.pathname === BLOB_PATH);
-  if (!match) return null;
-  const res = await fetch(match.url, { cache: "no-store" });
+  const { blobs } = await list({ prefix: BLOB_PREFIX });
+  if (blobs.length === 0) return null;
+  // Pick the most recently uploaded — that's the source of truth.
+  const newest = blobs.reduce((a, b) =>
+    new Date(a.uploadedAt).getTime() > new Date(b.uploadedAt).getTime() ? a : b,
+  );
+  const res = await fetch(newest.url, { cache: "no-store" });
   if (!res.ok) throw new Error(`Blob fetch failed: ${res.status}`);
   return (await res.json()) as PnLEntry[];
 }
@@ -41,13 +56,28 @@ async function writeBlob(entries: PnLEntry[]): Promise<void> {
   if (!process.env.BLOB_READ_WRITE_TOKEN) {
     throw new Error("BLOB_READ_WRITE_TOKEN missing — Vercel Blob não está ligado.");
   }
-  await put(BLOB_PATH, JSON.stringify(entries), {
+  // Snapshot existing blobs so we can delete them after the new write lands.
+  const { blobs: existing } = await list({ prefix: BLOB_PREFIX });
+
+  // Write to a new randomly-suffixed URL — the CDN has never seen it, so
+  // immediate reads return the new content.
+  await put(BLOB_BASENAME, JSON.stringify(entries), {
     access: "public",
     contentType: "application/json",
-    addRandomSuffix: false,
-    allowOverwrite: true,
+    addRandomSuffix: true,
     cacheControlMaxAge: 0,
   });
+
+  // Garbage-collect the old versions. Don't block the response on this — we
+  // still want it to await so the next list() returns clean results, but if
+  // del fails (transient network) we shouldn't fail the whole mutation.
+  if (existing.length > 0) {
+    try {
+      await del(existing.map((b) => b.url));
+    } catch {
+      // best-effort
+    }
+  }
 }
 
 // ---------- reads ----------

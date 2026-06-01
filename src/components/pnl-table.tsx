@@ -24,9 +24,13 @@ import { PersonPillEditable } from "./person-pill-editable";
 export function PnLTable({
   entries,
   propertySlug,
+  defaultDate,
 }: {
   entries: PnLEntry[];
   propertySlug: string;
+  /** ISO date to pre-fill in the Add Entry dialog — derived from the viewed
+   *  month so adding a custo while looking at May lands in May, not June. */
+  defaultDate?: string;
 }) {
   const entradas = entries.filter((e): e is EntradaEntry => e.kind === "entrada");
   const despesas = entries.filter((e): e is DespesaEntry => e.kind === "despesa");
@@ -41,7 +45,7 @@ export function PnLTable({
         accent="cyan"
         emoji="💰"
         count={entradas.length}
-        onAdd={<AddEntryDialog kind="entrada" property={propertySlug} />}
+        onAdd={<AddEntryDialog kind="entrada" property={propertySlug} defaultDate={defaultDate} />}
         empty="Nenhuma entrada registada neste mês."
       >
         {entradas.length > 0 && (
@@ -54,7 +58,7 @@ export function PnLTable({
         accent="rose"
         emoji="💸"
         count={despesas.length}
-        onAdd={<AddEntryDialog kind="despesa" property={propertySlug} />}
+        onAdd={<AddEntryDialog kind="despesa" property={propertySlug} defaultDate={defaultDate} />}
         empty="Sem custos neste mês."
       >
         {despesas.length > 0 && (
@@ -67,7 +71,7 @@ export function PnLTable({
         accent="amber"
         emoji="👷"
         count={funcionario.length}
-        onAdd={<AddEntryDialog kind="funcionario" property={propertySlug} />}
+        onAdd={<AddEntryDialog kind="funcionario" property={propertySlug} defaultDate={defaultDate} />}
         empty="Sem pagamentos a funcionários neste mês."
       >
         {funcionario.length > 0 && (

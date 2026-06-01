@@ -11,6 +11,7 @@ import {
 } from "@/lib/pnl-math";
 import {
   currentMonthKey,
+  defaultDateForMonth,
   monthLabel,
   shiftMonth,
   type MonthKey,
@@ -150,7 +151,11 @@ export default async function PropertyPage({
           </div>
 
           <div className="mt-10">
-            <PnLTable entries={monthEntries} propertySlug={property.slug} />
+            <PnLTable
+              entries={monthEntries}
+              propertySlug={property.slug}
+              defaultDate={defaultDateForMonth(month)}
+            />
           </div>
         </section>
       </main>

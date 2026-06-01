@@ -63,3 +63,30 @@ export function formatDateLong(iso: string): string {
   const [y, m, d] = datePart.split("-").map(Number);
   return `${String(d).padStart(2, "0")} ${MONTHS_PT_SHORT[m - 1]} ${y}`;
 }
+
+/**
+ * Suggested ISO date when adding an entry while viewing a specific month.
+ * - Viewing current month → today
+ * - Viewing past month → last day of that month
+ * - Viewing future month → first day of that month
+ */
+export function defaultDateForMonth(monthKey: MonthKey): string {
+  const { year, month } = parseMonthKey(monthKey);
+  const today = new Date();
+  const isCurrent =
+    year === today.getUTCFullYear() && month === today.getUTCMonth();
+  const isPast =
+    year < today.getUTCFullYear() ||
+    (year === today.getUTCFullYear() && month < today.getUTCMonth());
+
+  let d: Date;
+  if (isCurrent) {
+    d = today;
+  } else if (isPast) {
+    // Last day of that month — Date(year, month + 1, 0) gives last day.
+    d = new Date(Date.UTC(year, month + 1, 0));
+  } else {
+    d = new Date(Date.UTC(year, month, 1));
+  }
+  return d.toISOString().slice(0, 10);
+}

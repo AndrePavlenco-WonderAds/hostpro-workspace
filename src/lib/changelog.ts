@@ -15,6 +15,17 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.5.5",
+    date: "2026-06-01",
+    title:
+      "Saves aparecem instantâneamente · default-date inteligente · fix CDN do Blob",
+    highlights: [
+      "**🪲 Diagnóstico — adicionar um custo demorava até 1 minuto a aparecer.** Confirmado empiricamente: o CDN público do Vercel Blob serve cada blob com `Cache-Control: max-age=60` (60 s mínimos), e *ignora* tanto query-strings de cache-bust (`?v=ts`) como o header `Cache-Control: no-cache` no request. Mesmo com `cacheControlMaxAge: 0` no `put`, o CDN respondia `HIT` durante quase 5 minutos com o JSON antigo (testei com 6 estratégias diferentes — todas falharam).",
+      "**🛠 Fix — cada escrita usa um URL novo que a CDN nunca viu.** `writeBlob` passou a `addRandomSuffix: true` (gera `data/pnl-<hash>.json`), e o `del()` apaga as versões anteriores assim que a nova fica no sítio. `readBlob` faz `list({ prefix: 'data/pnl' })` (API autenticada, sem CDN entre nós), pega no blob com `uploadedAt` mais recente e fetcha esse URL — primeira vez que aquele URL é visto → `age: null` → conteúdo fresco. Verificado com probe end-to-end: write → read imediato devolve o probe entry.",
+      "**🎯 Default-date inteligente no `+ Adicionar`.** Quando estás a ver Maio (que já passou), o input de data abre em **31/05** em vez de hoje. Se estás no mês corrente, abre em hoje. Se estás num mês futuro, abre no dia 1. Acabou o problema típico de adicionar um custo a pensar que ia para Maio e ele cair em Junho porque a data tinha ficado a default em hoje. Helper novo `defaultDateForMonth(monthKey)` em `src/lib/dates.ts`.",
+    ],
+  },
+  {
     version: "0.5.4",
     date: "2026-06-01",
     title: "Ganhos acumulados primeiro no dashboard",
