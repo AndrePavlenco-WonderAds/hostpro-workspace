@@ -31,6 +31,26 @@ export function DashboardStats({
 
   return (
     <div className="grid gap-3 lg:grid-cols-3">
+      {/* Ganhos acumulados — full-width, with monthly bar chart on the right */}
+      <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-5 backdrop-blur-md lg:col-span-3">
+        <div className="grid gap-6 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] sm:items-center">
+          <div>
+            <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
+              <span aria-hidden>📊</span>
+              Ganhos acumulados desde início de {ytdYear}
+            </div>
+            <p className="mt-3 text-2xl font-semibold tracking-tight text-brand-cyan">
+              {eur(ytd.revenue)}
+            </p>
+            <p className="mt-1 text-xs text-white/55">
+              {ytdReservas} {ytdReservas === 1 ? "reserva" : "reservas"} desde 01/01/{ytdYear}
+            </p>
+          </div>
+
+          <YearChart breakdown={breakdown.filter((b) => b.key.startsWith(ytdYear))} year={ytdYear} />
+        </div>
+      </div>
+
       <Record
         icon="🏆"
         label={`Maior reserva — ${monthLabelShort(monthKey)}`}
@@ -56,26 +76,6 @@ export function DashboardStats({
         sub={`Margem ${ytd.revenue > 0 ? ((ytd.profit / ytd.revenue) * 100).toFixed(1) : "0.0"}%`}
         accent={ytd.profit >= 0 ? "green" : "red"}
       />
-
-      {/* Ganhos acumulados — full-width, with monthly bar chart on the right */}
-      <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-5 backdrop-blur-md lg:col-span-3">
-        <div className="grid gap-6 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] sm:items-center">
-          <div>
-            <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
-              <span aria-hidden>📊</span>
-              Ganhos acumulados desde início de {ytdYear}
-            </div>
-            <p className="mt-3 text-2xl font-semibold tracking-tight text-brand-cyan">
-              {eur(ytd.revenue)}
-            </p>
-            <p className="mt-1 text-xs text-white/55">
-              {ytdReservas} {ytdReservas === 1 ? "reserva" : "reservas"} desde 01/01/{ytdYear}
-            </p>
-          </div>
-
-          <YearChart breakdown={breakdown.filter((b) => b.key.startsWith(ytdYear))} year={ytdYear} />
-        </div>
-      </div>
 
       {/* Tendência mensal — full table for every month with data */}
       <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-5 backdrop-blur-md lg:col-span-3">

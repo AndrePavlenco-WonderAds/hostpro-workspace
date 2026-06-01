@@ -15,6 +15,14 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.5.4",
+    date: "2026-06-01",
+    title: "Ganhos acumulados primeiro no dashboard",
+    highlights: [
+      "**📊 Bloco *Ganhos acumulados* + gráfico anual passou para o topo do dashboard de cada alojamento.** Antes estava em baixo, depois dos 3 records pequenos. Faz mais sentido começar pelo número grande do ano em curso e só depois aprofundar nos detalhes mensais (maior reserva do mês, melhor mês de sempre, lucro acumulado).",
+    ],
+  },
+  {
     version: "0.5.3",
     date: "2026-05-30",
     title:
