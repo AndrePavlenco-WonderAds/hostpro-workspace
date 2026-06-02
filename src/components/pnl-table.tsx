@@ -86,6 +86,12 @@ const ACCENT: Record<
 const INPUT_CLASS =
   "w-full rounded-lg border border-white/12 bg-white/[0.05] px-3 py-2 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-brand-cyan disabled:opacity-60 [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:brightness-75";
 
+const formatKg = (n: number) =>
+  n.toLocaleString("pt-PT", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 2,
+  });
+
 // ──────────────────────────── entry point ────────────────────────────
 
 export function PnLTable({
@@ -198,6 +204,7 @@ function SectionShell({
   isPending,
   error,
   empty,
+  meta,
   children,
 }: {
   title: string;
@@ -214,6 +221,8 @@ function SectionShell({
   isPending: boolean;
   error: string | null;
   empty: string;
+  /** Extra chip next to the count badge — e.g. "7,0 KG ESTE MÊS". */
+  meta?: ReactNode;
   children: ReactNode;
 }) {
   const acc = ACCENT[accent];
@@ -224,7 +233,7 @@ function SectionShell({
       className={`rounded-2xl border border-white/10 bg-white/[0.025] backdrop-blur-md ring-1 ${acc.ring}`}
     >
       <header className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-6">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <span aria-hidden className="text-xl">
             {emoji}
           </span>
@@ -234,6 +243,7 @@ function SectionShell({
           <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/55">
             {count} {count === 1 ? "entrada" : "entradas"}
           </span>
+          {meta}
         </div>
         <button
           type="button"
@@ -888,6 +898,15 @@ function LavandariaSection({
     mode.kind === "editing" ? rows.find((r) => r.id === mode.id) : undefined;
   const today = defaultDate ?? new Date().toISOString().slice(0, 10);
 
+  const totalKg = rows.reduce((sum, r) => sum + r.weightKg, 0);
+  const meta =
+    totalKg > 0 ? (
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-400/40 bg-violet-500/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-violet-200">
+        <span aria-hidden>🧮</span>
+        {formatKg(totalKg)} kg este mês
+      </span>
+    ) : null;
+
   const formTitle =
     mode.kind === "editing" && editing
       ? `Editar lavandaria · ${ddmmyyyy(editing.date)}`
@@ -947,6 +966,7 @@ function LavandariaSection({
       isPending={isPending}
       error={error}
       empty="Sem idas à lavandaria neste mês."
+      meta={meta}
     >
       <LavandariaTable
         rows={rows}
@@ -974,11 +994,6 @@ function LavandariaTable({
 }) {
   const sorted = [...rows].sort((a, b) => (a.date < b.date ? -1 : 1));
   const totalKg = sorted.reduce((sum, r) => sum + r.weightKg, 0);
-  const formatKg = (n: number) =>
-    n.toLocaleString("pt-PT", {
-      minimumFractionDigits: 1,
-      maximumFractionDigits: 2,
-    });
   return tableWrap(
     <>
       <thead>

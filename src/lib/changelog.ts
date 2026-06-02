@@ -15,6 +15,14 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.6.1",
+    date: "2026-06-02",
+    title: "Total de kg do mês visível no header da Lavandaria",
+    highlights: [
+      "**🧮 Chip novo `7,0 kg este mês` ao lado de `1 ENTRADA` no header da Lavandaria.** Sempre visível (mesmo com uma entrada só), com a accent violeta da secção. Antes só aparecia uma linha de Total no fundo da tabela quando havia >1 entrada — agora o número fica num sítio onde dá para ver de relance. O `SectionShell` ganhou um slot `meta` reutilizável: as outras secções podem mais tarde fazer o mesmo para mostrar, p.ex., `Lucro do mês` no header das Entradas.",
+    ],
+  },
+  {
     version: "0.6.0",
     date: "2026-06-02",
     title: "Adeus modais — adicionar/editar agora expande o próprio card",
