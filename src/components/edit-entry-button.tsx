@@ -63,7 +63,7 @@ export function EditEntryButton({ entry }: { entry: PnLEntry }) {
 
       {open && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md px-4"
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 px-4 py-6 backdrop-blur-md sm:items-center sm:py-10"
           role="dialog"
           aria-modal="true"
           onClick={close}
@@ -71,7 +71,7 @@ export function EditEntryButton({ entry }: { entry: PnLEntry }) {
           <form
             onSubmit={handleSubmit}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md space-y-4 rounded-2xl border border-white/10 bg-brand-navy-dark p-6 shadow-2xl"
+            className="my-auto w-full max-w-md space-y-4 rounded-2xl border border-white/10 bg-brand-navy-dark p-6 shadow-2xl"
           >
             <header className="flex items-start justify-between gap-3">
               <div>

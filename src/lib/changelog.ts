@@ -15,6 +15,15 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.5.7",
+    date: "2026-06-02",
+    title: "Modais com scroll interno — botão de submit nunca mais fica tapado",
+    highlights: [
+      "**🪲 Botão `Registar lavandaria` (e os outros) ficava por baixo do limite da viewport em janelas mais baixas — não dava para clicar.** O painel do modal tinha `flex items-center` no overlay e o painel em si sem `max-height` nem scroll. Quando a soma das alturas dos campos passava a altura útil da viewport (entrada com 3 checkboxes + IVA chega lá rápido em ecrãs pequenos), o submit caía para fora.",
+      "**🛠 Fix — overlay scrollável + painel com `my-auto` e `items-start` em mobile.** O overlay passou a `overflow-y-auto` com `py-6` (mobile) e `sm:items-center sm:py-10`. O painel ganhou `my-auto` para continuar a centrar verticalmente quando há espaço, e escorrega para o topo + scroll quando não há. Aplicado nos dois modais que existem (`AddEntryDialog` e `EditEntryButton`).",
+    ],
+  },
+  {
     version: "0.5.6",
     date: "2026-06-02",
     title: "Nova tabela Lavandaria — peso de roupa por mês",
