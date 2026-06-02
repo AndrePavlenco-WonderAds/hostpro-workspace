@@ -15,6 +15,17 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.6.0",
+    date: "2026-06-02",
+    title: "Adeus modais — adicionar/editar agora expande o próprio card",
+    highlights: [
+      "**🪲 As versões 0.5.6/0.5.7 ainda usavam um modal centrado para `+ Adicionar` e `Editar` — tapava o resto da página e ainda introduzia uma scrollbar.** Andre disse explicitamente: *quero que se veja o container todo e que ele aumente quando clicamos*. Modal estava errado para esta UX.",
+      "**🛠 Refactor — cada secção (Entradas / Custos / Lavandaria / Funcionário) agora expande inline.** Carregar em `+ Adicionar` ou `Editar` faz aparecer um painel de formulário **dentro do próprio card** entre o header e a tabela. Sem overlay, sem `position: fixed`, sem scrollbar nova — o card cresce e empurra o resto da página para baixo, exactamente o comportamento natural.",
+      "**🎯 UX detalhes que valem o cuidado:** a linha que está a ser editada fica destacada com a cor da secção (cyan, rose, violet, amber); o botão `Editar` muda para `A editar` enquanto está activo; o painel do formulário usa um tom subtil da accent (e.g., violet para Lavandaria); botão `Cancelar` ao lado do `Registar`/`Guardar alterações` para sair sem ratos a procura do `✕`.",
+      "**🗑️ Apagado:** `add-entry-dialog.tsx` (-249 linhas) e `edit-entry-button.tsx` (-262 linhas). Toda a lógica vive agora em `pnl-table.tsx` com um hook partilhado `useSectionForm()`. Forms remontam ao trocar entre add/edit ou entre IDs diferentes via `key` no `<form>`, evitando seeds presos de `defaultValue`.",
+    ],
+  },
+  {
     version: "0.5.7",
     date: "2026-06-02",
     title: "Modais com scroll interno — botão de submit nunca mais fica tapado",
