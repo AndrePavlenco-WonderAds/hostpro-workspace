@@ -15,6 +15,16 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.5.6",
+    date: "2026-06-02",
+    title: "Nova tabela Lavandaria — peso de roupa por mês",
+    highlights: [
+      "**🧺 Nova secção *Lavandaria* entre Custos e Funcionário.** Mesma estrutura visual das outras (header com contador, botão `+ Adicionar lavandaria` à direita, accent violeta para distinguir à vista). Cada linha tem **Data** à esquerda, **Descrição** fixa em *Lavandaria* e **Peso (kg)** à direita — com `Editar` e `Apagar` iguais às tabelas existentes. No fundo da tabela aparece um total em kg quando há mais do que uma entrada.",
+      "**🧬 Modelo de dados — `kind: \"lavandaria\"` é um 4º variant do `PnLEntry`.** Diferente das outras três por não ter pessoa, conta nem valor em euros — apenas `date` e `weightKg`. IDs com prefixo `lvd-NNN`. Persiste no mesmo blob `data/pnl.json` que o resto, então herda automaticamente todo o fluxo de reads/writes corrigidos na v0.5.5 (sem cache da CDN, escritas instantâneas).",
+      "**🛡️ Type-narrowing alinhado no resto da app.** Onde código antigo acedia a `e.amount` sem narrowing (`biggestDespesa`, `topCustos`, `ActivityRow` do `/admin`), passou a filtrar explicitamente por `despesa`/`funcionario` ou a tratar lavandaria como caso separado (mostra `12.5 kg` em vez de `−€`). O agregado mensal (`MonthlyTotals`) não muda — lavandaria não afecta ganhos/custos/lucro.",
+    ],
+  },
+  {
     version: "0.5.5",
     date: "2026-06-01",
     title:

@@ -9,7 +9,7 @@ import type { PropertySlug } from "./properties";
 export type Person = "André" | "Carol" | "Alex" | "Lilia";
 export const PEOPLE: Person[] = ["André", "Carol", "Alex", "Lilia"];
 
-export type EntryKind = "entrada" | "despesa" | "funcionario";
+export type EntryKind = "entrada" | "despesa" | "funcionario" | "lavandaria";
 
 interface BaseEntry {
   id: string;
@@ -45,4 +45,19 @@ export interface EntradaEntry extends BaseEntry {
   inIvaVault: boolean;
 }
 
-export type PnLEntry = DespesaEntry | FuncionarioEntry | EntradaEntry;
+/** Lavandaria — quilos de roupa que a lavandaria leva.
+ *  Não tem pessoa, conta, nem valor em euros — apenas data e peso. */
+export interface LavandariaEntry {
+  id: string;
+  property: PropertySlug;
+  date: string;          // ISO YYYY-MM-DD
+  kind: "lavandaria";
+  weightKg: number;      // peso de roupa em kg
+  description: "Lavandaria";
+}
+
+export type PnLEntry =
+  | DespesaEntry
+  | FuncionarioEntry
+  | EntradaEntry
+  | LavandariaEntry;

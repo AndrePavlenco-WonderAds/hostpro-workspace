@@ -14,6 +14,7 @@ import type {
   DespesaEntry,
   EntradaEntry,
   FuncionarioEntry,
+  LavandariaEntry,
 } from "@/lib/pnl-types";
 import { AddEntryDialog } from "./add-entry-dialog";
 import { DeleteEntryButton } from "./delete-entry-button";
@@ -34,6 +35,9 @@ export function PnLTable({
 }) {
   const entradas = entries.filter((e): e is EntradaEntry => e.kind === "entrada");
   const despesas = entries.filter((e): e is DespesaEntry => e.kind === "despesa");
+  const lavandaria = entries.filter(
+    (e): e is LavandariaEntry => e.kind === "lavandaria",
+  );
   const funcionario = entries.filter(
     (e): e is FuncionarioEntry => e.kind === "funcionario",
   );
@@ -67,6 +71,19 @@ export function PnLTable({
       </Section>
 
       <Section
+        title="Lavandaria"
+        accent="violet"
+        emoji="🧺"
+        count={lavandaria.length}
+        onAdd={<AddEntryDialog kind="lavandaria" property={propertySlug} defaultDate={defaultDate} />}
+        empty="Sem idas à lavandaria neste mês."
+      >
+        {lavandaria.length > 0 && (
+          <LavandariaTable rows={lavandaria} property={propertySlug} />
+        )}
+      </Section>
+
+      <Section
         title="Funcionário"
         accent="amber"
         emoji="👷"
@@ -93,7 +110,7 @@ function Section({
 }: {
   title: string;
   emoji: string;
-  accent: "cyan" | "rose" | "amber";
+  accent: "cyan" | "rose" | "amber" | "violet";
   count: number;
   children: React.ReactNode;
   onAdd: React.ReactNode;
@@ -104,7 +121,9 @@ function Section({
       ? "ring-brand-cyan/30"
       : accent === "rose"
         ? "ring-rose-400/30"
-        : "ring-amber-300/30";
+        : accent === "violet"
+          ? "ring-violet-300/30"
+          : "ring-amber-300/30";
   return (
     <section
       className={`rounded-2xl border border-white/10 bg-white/[0.025] backdrop-blur-md ring-1 ${accentRing}`}
@@ -294,6 +313,60 @@ function DespesaTable({ rows, property }: { rows: DespesaEntry[]; property: stri
             </Td>
           </tr>
         ))}
+      </tbody>
+    </>,
+  );
+}
+
+function LavandariaTable({ rows, property }: { rows: LavandariaEntry[]; property: string }) {
+  const sorted = [...rows].sort((a, b) => (a.date < b.date ? -1 : 1));
+  const totalKg = sorted.reduce((sum, r) => sum + r.weightKg, 0);
+  return tableWrap(
+    <>
+      <thead>
+        <tr>
+          <Th>Data</Th>
+          <Th>Descrição</Th>
+          <Th align="right">Peso (kg)</Th>
+          <Th align="center"> </Th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-white/5">
+        {sorted.map((r) => (
+          <tr key={r.id} className="transition hover:bg-white/[0.025]">
+            <Td className="text-white/65">{ddmmyyyy(r.date)}</Td>
+            <Td className="text-white">{r.description}</Td>
+            <Td align="right" className="font-semibold text-violet-200">
+              {r.weightKg.toLocaleString("pt-PT", {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 2,
+              })}{" "}
+              kg
+            </Td>
+            <Td align="center">
+              <div className="inline-flex items-center gap-1">
+                <EditEntryButton entry={r} />
+                <DeleteEntryButton id={r.id} property={property} />
+              </div>
+            </Td>
+          </tr>
+        ))}
+        {sorted.length > 1 && (
+          <tr className="bg-white/[0.02]">
+            <Td className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
+              Total
+            </Td>
+            <Td className="text-white/55"> </Td>
+            <Td align="right" className="font-semibold text-violet-200">
+              {totalKg.toLocaleString("pt-PT", {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 2,
+              })}{" "}
+              kg
+            </Td>
+            <Td className="text-white/55"> </Td>
+          </tr>
+        )}
       </tbody>
     </>,
   );

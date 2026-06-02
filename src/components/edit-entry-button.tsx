@@ -15,14 +15,18 @@ export function EditEntryButton({ entry }: { entry: PnLEntry }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const [amount, setAmount] = useState(String(entry.amount));
+  const [amount, setAmount] = useState(
+    entry.kind === "lavandaria" ? "" : String(entry.amount),
+  );
 
   const title =
     entry.kind === "entrada"
       ? "Editar entrada"
       : entry.kind === "despesa"
         ? "Editar custo"
-        : "Editar pagamento";
+        : entry.kind === "funcionario"
+          ? "Editar pagamento"
+          : "Editar lavandaria";
 
   function close() {
     if (isPending) return;
@@ -99,113 +103,139 @@ export function EditEntryButton({ entry }: { entry: PnLEntry }) {
               />
             </Field>
 
-            {entry.kind === "entrada" ? (
-              <Field label="Janela da estadia">
-                <input
-                  type="text"
-                  name="stayWindow"
-                  defaultValue={entry.stayWindow ?? entry.description}
-                  required
-                  className="rsv-input"
-                />
-              </Field>
+            {entry.kind === "lavandaria" ? (
+              <>
+                <Field label="Descrição">
+                  <input
+                    type="text"
+                    value="Lavandaria"
+                    disabled
+                    className="rsv-input opacity-60"
+                  />
+                </Field>
+                <Field label="Peso de roupa (kg)">
+                  <input
+                    type="number"
+                    name="weightKg"
+                    step="0.1"
+                    min="0"
+                    required
+                    defaultValue={entry.weightKg}
+                    className="rsv-input"
+                  />
+                </Field>
+              </>
             ) : (
-              <Field label="Descrição">
-                <input
-                  type="text"
-                  name="description"
-                  defaultValue={entry.description}
-                  required
-                  className="rsv-input"
-                />
-              </Field>
+              <>
+                {entry.kind === "entrada" ? (
+                  <Field label="Janela da estadia">
+                    <input
+                      type="text"
+                      name="stayWindow"
+                      defaultValue={entry.stayWindow ?? entry.description}
+                      required
+                      className="rsv-input"
+                    />
+                  </Field>
+                ) : (
+                  <Field label="Descrição">
+                    <input
+                      type="text"
+                      name="description"
+                      defaultValue={entry.description}
+                      required
+                      className="rsv-input"
+                    />
+                  </Field>
+                )}
+
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Valor (€)">
+                    <input
+                      type="number"
+                      name="amount"
+                      step="0.01"
+                      min="0"
+                      required
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      className="rsv-input"
+                    />
+                  </Field>
+                  <Field
+                    label={
+                      entry.kind === "despesa" || entry.kind === "funcionario"
+                        ? "Pessoa pagou"
+                        : "Pessoa"
+                    }
+                  >
+                    <select
+                      name="person"
+                      defaultValue={entry.person}
+                      className="rsv-input"
+                    >
+                      {PEOPLE.map((p) => (
+                        <option key={p} value={p}>
+                          {p}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                </div>
+
+                {entry.kind === "entrada" && (
+                  <Field label="IVA (€)">
+                    <input
+                      type="number"
+                      name="iva"
+                      step="0.01"
+                      min="0"
+                      defaultValue={entry.iva}
+                      className="rsv-input"
+                    />
+                  </Field>
+                )}
+
+                <div className="space-y-2">
+                  {entry.kind === "despesa" && (
+                    <Check
+                      name="outOfAccount"
+                      label="Saiu da conta da empresa"
+                      defaultChecked={entry.outOfAccount}
+                    />
+                  )}
+                  {entry.kind === "funcionario" && (
+                    <>
+                      <Check name="pago" label="Já pago" defaultChecked={entry.pago} />
+                      <Check
+                        name="outOfAccount"
+                        label="Saiu da conta da empresa"
+                        defaultChecked={entry.outOfAccount}
+                      />
+                    </>
+                  )}
+                  {entry.kind === "entrada" && (
+                    <>
+                      <Check
+                        name="recebido"
+                        label="Recebido"
+                        defaultChecked={entry.recebido}
+                      />
+                      <Check
+                        name="noBanco"
+                        label="Já entrou no banco"
+                        defaultChecked={entry.noBanco}
+                      />
+                      <Check
+                        name="inIvaVault"
+                        label="IVA já no Vault"
+                        defaultChecked={entry.inIvaVault}
+                      />
+                    </>
+                  )}
+                </div>
+              </>
             )}
-
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Valor (€)">
-                <input
-                  type="number"
-                  name="amount"
-                  step="0.01"
-                  min="0"
-                  required
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="rsv-input"
-                />
-              </Field>
-              <Field
-                label={
-                  entry.kind === "despesa" || entry.kind === "funcionario"
-                    ? "Pessoa pagou"
-                    : "Pessoa"
-                }
-              >
-                <select
-                  name="person"
-                  defaultValue={entry.person}
-                  className="rsv-input"
-                >
-                  {PEOPLE.map((p) => (
-                    <option key={p} value={p}>
-                      {p}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-            </div>
-
-            {entry.kind === "entrada" && (
-              <Field label="IVA (€)">
-                <input
-                  type="number"
-                  name="iva"
-                  step="0.01"
-                  min="0"
-                  defaultValue={entry.iva}
-                  className="rsv-input"
-                />
-              </Field>
-            )}
-
-            <div className="space-y-2">
-              {entry.kind === "despesa" && (
-                <Check
-                  name="outOfAccount"
-                  label="Saiu da conta da empresa"
-                  defaultChecked={entry.outOfAccount}
-                />
-              )}
-              {entry.kind === "funcionario" && (
-                <>
-                  <Check name="pago" label="Já pago" defaultChecked={entry.pago} />
-                  <Check
-                    name="outOfAccount"
-                    label="Saiu da conta da empresa"
-                    defaultChecked={entry.outOfAccount}
-                  />
-                </>
-              )}
-              {entry.kind === "entrada" && (
-                <>
-                  <Check
-                    name="recebido"
-                    label="Recebido"
-                    defaultChecked={entry.recebido}
-                  />
-                  <Check
-                    name="noBanco"
-                    label="Já entrou no banco"
-                    defaultChecked={entry.noBanco}
-                  />
-                  <Check
-                    name="inIvaVault"
-                    label="IVA já no Vault"
-                    defaultChecked={entry.inIvaVault}
-                  />
-                </>
-              )}
-            </div>
 
             {error && (
               <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-300">

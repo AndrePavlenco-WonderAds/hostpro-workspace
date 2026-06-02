@@ -20,6 +20,7 @@ import type {
   DespesaEntry,
   EntradaEntry,
   FuncionarioEntry,
+  LavandariaEntry,
   Person,
 } from "./pnl-types";
 
@@ -105,10 +106,18 @@ export async function getEntries(slug: PropertySlug): Promise<PnLEntry[]> {
 export type NewEntryInput =
   | (Omit<DespesaEntry, "id"> & { id?: string })
   | (Omit<EntradaEntry, "id"> & { id?: string })
-  | (Omit<FuncionarioEntry, "id"> & { id?: string });
+  | (Omit<FuncionarioEntry, "id"> & { id?: string })
+  | (Omit<LavandariaEntry, "id"> & { id?: string });
 
 function nextId(existing: PnLEntry[], kind: EntryKind): string {
-  const prefix = kind === "entrada" ? "ent" : kind === "despesa" ? "exp" : "fnc";
+  const prefix =
+    kind === "entrada"
+      ? "ent"
+      : kind === "despesa"
+        ? "exp"
+        : kind === "funcionario"
+          ? "fnc"
+          : "lvd";
   let max = 0;
   for (const e of existing) {
     const m = e.id.match(new RegExp(`^${prefix}-(\\d+)$`));

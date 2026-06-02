@@ -46,8 +46,8 @@ export default async function AdminPage() {
     .slice(0, 5);
 
   const topCustos = [...all]
-    .filter((e) => e.kind !== "entrada")
-    .sort((a, b) => b.amount - a.amount)
+    .filter((e) => e.kind === "despesa" || e.kind === "funcionario")
+    .sort((a, b) => (b as { amount: number }).amount - (a as { amount: number }).amount)
     .slice(0, 5);
 
   const recent = [...all]
@@ -346,16 +346,27 @@ function ActivityRow({ entry }: { entry: PnLEntry }) {
   const propertyName =
     PROPERTIES.find((p) => p.slug === entry.property)?.shortName ?? entry.property;
   const typeLabel =
-    entry.kind === "entrada" ? "Entrada" : entry.kind === "despesa" ? "Custo" : "Funcionário";
+    entry.kind === "entrada"
+      ? "Entrada"
+      : entry.kind === "despesa"
+        ? "Custo"
+        : entry.kind === "funcionario"
+          ? "Funcionário"
+          : "Lavandaria";
   const tone =
     entry.kind === "entrada"
       ? "text-brand-cyan"
       : entry.kind === "despesa"
         ? "text-rose-200"
-        : "text-amber-200";
+        : entry.kind === "funcionario"
+          ? "text-amber-200"
+          : "text-violet-200";
   const desc =
     entry.kind === "entrada" ? (entry.stayWindow ?? entry.description) : entry.description;
-  const sign = entry.kind === "entrada" ? "+" : "−";
+  const rightValue =
+    entry.kind === "lavandaria"
+      ? `${entry.weightKg.toLocaleString("pt-PT", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg`
+      : `${entry.kind === "entrada" ? "+" : "−"}${eur(entry.amount)}`;
   return (
     <tr className="hover:bg-white/[0.025]">
       <td className="whitespace-nowrap px-5 py-3 text-white/65">{ddmmyyyy(entry.date)}</td>
@@ -365,8 +376,7 @@ function ActivityRow({ entry }: { entry: PnLEntry }) {
       </td>
       <td className="px-5 py-3 text-white">{desc}</td>
       <td className={`whitespace-nowrap px-5 py-3 text-right font-semibold ${tone}`}>
-        {sign}
-        {eur(entry.amount)}
+        {rightValue}
       </td>
     </tr>
   );

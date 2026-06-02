@@ -47,12 +47,36 @@ export async function addEntryAction(formData: FormData): Promise<ActionResult> 
   const property = asString(formData.get("property"));
   const kind = asString(formData.get("kind")) as EntryKind;
   const date = asString(formData.get("date"));
+
+  if (!isPropertySlug(property)) return { ok: false, error: "Alojamento inválido" };
+  if (!isISODate(date)) return { ok: false, error: "Data inválida (YYYY-MM-DD)" };
+
+  // Lavandaria has its own shape — apenas data + peso (kg). Tratamos antes
+  // das validações que assumem pessoa / valor em euros.
+  if (kind === "lavandaria") {
+    const weightKg = asNumber(formData.get("weightKg"));
+    if (weightKg <= 0) return { ok: false, error: "Peso tem de ser positivo (kg)" };
+    try {
+      await addEntry({
+        kind: "lavandaria",
+        property,
+        date,
+        weightKg,
+        description: "Lavandaria",
+      });
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : "Erro" };
+    }
+    revalidatePath(`/alojamentos/${property}`);
+    revalidatePath("/admin");
+    revalidatePath("/");
+    return { ok: true };
+  }
+
   const description = asString(formData.get("description"));
   const person = asString(formData.get("person"));
   const amount = asNumber(formData.get("amount"));
 
-  if (!isPropertySlug(property)) return { ok: false, error: "Alojamento inválido" };
-  if (!isISODate(date)) return { ok: false, error: "Data inválida (YYYY-MM-DD)" };
   if (!isPerson(person)) return { ok: false, error: "Pessoa inválida" };
   if (amount <= 0) return { ok: false, error: "Valor tem de ser positivo" };
   if (!description && kind !== "entrada") {
@@ -124,12 +148,29 @@ export async function updateEntryAction(
   const property = asString(formData.get("property"));
   const kind = asString(formData.get("kind")) as EntryKind;
   const date = asString(formData.get("date"));
+
+  if (!isPropertySlug(property)) return { ok: false, error: "Alojamento inválido" };
+  if (!isISODate(date)) return { ok: false, error: "Data inválida (YYYY-MM-DD)" };
+
+  // Lavandaria — fields são apenas data + peso. Mesma lógica do add.
+  if (kind === "lavandaria") {
+    const weightKg = asNumber(formData.get("weightKg"));
+    if (weightKg <= 0) return { ok: false, error: "Peso tem de ser positivo (kg)" };
+    try {
+      await updateEntry(id, { date, weightKg } as never);
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : "Erro" };
+    }
+    revalidatePath(`/alojamentos/${property}`);
+    revalidatePath("/admin");
+    revalidatePath("/");
+    return { ok: true };
+  }
+
   const description = asString(formData.get("description"));
   const person = asString(formData.get("person"));
   const amount = asNumber(formData.get("amount"));
 
-  if (!isPropertySlug(property)) return { ok: false, error: "Alojamento inválido" };
-  if (!isISODate(date)) return { ok: false, error: "Data inválida (YYYY-MM-DD)" };
   if (!isPerson(person)) return { ok: false, error: "Pessoa inválida" };
   if (amount <= 0) return { ok: false, error: "Valor tem de ser positivo" };
 

@@ -96,7 +96,7 @@ export function monthlyBreakdown(entries: PnLEntry[]): Array<{
 
 // ---------- dashboard records ----------
 
-export type RecordPick<T> = { value: T; entry: PnLEntry } | null;
+export type RecordPick<T extends PnLEntry> = { value: T; entry: T } | null;
 
 export function biggestEntrada(entries: PnLEntry[]): RecordPick<EntradaEntry> | null {
   let best: EntradaEntry | null = null;
@@ -108,12 +108,21 @@ export function biggestEntrada(entries: PnLEntry[]): RecordPick<EntradaEntry> | 
 }
 
 export function biggestDespesa(entries: PnLEntry[]): { entry: PnLEntry } | null {
-  let best: PnLEntry | null = null;
+  let best: (PnLEntry & { amount: number }) | null = null;
   for (const e of entries) {
-    if (e.kind === "entrada") continue;
+    if (e.kind !== "despesa" && e.kind !== "funcionario") continue;
     if (!best || e.amount > best.amount) best = e;
   }
   return best ? { entry: best } : null;
+}
+
+/** Total de quilos de roupa lavada num conjunto de entradas. */
+export function totalLavandariaKg(entries: PnLEntry[]): number {
+  let total = 0;
+  for (const e of entries) {
+    if (e.kind === "lavandaria") total += e.weightKg;
+  }
+  return total;
 }
 
 export function bestMonth(entries: PnLEntry[]): {

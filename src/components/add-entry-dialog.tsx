@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { addEntryAction } from "@/lib/pnl-actions";
 import { PEOPLE } from "@/lib/pnl-types";
 
-type Kind = "entrada" | "despesa" | "funcionario";
+type Kind = "entrada" | "despesa" | "funcionario" | "lavandaria";
 
 const LABELS: Record<Kind, { open: string; title: string; primary: string }> = {
   entrada: {
@@ -22,6 +22,11 @@ const LABELS: Record<Kind, { open: string; title: string; primary: string }> = {
     open: "+ Adicionar pagamento",
     title: "Novo pagamento a funcionário",
     primary: "Registar pagamento",
+  },
+  lavandaria: {
+    open: "+ Adicionar lavandaria",
+    title: "Nova ida à lavandaria",
+    primary: "Registar lavandaria",
   },
 };
 
@@ -118,7 +123,29 @@ export function AddEntryDialog({
               />
             </Field>
 
-            {kind === "entrada" ? (
+            {kind === "lavandaria" ? (
+              <>
+                <Field label="Descrição">
+                  <input
+                    type="text"
+                    value="Lavandaria"
+                    disabled
+                    className="form-input opacity-60"
+                  />
+                </Field>
+                <Field label="Peso de roupa (kg)">
+                  <input
+                    type="number"
+                    name="weightKg"
+                    step="0.1"
+                    min="0"
+                    required
+                    placeholder="ex: 12.5"
+                    className="form-input"
+                  />
+                </Field>
+              </>
+            ) : kind === "entrada" ? (
               <Field label="Janela da estadia">
                 <input
                   type="text"
@@ -142,35 +169,37 @@ export function AddEntryDialog({
               </Field>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Valor (€)">
-                <input
-                  type="number"
-                  name="amount"
-                  step="0.01"
-                  min="0"
-                  required
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="form-input"
-                />
-              </Field>
-              <Field
-                label={
-                  kind === "despesa" || kind === "funcionario"
-                    ? "Pessoa pagou"
-                    : "Pessoa"
-                }
-              >
-                <select name="person" defaultValue="André" className="form-input">
-                  {PEOPLE.map((p) => (
-                    <option key={p} value={p}>
-                      {p}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-            </div>
+            {kind !== "lavandaria" && (
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Valor (€)">
+                  <input
+                    type="number"
+                    name="amount"
+                    step="0.01"
+                    min="0"
+                    required
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    className="form-input"
+                  />
+                </Field>
+                <Field
+                  label={
+                    kind === "despesa" || kind === "funcionario"
+                      ? "Pessoa pagou"
+                      : "Pessoa"
+                  }
+                >
+                  <select name="person" defaultValue="André" className="form-input">
+                    {PEOPLE.map((p) => (
+                      <option key={p} value={p}>
+                        {p}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
+            )}
 
             {kind === "entrada" && (
               <Field label="IVA (€) — sugestão 6 %">
