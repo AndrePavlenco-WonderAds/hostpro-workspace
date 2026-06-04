@@ -15,6 +15,22 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.7.0",
+    date: "2026-06-04",
+    title: "App optimizada para mobile — adeus scroll preso e overflows",
+    highlights: [
+      "**📱 Home deixou de bloquear scroll em telemóvel.** A `Home` usava `h-screen overflow-hidden` para forçar tudo dentro de uma viewport em desktop — em mobile isso significava que o logo + claim + 3 cards de alojamento + botão *Visão Geral* eram comprimidos numa só viewport sem qualquer hipótese de scroll. Trocado por `min-h-screen` (sem `overflow-hidden`) e padding mais apertado (`px-4 py-8` em vez de `px-6 py-6`). Em desktops continua a parecer one-page porque o conteúdo cabe naturalmente.",
+      "**⌨️ Claim *O seu alojamento, nas melhores mãos.* já quebra em telemóvel.** O `whitespace-nowrap` no h1 obrigava a linha a manter-se inteira (36 caracteres em `text-2xl` → overflow horizontal em iPhones SE). Passou a aplicar-se só em `sm:` para cima — em mobile a frase quebra naturalmente em duas linhas. Tamanho da type também ajustado para `text-xl sm:text-3xl`.",
+      "**📊 Tabela *Actividade recente* do `/admin` deixou de ficar cortada.** Estava dentro de um wrapper `overflow-hidden rounded-2xl` sem `overflow-x-auto` interno — em ecrãs estreitos as últimas colunas (Descrição, Valor) eram clipped. Agora há um `<div class=overflow-x-auto>` entre o card e a tabela, e os paddings das células passaram a `px-3 py-3 sm:px-5` para os ecrãs mais pequenos. O grid de tiles *Ganhos {ano} · Custos · Lucro · Margem* também passou a 2 colunas em mobile (era single column por causa do `sm:grid-cols-4` sem fallback explícito).",
+      "**📐 Tile *Lucro* já não fica sozinho na última linha.** No `OverviewTiles` há 5 tiles num grid `grid-cols-2 sm:grid-cols-5`. Em mobile isso punha o *Lucro* (com `emphasis`) sozinho na 3ª linha. Adicionei prop `spanFullOnMobile` que faz `col-span-2 sm:col-span-1` — agora o tile do Lucro estica para ocupar a linha toda em telemóvel, ficando como o destaque grande que era para ser.",
+      "**📈 Gráfico *Tendência mensal* refeito para mobile.** Era um `grid grid-cols-12` com `col-span-2` para a label do mês, `col-span-9` para as barras e `col-span-1` para o lucro — em ecrãs estreitos a label do mês ficava esmagada e o valor do lucro ficava `+€1.234` cortado. Em mobile passou a stacked: linha 1 = mês + lucro lado-a-lado; linha 2 = barras ganhos/custos com os valores no fim. Em `sm:` para cima volta ao layout horizontal original.",
+      "**🖨 Página de reserva responsiva para criar PDFs no telemóvel.** Toolbar sticky agora encolhe — *Imprimir / Gravar PDF* fica só *🖨 PDF* em mobile; título *Nova reserva* esconde-se. Card da factura passou de `p-8 sm:p-10` para `p-5 sm:p-8 md:p-10`. Tamanhos serif do `RESERVA` e `Obrigado!` reduzidos (`text-4xl sm:text-6xl` e `text-3xl sm:text-5xl`) e o footer (logo + tagline) tem agora `flex-wrap` para nunca espremer o logo do lado do *Obrigado!* em ecrãs muito estreitos. Tabela de totais usa `text-xs sm:text-sm`.",
+      "**📑 Tabelas P&L — paddings das células finalmente cabem em ecrãs estreitos.** `px-5 py-3` por célula em 7 colunas (Data · Estadia · Pessoa · Valor · IVA · Estado · Acções) significava ~120px de padding lateral por linha. Agora `px-3 py-3 sm:px-5` — recupera ~80px de largura útil por linha em mobile, e as toggles *Recebido · No banco · IVA Vault* já cabem na coluna Estado sem partir.",
+      "**🏠 Cabeçalhos das páginas de alojamento e admin também encolhidos.** `px-6 py-10` → `px-4 py-8` em mobile (`/admin` e `/alojamentos/[slug]`). Hero da página do alojamento ganhou `flex-wrap` no header de cima (botão *Início*, *🧾 Gerar reserva*, chip de localização) para nunca rebentar a linha em iPhones SE. Título h1 do alojamento desceu de `text-3xl` para `text-2xl` em mobile.",
+      "**🧭 Viewport meta explícito.** `layout.tsx` agora exporta `const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#142030' }` — o `viewport-fit=cover` deixa o background levar até às margens do notch no iPhone, e `themeColor` matches o navy escuro do app (Safari pinta a barra de URL com a mesma cor).",
+    ],
+  },
+  {
     version: "0.6.1",
     date: "2026-06-02",
     title: "Total de kg do mês visível no header da Lavandaria",

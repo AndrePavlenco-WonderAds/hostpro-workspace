@@ -32,7 +32,7 @@ export function DashboardStats({
   return (
     <div className="grid gap-3 lg:grid-cols-3">
       {/* Ganhos acumulados — full-width, with monthly bar chart on the right */}
-      <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-5 backdrop-blur-md lg:col-span-3">
+      <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-4 backdrop-blur-md sm:p-5 lg:col-span-3">
         <div className="grid gap-6 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] sm:items-center">
           <div>
             <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
@@ -78,7 +78,7 @@ export function DashboardStats({
       />
 
       {/* Tendência mensal — full table for every month with data */}
-      <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-5 backdrop-blur-md lg:col-span-3">
+      <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-4 backdrop-blur-md sm:p-5 lg:col-span-3">
         <header>
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
             Tendência mensal · ganhos vs custos
@@ -163,10 +163,10 @@ function YearChart({
   const CHART_HEIGHT = 144; // ~h-36 in px
 
   return (
-    <div className="flex gap-2">
+    <div className="flex min-w-0 gap-2">
       {/* Y-axis */}
       <div
-        className="flex flex-col justify-between pr-1 text-right text-[9px] text-white/40"
+        className="flex shrink-0 flex-col justify-between pr-1 text-right text-[9px] text-white/40"
         style={{ height: CHART_HEIGHT }}
       >
         {lines.map((v) => (
@@ -177,7 +177,7 @@ function YearChart({
       </div>
 
       {/* Chart area */}
-      <div className="flex flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col">
         <div
           className="relative flex items-end gap-1.5"
           style={{ height: CHART_HEIGHT }}
@@ -269,36 +269,51 @@ function TrendBars({
     ...breakdown.map((b) => Math.max(b.totals.revenue, b.totals.totalExpenses, 100)),
   );
   return (
-    <div className="mt-5 grid gap-2">
+    <div className="mt-5 grid gap-3 sm:gap-2">
       {breakdown.map((b) => {
         const revW = (b.totals.revenue / max) * 100;
         const expW = (b.totals.totalExpenses / max) * 100;
         const positive = b.totals.profit >= 0;
         return (
-          <div key={b.key} className="grid grid-cols-12 items-center gap-2 text-xs">
-            <span className="col-span-2 text-white/55">{monthLabelShort(b.key)}</span>
-            <div className="col-span-9 space-y-1">
+          // Em mobile, cada mês fica em duas linhas (header com mês + lucro
+          // por cima das barras); em sm+ volta ao layout horizontal original.
+          <div
+            key={b.key}
+            className="grid grid-cols-1 gap-y-1 text-xs sm:grid-cols-12 sm:items-center sm:gap-2"
+          >
+            <div className="flex items-center justify-between sm:col-span-2 sm:block">
+              <span className="text-white/55">{monthLabelShort(b.key)}</span>
+              <span
+                className={`text-[11px] font-semibold sm:hidden ${
+                  positive ? "text-emerald-300" : "text-rose-300"
+                }`}
+              >
+                {positive ? "+" : "−"}
+                {eur(Math.abs(b.totals.profit))}
+              </span>
+            </div>
+            <div className="space-y-1 sm:col-span-9">
               <div className="flex items-center gap-2">
-                <span className="w-14 shrink-0 text-[10px] uppercase tracking-wider text-brand-cyan/80">
+                <span className="w-12 shrink-0 text-[10px] uppercase tracking-wider text-brand-cyan/80 sm:w-14">
                   ganhos
                 </span>
                 <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/5">
                   <div className="h-full origin-left animate-bar-line bg-brand-cyan/85" style={{ width: `${revW}%` }} />
                 </div>
-                <span className="w-20 shrink-0 text-right text-white/70">{eur(b.totals.revenue)}</span>
+                <span className="w-16 shrink-0 text-right text-white/70 sm:w-20">{eur(b.totals.revenue)}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="w-14 shrink-0 text-[10px] uppercase tracking-wider text-rose-300/80">
+                <span className="w-12 shrink-0 text-[10px] uppercase tracking-wider text-rose-300/80 sm:w-14">
                   custos
                 </span>
                 <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/5">
                   <div className="h-full origin-left animate-bar-line bg-rose-400/70" style={{ width: `${expW}%` }} />
                 </div>
-                <span className="w-20 shrink-0 text-right text-white/70">{eur(b.totals.totalExpenses)}</span>
+                <span className="w-16 shrink-0 text-right text-white/70 sm:w-20">{eur(b.totals.totalExpenses)}</span>
               </div>
             </div>
             <span
-              className={`col-span-1 text-right text-[11px] font-semibold ${
+              className={`hidden text-right text-[11px] font-semibold sm:col-span-1 sm:inline ${
                 positive ? "text-emerald-300" : "text-rose-300"
               }`}
             >

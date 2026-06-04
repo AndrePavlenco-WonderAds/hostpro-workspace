@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AppFooter } from "@/components/app-footer";
@@ -23,6 +23,16 @@ export const metadata: Metadata = {
       { url: "/favicon.png", type: "image/png" },
     ],
   },
+};
+
+// Viewport explícito — `viewport-fit=cover` deixa o background levar até às
+// margens do notch no iPhone; `user-scalable=yes` deixa o utilizador fazer
+// pinch-zoom (vital em tabelas P&L densas).
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#142030",
 };
 
 export default function RootLayout({

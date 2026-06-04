@@ -22,7 +22,7 @@ export default async function ChangelogPage() {
   const unlocked = await isChangelogUnlocked();
 
   return (
-    <div className="relative min-h-screen bg-brand-navy-dark px-6 py-12 sm:px-10 sm:py-16">
+    <div className="relative min-h-screen bg-brand-navy-dark px-4 py-8 sm:px-10 sm:py-16">
       <div className="mx-auto w-full max-w-3xl">
         <BackHome />
 
@@ -37,7 +37,7 @@ export default async function ChangelogPage() {
               >
                 ✨
               </span>
-              <h1 className="text-4xl font-semibold leading-[1.05] tracking-tight text-white sm:text-5xl">
+              <h1 className="text-3xl font-semibold leading-[1.05] tracking-tight text-white sm:text-5xl">
                 Changelog
               </h1>
               <p className="max-w-2xl text-base text-white/65 sm:text-lg">
@@ -58,7 +58,7 @@ export default async function ChangelogPage() {
               {CHANGELOG.map((entry, i) => (
                 <li
                   key={entry.version}
-                  className="relative pb-10 pl-12 sm:pl-16"
+                  className="relative pb-10 pl-10 sm:pl-16"
                 >
                   <TimelineDot isLatest={i === 0} />
                   <Entry entry={entry} isLatest={i === 0} />
@@ -94,7 +94,7 @@ function Entry({
   isLatest: boolean;
 }) {
   return (
-    <article className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.035] p-6 backdrop-blur-md transition hover:bg-white/[0.06] sm:p-7">
+    <article className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.035] p-4 backdrop-blur-md transition hover:bg-white/[0.06] sm:p-7">
       {isLatest && (
         <div
           aria-hidden

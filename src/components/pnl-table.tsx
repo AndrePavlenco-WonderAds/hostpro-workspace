@@ -232,7 +232,7 @@ function SectionShell({
     <section
       className={`rounded-2xl border border-white/10 bg-white/[0.025] backdrop-blur-md ring-1 ${acc.ring}`}
     >
-      <header className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-6">
+      <header className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
         <div className="flex flex-wrap items-center gap-3">
           <span aria-hidden className="text-xl">
             {emoji}
@@ -256,7 +256,7 @@ function SectionShell({
       </header>
 
       {isOpen && (
-        <div className="border-t border-white/5 px-5 py-5 sm:px-6">
+        <div className="border-t border-white/5 px-4 py-5 sm:px-6">
           <form
             // Remount when switching between add / different editing rows so
             // defaultValue applies cleanly.
@@ -312,7 +312,7 @@ function SectionShell({
 
       <div className="border-t border-white/5">
         {count === 0 ? (
-          <p className="px-5 py-8 text-center text-sm text-white/45 sm:px-6">
+          <p className="px-4 py-8 text-center text-sm text-white/45 sm:px-6">
             {empty}
           </p>
         ) : (
@@ -378,7 +378,7 @@ function Th({
   return (
     <th
       scope="col"
-      className={`px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45 ${
+      className={`px-3 py-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45 sm:px-5 ${
         align === "right"
           ? "text-right"
           : align === "center"
@@ -402,7 +402,7 @@ function Td({
 }) {
   return (
     <td
-      className={`whitespace-nowrap px-5 py-3 ${
+      className={`whitespace-nowrap px-3 py-3 sm:px-5 ${
         align === "right"
           ? "text-right"
           : align === "center"

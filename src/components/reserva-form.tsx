@@ -138,29 +138,29 @@ export function ReservaForm({
 
       {/* Toolbar */}
       <header className="reserva-toolbar sticky top-0 z-20 border-b border-white/10 bg-brand-navy-dark/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-6 py-3 sm:px-10">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-3 sm:gap-3 sm:px-10">
           <Link
             href={`/alojamentos/${property.slug}`}
             className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-white/80 transition hover:border-brand-cyan hover:text-white"
           >
             ← {property.shortName}
           </Link>
-          <h1 className="text-sm font-semibold uppercase tracking-[0.18em] text-white/65 sm:text-base">
+          <h1 className="hidden text-sm font-semibold uppercase tracking-[0.18em] text-white/65 sm:inline sm:text-base">
             Nova reserva
           </h1>
           <button
             type="button"
             onClick={() => window.print()}
-            className="inline-flex items-center gap-2 rounded-full bg-brand-cyan px-5 py-2 text-xs font-semibold text-brand-navy shadow-[0_10px_30px_-8px_rgba(0,181,226,0.6)] transition hover:opacity-90"
+            className="inline-flex items-center gap-2 rounded-full bg-brand-cyan px-4 py-2 text-xs font-semibold text-brand-navy shadow-[0_10px_30px_-8px_rgba(0,181,226,0.6)] transition hover:opacity-90 sm:px-5"
           >
-            🖨 Imprimir / Gravar PDF
+            🖨 <span className="hidden xs:inline sm:inline">Imprimir / Gravar PDF</span><span className="sm:hidden">PDF</span>
           </button>
         </div>
       </header>
 
-      <div className="mx-auto grid w-full max-w-7xl gap-6 px-6 py-8 sm:px-10 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)] lg:items-start">
+      <div className="mx-auto grid w-full max-w-7xl gap-5 px-4 py-6 sm:gap-6 sm:px-10 sm:py-8 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)] lg:items-start">
         {/* Form aside */}
-        <aside className="reserva-form-aside space-y-5 rounded-2xl border border-white/10 bg-white/[0.025] p-5 backdrop-blur-md">
+        <aside className="reserva-form-aside space-y-5 rounded-2xl border border-white/10 bg-white/[0.025] p-4 backdrop-blur-md sm:p-5">
           <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-white/55">
             Dados da reserva
           </h2>
@@ -303,7 +303,7 @@ export function ReservaForm({
         </aside>
 
         {/* Invoice preview */}
-        <section className="reserva-print-area rounded-2xl border border-white/10 bg-white p-8 text-zinc-900 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.45)] sm:p-10">
+        <section className="reserva-print-area rounded-2xl border border-white/10 bg-white p-5 text-zinc-900 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.45)] sm:p-8 md:p-10">
           <InvoiceBody
             propertyName={property.name}
             clientName={clientName}
@@ -409,10 +409,10 @@ function InvoiceBody({
           alt="HostPro"
           width={64}
           height={64}
-          className="h-12 w-12 sm:h-14 sm:w-14"
+          className="h-10 w-10 sm:h-14 sm:w-14"
         />
         <h1
-          className="font-serif text-5xl font-medium leading-none tracking-tight text-zinc-900 sm:text-6xl"
+          className="font-serif text-4xl font-medium leading-none tracking-tight text-zinc-900 sm:text-6xl"
           style={{ fontFamily: "var(--font-cormorant), serif" }}
         >
           RESERVA
@@ -420,7 +420,7 @@ function InvoiceBody({
       </header>
 
       {/* CLIENTE | APARTAMENTO */}
-      <section className="mt-8 grid grid-cols-2 gap-6 text-sm">
+      <section className="mt-6 grid grid-cols-2 gap-4 text-xs sm:mt-8 sm:gap-6 sm:text-sm">
         <div>
           <p className="font-bold uppercase tracking-wide">CLIENTE:</p>
           <p className="mt-2 whitespace-pre-line text-zinc-700">
@@ -438,8 +438,8 @@ function InvoiceBody({
       </section>
 
       {/* Table */}
-      <section className="reserva-totals-block mt-8">
-        <table className="w-full border-collapse text-sm">
+      <section className="reserva-totals-block mt-6 sm:mt-8">
+        <table className="w-full border-collapse text-xs sm:text-sm">
           <thead>
             <tr className="border-b border-zinc-300">
               <th className="py-3 text-left font-bold uppercase tracking-wide">Item</th>
@@ -522,9 +522,9 @@ function InvoiceBody({
 
       {/* Footer — kept tight + tagged 'break-before: avoid' so it never
           gets bumped to a fresh page on its own. */}
-      <footer className="reserva-footer-block mt-10 flex items-end justify-between">
+      <footer className="reserva-footer-block mt-8 flex flex-wrap items-end justify-between gap-4 sm:mt-10">
         <p
-          className="font-serif text-4xl font-medium text-zinc-900 sm:text-5xl"
+          className="font-serif text-3xl font-medium text-zinc-900 sm:text-5xl"
           style={{ fontFamily: "var(--font-cormorant), serif" }}
         >
           Obrigado!
@@ -535,10 +535,10 @@ function InvoiceBody({
             alt="HostPro"
             width={140}
             height={38}
-            className="h-9 w-auto sm:h-10"
+            className="h-8 w-auto sm:h-10"
           />
           <p
-            className="mt-1 text-xs italic text-zinc-600"
+            className="mt-1 text-[10px] italic text-zinc-600 sm:text-xs"
             style={{ fontFamily: "var(--font-cormorant), serif" }}
           >
             {tagline}

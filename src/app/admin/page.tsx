@@ -55,7 +55,7 @@ export default async function AdminPage() {
     .slice(0, 10);
 
   return (
-    <div className="min-h-screen bg-brand-navy-dark px-6 py-10 sm:px-10 sm:py-14">
+    <div className="min-h-screen bg-brand-navy-dark px-4 py-8 sm:px-10 sm:py-14">
       <div className="mx-auto w-full max-w-6xl">
         <header className="flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -65,7 +65,7 @@ export default async function AdminPage() {
             >
               ← Início
             </Link>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+            <h1 className="mt-3 text-2xl font-semibold tracking-tight text-white sm:text-4xl">
               Visão geral
             </h1>
             <p className="mt-2 text-sm text-white/55 sm:text-base">
@@ -75,7 +75,7 @@ export default async function AdminPage() {
             </p>
           </div>
           <span className="rounded-full border border-brand-cyan/40 bg-brand-cyan/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-brand-cyan">
-            Ao vivo · v0.4.1
+            Ao vivo · v0.7.0
           </span>
         </header>
 
@@ -92,7 +92,7 @@ export default async function AdminPage() {
           <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-white/45">
             Acumulado de {ytdYear}
           </h2>
-          <div className="mt-4 grid gap-3 sm:grid-cols-4">
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <YtdTile label={`Ganhos ${ytdYear}`} value={eur(ytd.revenue)} accent="cyan" />
             <YtdTile label={`Custos ${ytdYear}`} value={eur(ytd.totalExpenses)} accent="red" />
             <YtdTile
@@ -156,23 +156,27 @@ export default async function AdminPage() {
           <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-white/45">
             Actividade recente
           </h2>
-          <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.025] backdrop-blur-md">
-            <table className="min-w-full divide-y divide-white/5 text-sm">
-              <thead>
-                <tr>
-                  <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">Data</th>
-                  <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">Alojamento</th>
-                  <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">Tipo</th>
-                  <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">Descrição</th>
-                  <th className="px-5 py-3 text-right text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">Valor</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {recent.map((e) => (
-                  <ActivityRow key={e.id} entry={e} />
-                ))}
-              </tbody>
-            </table>
+          {/* `overflow-x-auto` no wrapper interno para a tabela poder fazer
+              scroll horizontal em mobile sem o card a clipar. */}
+          <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.025] backdrop-blur-md">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-white/5 text-sm">
+                <thead>
+                  <tr>
+                    <th className="px-3 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45 sm:px-5">Data</th>
+                    <th className="px-3 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45 sm:px-5">Alojamento</th>
+                    <th className="px-3 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45 sm:px-5">Tipo</th>
+                    <th className="px-3 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45 sm:px-5">Descrição</th>
+                    <th className="px-3 py-3 text-right text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45 sm:px-5">Valor</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {recent.map((e) => (
+                    <ActivityRow key={e.id} entry={e} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </section>
 
@@ -369,13 +373,13 @@ function ActivityRow({ entry }: { entry: PnLEntry }) {
       : `${entry.kind === "entrada" ? "+" : "−"}${eur(entry.amount)}`;
   return (
     <tr className="hover:bg-white/[0.025]">
-      <td className="whitespace-nowrap px-5 py-3 text-white/65">{ddmmyyyy(entry.date)}</td>
-      <td className="whitespace-nowrap px-5 py-3 text-white/75">{propertyName}</td>
-      <td className="whitespace-nowrap px-5 py-3 text-[11px] uppercase tracking-[0.18em] text-white/45">
+      <td className="whitespace-nowrap px-3 py-3 text-white/65 sm:px-5">{ddmmyyyy(entry.date)}</td>
+      <td className="whitespace-nowrap px-3 py-3 text-white/75 sm:px-5">{propertyName}</td>
+      <td className="whitespace-nowrap px-3 py-3 text-[11px] uppercase tracking-[0.18em] text-white/45 sm:px-5">
         {typeLabel}
       </td>
-      <td className="px-5 py-3 text-white">{desc}</td>
-      <td className={`whitespace-nowrap px-5 py-3 text-right font-semibold ${tone}`}>
+      <td className="px-3 py-3 text-white sm:px-5">{desc}</td>
+      <td className={`whitespace-nowrap px-3 py-3 text-right font-semibold sm:px-5 ${tone}`}>
         {rightValue}
       </td>
     </tr>

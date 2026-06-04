@@ -28,7 +28,10 @@ export default async function Home() {
   );
 
   return (
-    <div className="relative flex h-screen flex-col overflow-hidden bg-brand-navy-dark">
+    // `min-h-screen` (não `h-screen`) + sem `overflow-hidden` → no mobile a
+    // home faz scroll normalmente. Em desktops continua a parecer uma única
+    // viewport porque o conteúdo cabe naturalmente.
+    <div className="relative flex min-h-screen flex-col bg-brand-navy-dark">
       {/* Hero photo behind everything — softer blur per Andre's feedback. */}
       <Image
         src="/hero-living-room.jpg"
@@ -41,18 +44,21 @@ export default async function Home() {
       {/* Navy wash so the content stays legible. */}
       <div className="absolute inset-0 bg-gradient-to-b from-brand-navy-dark/50 via-brand-navy-dark/65 to-brand-navy-dark/80" />
 
-      <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 py-6">
-        <div className="flex w-full max-w-6xl flex-col items-center gap-6 text-center">
+      <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-4 py-8 sm:px-6 sm:py-6">
+        <div className="flex w-full max-w-6xl flex-col items-center gap-5 text-center sm:gap-6">
           <Image
             src="/hostpro-logo-white.png"
             alt="HostPro"
             width={240}
             height={66}
             priority
+            className="h-auto w-48 sm:w-60"
           />
           <div className="h-1 w-12 rounded-full bg-brand-cyan" />
 
-          <h1 className="text-2xl font-semibold tracking-tight text-white whitespace-nowrap sm:text-3xl">
+          {/* `whitespace-nowrap` apenas em ≥ sm — em mobile a frase pode
+              quebrar naturalmente para não overflow horizontal. */}
+          <h1 className="text-xl font-semibold tracking-tight text-white sm:whitespace-nowrap sm:text-3xl">
             <Typewriter text="O seu alojamento, nas melhores mãos." />
           </h1>
 

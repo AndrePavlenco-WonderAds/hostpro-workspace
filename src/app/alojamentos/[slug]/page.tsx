@@ -77,15 +77,15 @@ export default async function PropertyPage({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-brand-navy-dark via-brand-navy-dark/70 to-brand-navy-dark/30" />
 
-        <div className="absolute inset-x-0 top-0 px-6 pt-6 sm:px-10 sm:pt-8">
-          <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3">
+        <div className="absolute inset-x-0 top-0 px-4 pt-4 sm:px-10 sm:pt-8">
+          <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-2">
             <Link
               href="/"
               className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/30 px-3 py-1.5 text-xs font-semibold text-white/85 backdrop-blur-sm transition hover:border-brand-cyan hover:text-white"
             >
               ← Início
             </Link>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Link
                 href={`/alojamentos/${property.slug}/reserva`}
                 className="inline-flex items-center gap-1.5 rounded-full bg-brand-cyan/95 px-3.5 py-1.5 text-xs font-semibold text-brand-navy shadow-[0_10px_30px_-8px_rgba(0,181,226,0.6)] transition hover:opacity-90"
@@ -99,9 +99,9 @@ export default async function PropertyPage({
           </div>
         </div>
 
-        <div className="absolute inset-x-0 bottom-0 px-6 pb-6 sm:px-10 sm:pb-8">
+        <div className="absolute inset-x-0 bottom-0 px-4 pb-5 sm:px-10 sm:pb-8">
           <div className="mx-auto w-full max-w-6xl">
-            <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+            <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-4xl">
               {property.name}
             </h1>
             <p className="mt-1.5 max-w-2xl text-sm text-white/75 sm:text-base">
@@ -111,7 +111,7 @@ export default async function PropertyPage({
         </div>
       </section>
 
-      <main className="mx-auto w-full max-w-6xl px-6 py-10 sm:px-10 sm:py-12">
+      <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-10 sm:py-12">
         <section>
           <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-white/45">
             Dashboard

@@ -43,6 +43,7 @@ export function OverviewTiles({
         accent={totals.profit >= 0 ? "green" : "red"}
         emphasis
         delta={previous ? totals.profit - previous.profit : undefined}
+        spanFullOnMobile
       />
     </div>
   );
@@ -55,6 +56,7 @@ function Tile({
   emphasis,
   delta,
   deltaInverted,
+  spanFullOnMobile,
 }: {
   label: string;
   value: string;
@@ -63,6 +65,8 @@ function Tile({
   delta?: number;
   /** If true, positive delta is bad (e.g. expenses going up). */
   deltaInverted?: boolean;
+  /** Em mobile (2-cols grid) este tile estica para ocupar a linha toda. */
+  spanFullOnMobile?: boolean;
 }) {
   const accentClass =
     accent === "cyan"
@@ -89,7 +93,7 @@ function Tile({
     <div
       className={`rounded-2xl border bg-white/[0.03] p-4 backdrop-blur-md ${
         emphasis ? "border-white/20 sm:col-span-1" : "border-white/10"
-      }`}
+      } ${spanFullOnMobile ? "col-span-2 sm:col-span-1" : ""}`}
     >
       <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
         {label}
