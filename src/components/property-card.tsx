@@ -6,20 +6,30 @@ import { ddmmyyyy } from "@/lib/dates";
 export function PropertyCard({
   property,
   hasData,
+  monthLabel,
   monthRevenue,
+  monthExpenses,
   monthProfit,
+  monthProfitPositive,
+  monthLavandariaKg,
   ytdRevenue,
   ytdProfit,
+  ytdProfitPositive,
   reservasYtd,
   lastActivity,
   year,
 }: {
   property: Property;
   hasData: boolean;
+  monthLabel: string;
   monthRevenue: string;
+  monthExpenses: string;
   monthProfit: string;
+  monthProfitPositive: boolean;
+  monthLavandariaKg: string;
   ytdRevenue: string;
   ytdProfit: string;
+  ytdProfitPositive: boolean;
   reservasYtd: number;
   lastActivity?: string;
   year: string;
@@ -29,7 +39,6 @@ export function PropertyCard({
       href={`/alojamentos/${property.slug}`}
       className="group relative flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] transition hover:-translate-y-0.5 hover:border-brand-cyan/50 hover:bg-white/[0.05]"
     >
-      {/* Photo — smaller than before so the card data takes priority. */}
       <div className="relative h-36 w-full overflow-hidden sm:h-44">
         <Image
           src={property.photo}
@@ -61,24 +70,56 @@ export function PropertyCard({
           )}
         </div>
 
-        {/* Mês actual — 2 mini KPIs */}
-        <div className="grid grid-cols-2 gap-2">
-          <Mini label="Ganhos / mês" value={hasData ? monthRevenue : "—"} accent="cyan" />
-          <Mini label="Lucro / mês" value={hasData ? monthProfit : "—"} />
-        </div>
+        {/* Mês actual — 4 KPIs in a 2×2 grid, with the colour-coding Andre
+            asked for: ganhos verde, custos vermelho, lucro segue o sinal. */}
+        <section>
+          <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-white/45">
+            {monthLabel}
+          </p>
+          <div className="mt-1.5 grid grid-cols-2 gap-2">
+            <Mini label="Ganhos" value={hasData ? monthRevenue : "—"} tone="green" />
+            <Mini label="Custos" value={hasData ? monthExpenses : "—"} tone="red" />
+            <Mini
+              label="Lucro"
+              value={hasData ? monthProfit : "—"}
+              tone={hasData ? (monthProfitPositive ? "green" : "red") : "neutral"}
+            />
+            <Mini
+              label="Lavandaria"
+              value={hasData ? monthLavandariaKg : "—"}
+              tone="neutral"
+            />
+          </div>
+        </section>
 
-        {/* YTD strip */}
-        <div className="grid grid-cols-3 gap-2 rounded-xl border border-white/10 bg-white/[0.025] p-2.5">
-          <YtdMini label={`Ganhos ${year}`} value={hasData ? ytdRevenue : "—"} accent="cyan" />
-          <YtdMini label={`Lucro ${year}`} value={hasData ? ytdProfit : "—"} />
-          <YtdMini label="Reservas" value={hasData ? String(reservasYtd) : "—"} />
-        </div>
+        {/* YTD strip — same colour rules. */}
+        <section>
+          <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-white/45">
+            {year} · YTD
+          </p>
+          <div className="mt-1.5 grid grid-cols-3 gap-2 rounded-xl border border-white/10 bg-white/[0.025] p-2.5">
+            <YtdMini label="Ganhos" value={hasData ? ytdRevenue : "—"} tone="green" />
+            <YtdMini
+              label="Lucro"
+              value={hasData ? ytdProfit : "—"}
+              tone={hasData ? (ytdProfitPositive ? "green" : "red") : "neutral"}
+            />
+            <YtdMini
+              label="Reservas"
+              value={hasData ? String(reservasYtd) : "—"}
+              tone="neutral"
+            />
+          </div>
+        </section>
 
         <div className="flex items-center justify-between pt-1 text-xs">
           <span className="text-white/45 transition group-hover:text-brand-cyan">
             Abrir página
           </span>
-          <span aria-hidden className="text-white/45 transition group-hover:text-brand-cyan group-hover:translate-x-0.5">
+          <span
+            aria-hidden
+            className="text-white/45 transition group-hover:translate-x-0.5 group-hover:text-brand-cyan"
+          >
             →
           </span>
         </div>
@@ -87,14 +128,24 @@ export function PropertyCard({
   );
 }
 
+type Tone = "green" | "red" | "neutral";
+
+function toneClass(tone: Tone): string {
+  return tone === "green"
+    ? "text-emerald-300"
+    : tone === "red"
+      ? "text-rose-300"
+      : "text-white";
+}
+
 function Mini({
   label,
   value,
-  accent,
+  tone,
 }: {
   label: string;
   value: string;
-  accent?: "cyan";
+  tone: Tone;
 }) {
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.04] p-2.5">
@@ -102,9 +153,7 @@ function Mini({
         {label}
       </p>
       <p
-        className={`mt-1 text-sm font-semibold tracking-tight tabular-nums ${
-          accent === "cyan" ? "text-brand-cyan" : "text-white"
-        }`}
+        className={`mt-1 truncate text-sm font-semibold tracking-tight tabular-nums ${toneClass(tone)}`}
       >
         {value}
       </p>
@@ -115,11 +164,11 @@ function Mini({
 function YtdMini({
   label,
   value,
-  accent,
+  tone,
 }: {
   label: string;
   value: string;
-  accent?: "cyan";
+  tone: Tone;
 }) {
   return (
     <div className="min-w-0">
@@ -127,9 +176,7 @@ function YtdMini({
         {label}
       </p>
       <p
-        className={`mt-0.5 truncate text-xs font-semibold tabular-nums ${
-          accent === "cyan" ? "text-brand-cyan" : "text-white/85"
-        }`}
+        className={`mt-0.5 truncate text-xs font-semibold tabular-nums ${toneClass(tone)}`}
       >
         {value}
       </p>
