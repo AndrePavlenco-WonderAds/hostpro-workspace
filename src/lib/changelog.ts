@@ -15,6 +15,18 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.8.0",
+    date: "2026-06-06",
+    title: "Home agora é o dashboard — KPIs do mês + YTD + cards enriquecidos",
+    highlights: [
+      "**📊 Home deixou de ser uma vitrina e passou a ser um dashboard.** Antes a `/` mostrava só logo + claim + 3 cards de alojamento com 2 mini KPIs (Ganhos/Profit do mês) e um botão *Visão Geral* — para ver qualquer número agregado tinhas de carregar no botão. Agora a home abre directamente com duas bandas de KPIs: **mês actual** (Ganhos · Custos · Lucro · Margem, cada um com delta vs mês anterior) e **acumulado YTD** (Ganhos · Custos · Lucro · Margem + contagem de reservas). Os números aparecem antes do scroll, sem precisar de navegar para `/admin`.",
+      "**🏠 Cards dos alojamentos enriquecidos.** Cada card passou a mostrar 5 KPIs em vez de 2: Ganhos/mês · Lucro/mês na fila principal, mais uma strip YTD (Ganhos · Lucro · Reservas) no fundo. A foto encolheu (`h-36 sm:h-44` em vez de `h-48 sm:h-56`) para libertar espaço para os dados, e há uma linha *Última actividade · DD/MM/YYYY* por baixo do nome para mostrar quão fresca está a propriedade. O chip *Sem dados* agora aparece sobre a foto (canto superior direito) em vez de partilhar espaço com *Abrir página*.",
+      "**📱 Optimização mobile profissional.** Bandas de KPIs em `grid-cols-2` em mobile e `lg:grid-cols-4` em desktop — cada tile com `tabular-nums` para os números alinharem na vertical. Cards de alojamento em `grid-cols-1` mobile, `sm:grid-cols-2`, `lg:grid-cols-3` (antes saltava de 1 para 2 só em `sm:` sem nunca chegar a 3 colunas, deixando dois cards solitários numa terceira linha em ecrãs largos). Header da home compactado (`py-6` mobile, `py-10` desktop) para os KPIs aparecerem acima da dobra.",
+      "**⚡ Uma única leitura de dados em vez de N+1.** O page.tsx antigo fazia `Promise.all(PROPERTIES.map(p => getEntries(p.slug)))` — 3 leituras paralelas mas independentes do mesmo blob. Trocado por uma única chamada a `getAllEntries()` seguida de `filter` local por slug. Resultado: 1 fetch ao Blob em vez de 3, e os agregados YTD/mês ficam triviais de calcular sobre o conjunto completo.",
+      "**🎨 Background da home polido.** Hero photo (`/hero-living-room.jpg`) aumentado de `blur-lg opacity-55` para `blur-2xl opacity-30` + overlay navy mais escuro (`from-brand-navy-dark/75 via-brand-navy-dark/90 to-brand-navy-dark`). Os tiles têm `bg-white/[0.04]` (era `0.025`) — mais contraste contra o fundo escurecido, números legíveis sem cansar.",
+    ],
+  },
+  {
     version: "0.7.0",
     date: "2026-06-04",
     title: "App optimizada para mobile — adeus scroll preso e overflows",
