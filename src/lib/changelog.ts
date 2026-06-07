@@ -15,6 +15,16 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.8.2",
+    date: "2026-06-07",
+    title: "Import: SE5 + SE2 entradas Jan→Jun 2026 (Booking.com + Airbnb)",
+    highlights: [
+      "**📥 42 entradas importadas para o blob.** Sweet Escape · 5º recebeu 13 entradas (11 Booking + 2 Airbnb) e Sweet Escape · 2º recebeu 29 entradas (22 Booking + 7 Airbnb) — todas com payout entre Janeiro e Junho de 2026. O ficheiro `scripts/import-bookings-2026.mjs` é o registo auditável de cada reserva (booking number, hóspede, valores) e é idempotente: corre-se de novo e não duplica nada (skip por `id`).",
+      "**📒 Convenção mantida igual à seed da One For One House.** `amount` = guest gross (Booking `Amount` · Airbnb `Gross earnings`), `iva` = `round(amount × 0.06, 2)` (Andre trata o gross como base tributável e adiciona 6% por cima), `date` = data do payout, `stayWindow` = `DD/MM-DD/MM`, `person` = André, `recebido`/`noBanco` = true (todos os payouts já caíram), `inIvaVault` = false (Andre alterna no fecho trimestral). Uma linha de ajuste da Booking (Alejandra Refoyo, May 11, Amount=0, Net=-9.40) foi propositadamente saltada porque não representa receita.",
+      "**🧾 Como correr de novo se algo der errado.** `cd hostpro-workspace && node --env-file=.env.local scripts/import-bookings-2026.mjs` — o script lê o blob actual, faz `Set<id>` dos existentes, e só insere o que falta. Saída inclui breakdown por propriedade para verificação rápida.",
+    ],
+  },
+  {
     version: "0.8.1",
     date: "2026-06-07",
     title: "Pagamento a funcionário · Limpeza + tarifa T2/T3 pré-preenchidas",
