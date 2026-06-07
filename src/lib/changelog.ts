@@ -15,6 +15,16 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.8.3",
+    date: "2026-06-07",
+    title: "Import: custos + funcionário Abril e Maio 2026 (SE2, SE5, OFO)",
+    highlights: [
+      "**📥 27 custos importados a partir do Google Sheets.** As colunas *Despesas* + *Funcionário* dos meses de Abril e Maio (screenshots) ficaram registados no blob: SE2 ganhou 15 entradas (€613,04), SE5 ganhou 11 entradas (€305,90), OFO ganhou 1 entrada (€35,00 da limpeza S.J.Estoril 23/04 que não estava na seed). `scripts/import-custos-abr-mai-2026.mjs` é idempotente — corre-se de novo e não duplica.",
+      "**🧠 Regras de mapeamento aplicadas (documentadas no script):** descrições genéricas como *Chinês · Tinta · Lavandaria · Compras Continente · Toalhas · Tecnico Internet · Aguas Maio Cash* sem indicação de AL → **SE2 por defeito** (instrução do Andre para Abril); *T2 2º e 5º* (€50) → split €25 SE2 + €25 SE5; *t2 elbia 5º-8e11* (€50) → split em duas limpezas SE5 (08/04 e 11/04, porque a descrição menciona literalmente as duas datas); *Agua dos T2s* (€61,80) → split €30,90 SE2 + €30,90 SE5; *S.J.Estoril* → OFO (não SE2/SE5); *Mãe* → person `Lilia`; *Mãe/Andre* → `André`.",
+      "**🧺 Lavandaria como despesa regular, não kind=lavandaria.** A linha *09/04 €207,50 Lavandaria* foi registada como `kind: \"despesa\"` (com valor em €) e não como `kind: \"lavandaria\"` (que é só kg de roupa). O Google Sheets do Andre só tem coluna de € na secção Despesas — não há peso. Se mais tarde quiseres separar valor da lavandaria por mês, fazemos uma despesa-categoria dedicada.",
+    ],
+  },
+  {
     version: "0.8.2",
     date: "2026-06-07",
     title: "Import: SE5 + SE2 entradas Jan→Jun 2026 (Booking.com + Airbnb)",
