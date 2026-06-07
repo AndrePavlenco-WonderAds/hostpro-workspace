@@ -13,7 +13,7 @@
 //     received date.
 
 import type { PropertySlug } from "@/lib/properties";
-import { inferProperty } from "../listing-map";
+import { classifyListing, type ListingClassification } from "../listing-map";
 
 // ---------- shared helpers ----------
 
@@ -61,6 +61,8 @@ export type AirbnbConfirmation = {
   stayWindow: string;              // "DD/MM-DD/MM"
   roomId?: string;
   listingText: string;
+  classification: ListingClassification;
+  /** Convenience — the slug when classification.kind === "property". */
   property: PropertySlug | null;
   /** Total guest paid (incl. cleaning + service fee). Closest to what the
    *  pnl entries use as `amount` for the OFO / SE imports. */
@@ -136,6 +138,7 @@ export function parseAirbnbConfirmation(
   const earnMatch = body.match(/You earn\s*€?\s*([\d.,]+)/i);
   const cleaningMatch = body.match(/Cleaning fee\s*€?\s*([\d.,]+)/i);
 
+  const classification = classifyListing({ roomId, listingText });
   return {
     confirmationCode,
     guestName,
@@ -144,7 +147,8 @@ export function parseAirbnbConfirmation(
     stayWindow: stayWindow(checkin, checkout),
     roomId,
     listingText,
-    property: inferProperty({ roomId, listingText }),
+    classification,
+    property: classification.kind === "property" ? classification.slug : null,
     guestTotal: totalMatch ? parseEuro(totalMatch[1]) ?? undefined : undefined,
     hostPayout: earnMatch ? parseEuro(earnMatch[1]) ?? undefined : undefined,
     cleaningFee: cleaningMatch ? parseEuro(cleaningMatch[1]) ?? undefined : undefined,
@@ -159,6 +163,7 @@ export type AirbnbPayout = {
   confirmationCode?: string;
   roomId?: string;
   listingText?: string;
+  classification?: ListingClassification;
   property?: PropertySlug | null;
 };
 
@@ -188,12 +193,14 @@ export function parseAirbnbPayout(
     if (iso) payoutDate = iso;
   }
 
+  const classification = classifyListing({ roomId, listingText });
   return {
     amount,
     payoutDate,
     confirmationCode: codeMatch?.[1],
     roomId,
     listingText: listingText || undefined,
-    property: inferProperty({ roomId, listingText }),
+    classification,
+    property: classification.kind === "property" ? classification.slug : null,
   };
 }

@@ -49,6 +49,7 @@ export default async function EmailImportLogPage() {
     "created": 0,
     "updated": 0,
     "skipped": 0,
+    "ignored": 0,
     "unknown-listing": 0,
     "parse-failed": 0,
     "error": 0,
@@ -94,11 +95,12 @@ export default async function EmailImportLogPage() {
           </div>
         </div>
 
-        <section className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+        <section className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
           <Stat label="Dry-run" value={counts["dry-run"]} tone="cyan" />
           <Stat label="Criadas" value={counts.created} tone="green" />
           <Stat label="Actualizadas" value={counts.updated} tone="green" />
           <Stat label="Skipped" value={counts.skipped} tone="neutral" />
+          <Stat label="Ignorado" value={counts.ignored} tone="neutral" />
           <Stat label="Listing ?" value={counts["unknown-listing"]} tone="amber" />
           <Stat label="Parse ✗" value={counts["parse-failed"]} tone="red" />
           <Stat label="Erro" value={counts.error} tone="red" />
@@ -161,7 +163,9 @@ function Row({ entry }: { entry: ImportLogEntry }) {
           ? "border-amber-300/30 bg-amber-300/[0.04]"
           : entry.status === "parse-failed" || entry.status === "error"
             ? "border-rose-400/30 bg-rose-400/[0.04]"
-            : "border-white/10 bg-white/[0.025]";
+            : entry.status === "skipped" || entry.status === "ignored"
+              ? "border-white/10 bg-white/[0.025] opacity-60"
+              : "border-white/10 bg-white/[0.025]";
   const ts = new Date(entry.ts);
   const tsLabel = ts.toLocaleString("en-GB", {
     day: "2-digit",
@@ -202,6 +206,7 @@ function StatusPill({ status }: { status: ImportLogStatus }) {
     created: { label: "CRIADA", cls: "bg-emerald-300/20 text-emerald-200 ring-emerald-300/30" },
     updated: { label: "ACTUALIZADA", cls: "bg-emerald-300/20 text-emerald-200 ring-emerald-300/30" },
     skipped: { label: "SKIPPED", cls: "bg-white/10 text-white/60 ring-white/20" },
+    ignored: { label: "IGNORADO", cls: "bg-white/10 text-white/60 ring-white/20" },
     "unknown-listing": { label: "LISTING ?", cls: "bg-amber-300/20 text-amber-100 ring-amber-300/30" },
     "parse-failed": { label: "PARSE ✗", cls: "bg-rose-400/20 text-rose-100 ring-rose-400/30" },
     error: { label: "ERRO", cls: "bg-rose-500/25 text-rose-100 ring-rose-500/40" },

@@ -15,6 +15,17 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.9.3",
+    date: "2026-06-07",
+    title: "Listing ignorado · 1 row por messageId · stats estáveis",
+    highlights: [
+      "**🙈 Listing `619354998862049574` (\"Apartamento perto da praia do Estoril, Cascais\") passou a IGNORADO.** Andre confirmou que não pertence à HostPro mas cai nesta inbox por settings legados. O cron agora classifica esse room id como `ignored` (em vez de unknown), aplica o label `hostpro/processado`, e regista com status novo `IGNORADO` (badge cinzento subtil, opacity 60%). Os 3 emails dessa propriedade saíram do bucket *Listing ?*.",
+      "**🔁 1 row por Gmail messageId.** O motivo dos stats oscilarem entre refreshes era que cada press do *↻ Retry todos* adicionava uma NOVA row de log por email reprocessado (em cima das antigas). `appendImportLog` agora dropa qualquer row anterior do mesmo `messageId` antes de inserir a nova — o log é sempre 1 row por Gmail message, latest attempt wins. Stats deixam de bouncar.",
+      "**🏷️ Listing classification refactorada.** `inferProperty()` foi substituída por `classifyListing()` que devolve `{kind: 'property' | 'ignored' | 'unknown'}`. Permite distinguir *desconhecido* (precisa de input do Andre) de *intencionalmente fora do scope*. `inferProperty()` mantém-se como compat shim.",
+      "**📊 Stat tile *Ignorado*** adicionado, grid passou para `lg:grid-cols-8`.",
+    ],
+  },
+  {
     version: "0.9.2",
     date: "2026-06-07",
     title: "Parser Airbnb v2 — HTML body, room-id mapping, dedupe by stayWindow",

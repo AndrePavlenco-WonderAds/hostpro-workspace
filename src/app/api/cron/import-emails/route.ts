@@ -186,6 +186,23 @@ async function processMessage(
     return { status: "parse-failed" };
   }
 
+  // Listing classification — distinguish (a) maps to a HostPro AL,
+  // (b) intentionally NOT a HostPro AL (e.g. brother's apartment that
+  // also ends up in this inbox), (c) something new we haven't mapped yet.
+  const classification = parsed.classification;
+  if (classification?.kind === "ignored") {
+    await appendImportLog({
+      messageId: msg.id,
+      emailSubject: subject,
+      emailFrom: from,
+      emailDate: receivedDate,
+      kind,
+      status: "ignored",
+      parsed,
+    });
+    return { status: "ignored" };
+  }
+
   const property = parsed.property ?? null;
   if (!property) {
     await appendImportLog({
