@@ -15,6 +15,15 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.9.5",
+    date: "2026-06-07",
+    title: "Parser payouts SE2/SE5 — roomId em parens (não em /rooms/)",
+    highlights: [
+      "**🐛 6 payouts continuavam UNKNOWN-LISTING.** Os emails de payout do Airbnb usam um layout completamente diferente das confirmações — não têm URL `/rooms/{id}` no body, mas trazem o roomId em **parênteses** depois do título: *\"2BR Apartment · Near Estoril Beach & Cascais (1638360824534789511)\"*. Os payouts OFO já bateram por sorte (o substring match \"3BR\" funcionou no fallback), mas SE2 e SE5 caíam no nada.",
+      "**✅ Parser de payout: 2 estratégias para roomId.** Tenta primeiro `/rooms/{id}` (formato confirmação), depois `(\\d{15,20})` em parens (formato payout). E para o título: primeiro a linha antes de `(roomId)`, depois fallback ao padrão `... Apartment` antes de newline. Verificado: John Elvis €309,27 payout → roomId `1638360824534789511` → SE2 ✓.",
+    ],
+  },
+  {
     version: "0.9.4",
     date: "2026-06-07",
     title: "Cron 10× mais rápido + parser room-id e título arranjados",
