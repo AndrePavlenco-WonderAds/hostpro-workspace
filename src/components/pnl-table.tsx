@@ -22,6 +22,8 @@ import { useRouter } from "next/navigation";
 import { ddmmyyyy } from "@/lib/dates";
 import { eur } from "@/lib/money";
 import { addEntryAction, updateEntryAction } from "@/lib/pnl-actions";
+import { BILLING } from "@/lib/property-billing";
+import type { PropertySlug } from "@/lib/properties";
 import {
   PEOPLE,
   type DespesaEntry,
@@ -1063,6 +1065,17 @@ function FuncionarioSection({
     mode.kind === "editing" ? rows.find((r) => r.id === mode.id) : undefined;
   const today = defaultDate ?? new Date().toISOString().slice(0, 10);
 
+  // Cleaning is by far the most common funcionário entry (one per turn-over)
+  // and the rate per property is fixed: T2 = 25€, T3 (One For One) = 35€.
+  // Pre-fill description + amount on `Novo pagamento` so Andre only confirms
+  // the date and *Registar* — editing still respects whatever was saved.
+  const billing = BILLING[property as PropertySlug] as
+    | (typeof BILLING)[PropertySlug]
+    | undefined;
+  const defaultDescription = editing?.description ?? "Limpeza";
+  const defaultAmount =
+    editing?.amount ?? billing?.defaultCleaningPaymentEur ?? undefined;
+
   const formTitle =
     mode.kind === "editing" && editing
       ? `Editar pagamento · ${ddmmyyyy(editing.date)}`
@@ -1089,7 +1102,7 @@ function FuncionarioSection({
             name="description"
             required
             placeholder="ex: Limpeza"
-            defaultValue={editing?.description ?? ""}
+            defaultValue={defaultDescription}
             className={INPUT_CLASS}
           />
         </Field>
@@ -1103,7 +1116,7 @@ function FuncionarioSection({
             step="0.01"
             min="0"
             required
-            defaultValue={editing?.amount}
+            defaultValue={defaultAmount}
             className={INPUT_CLASS}
           />
         </Field>

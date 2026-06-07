@@ -15,6 +15,16 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.8.1",
+    date: "2026-06-07",
+    title: "Pagamento a funcionário · Limpeza + tarifa T2/T3 pré-preenchidas",
+    highlights: [
+      "**🧹 *Novo pagamento a funcionário* já abre pronto a registar.** Limpeza é a entrada de funcionário mais comum (uma por turn-over) e a tarifa é fixa por tipologia. O form passou a abrir com **Descrição: `Limpeza`** e **Valor (€)** já preenchido conforme a propriedade — **25 €** para os T2 (Sweet Escape · 2º e Sweet Escape · 5º) e **35 €** para o T3 (One For One House). Na maioria dos turn-overs Andre só precisa de confirmar a data e carregar em *Registar*.",
+      "**📒 Novo campo `defaultCleaningPaymentEur` em `BILLING`.** A tarifa de limpeza por propriedade vive no mesmo `Record<PropertySlug, PropertyBilling>` que já tinha as moradas e os defaults da reserva (`src/lib/property-billing.ts`). Single source of truth — quando a tarifa subir, muda-se aqui e o form, a reserva e o /admin (se vier a usar isto) ficam todos coerentes.",
+      "**✏️ Editar pagamento continua a respeitar o histórico.** Os defaults só se aplicam em `Novo pagamento` — o ramo *Editar* continua a usar `editing.description` e `editing.amount` para não reescrever silenciosamente uma entrada antiga.",
+    ],
+  },
+  {
     version: "0.8.0",
     date: "2026-06-06",
     title: "Home: KPIs migrados para dentro dos cards de alojamento",

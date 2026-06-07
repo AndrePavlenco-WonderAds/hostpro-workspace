@@ -14,6 +14,10 @@ export type PropertyBilling = {
   defaultNightlyRate: number;
   /** Default cleaning fee in € — 0 means render the dash like the reference PDF. */
   defaultCleaningFee: number;
+  /** Standard payment to the cleaner per turn-over, in €. Used to pre-fill
+   *  the *Novo pagamento a funcionário* form on the property page. T2 = 25€,
+   *  T3 (One For One House) = 35€. */
+  defaultCleaningPaymentEur: number;
 };
 
 export const BILLING: Record<PropertySlug, PropertyBilling> = {
@@ -27,6 +31,7 @@ export const BILLING: Record<PropertySlug, PropertyBilling> = {
     ],
     defaultNightlyRate: 130,
     defaultCleaningFee: 0,
+    defaultCleaningPaymentEur: 35,
   },
   "sweet-escape-2": {
     addressLines: [
@@ -37,6 +42,7 @@ export const BILLING: Record<PropertySlug, PropertyBilling> = {
     ],
     defaultNightlyRate: 100,
     defaultCleaningFee: 0,
+    defaultCleaningPaymentEur: 25,
   },
   "sweet-escape-5": {
     addressLines: [
@@ -47,6 +53,7 @@ export const BILLING: Record<PropertySlug, PropertyBilling> = {
     ],
     defaultNightlyRate: 100,
     defaultCleaningFee: 0,
+    defaultCleaningPaymentEur: 25,
   },
 };
 
