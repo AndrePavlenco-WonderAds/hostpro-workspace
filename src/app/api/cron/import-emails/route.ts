@@ -1,14 +1,15 @@
-// Vercel Cron handler — runs every 30 minutes (see vercel.json).
+// Vercel Cron handler — runs once a day at 06:00 UTC (Hobby plan limit;
+// manual trigger via the button in /admin/email-import-log for on-demand).
 //
 // For each labelled-but-not-processed message in Gmail:
 //   1. fetch full message
-//   2. run the matching parser
-//   3. (DRY-RUN MODE) only write to the import log; do NOT touch pnl blob
-//   4. apply Gmail label `hostpro/processado` or `hostpro/falhou`
-//
-// Live mode kicks in once we set IMPORT_LIVE=true in the env. Until then the
-// operator reviews everything in /admin/email-import-log and only flips the
-// switch when the parsers are catching everything cleanly.
+//   2. run the matching parser (prefers HTML-stripped body; Airbnb plain
+//      body is tabular and unparseable)
+//   3. dedupe check — if the property + stayWindow already exists in the
+//      pnl blob, skip with status `skipped-duplicate` so we don't double
+//      up against the historical CSV imports
+//   4. (DRY-RUN MODE) only write to the import log; do NOT touch pnl blob
+//   5. apply Gmail label `hostpro/processado` or `hostpro/falhou`
 
 import { NextResponse } from "next/server";
 import {
@@ -29,7 +30,9 @@ import {
   appendImportLog,
   hasMessageBeenLogged,
   type ImportLogEntry,
+  type ImportLogStatus,
 } from "@/lib/gmail/import-log";
+import { getAllEntries } from "@/lib/pnl-store";
 
 const LABELS = {
   airbnbConf: "hostpro/airbnb-conf",
@@ -38,9 +41,6 @@ const LABELS = {
   falhou: "hostpro/falhou",
 } as const;
 
-/** Vercel sets `Authorization: Bearer <CRON_SECRET>` automatically when a
- *  Cron job invokes a route, provided we've defined CRON_SECRET in env.
- *  Reject anything else so the endpoint isn't a public Gmail importer. */
 function authorized(req: Request): boolean {
   const auth = req.headers.get("authorization");
   const expected = process.env.CRON_SECRET;
@@ -61,12 +61,26 @@ export async function GET(req: Request) {
     );
   }
 
+  const url = new URL(req.url);
+  // `?retry=true` reprocesses messages that the previous parser version
+  // marked `hostpro/falhou`. Used by the manual trigger button so we can
+  // iterate on the regex without manually clearing Gmail labels.
+  const retry = url.searchParams.get("retry") === "true";
+
   const dryRun = process.env.IMPORT_LIVE !== "true";
   const gmail = new GmailClient(refreshToken);
 
-  // Materialise the label ids we'll add/remove. Read-only call is fine if
-  // the labels already exist; if not (Andre hasn't created the filters yet),
-  // we still want to be able to mark messages processed afterwards.
+  // Snapshot the existing pnl entries once per cron run for fast dedupe.
+  // Key by `${property}|${stayWindow}` — same shape both the CSV imports
+  // and this cron would produce for an entrada.
+  const existingEntries = await getAllEntries();
+  const existingByKey = new Set<string>();
+  for (const e of existingEntries) {
+    if (e.kind !== "entrada") continue;
+    if (!e.stayWindow) continue;
+    existingByKey.add(`${e.property}|${e.stayWindow}`);
+  }
+
   const processadoId = await gmail.ensureLabel(LABELS.processado);
   const falhouId = await gmail.ensureLabel(LABELS.falhou);
 
@@ -75,6 +89,7 @@ export async function GET(req: Request) {
     processed: 0,
     failed: 0,
     skipped: 0,
+    skippedDuplicate: 0,
     dryRun,
   };
 
@@ -82,27 +97,37 @@ export async function GET(req: Request) {
     [LABELS.airbnbConf, "airbnb-confirmation"],
     [LABELS.airbnbPayout, "airbnb-payout"],
   ] as const) {
-    const q = `label:${labelName} -label:${LABELS.processado} -label:${LABELS.falhou}`;
-    const messages = await gmail.listMessages(q, 25);
+    // In retry mode we ignore both the processado and falhou guards so
+    // every labelled message gets re-parsed against the latest regex.
+    const q = retry
+      ? `label:${labelName}`
+      : `label:${labelName} -label:${LABELS.processado} -label:${LABELS.falhou}`;
+    const messages = await gmail.listMessages(q, 50);
     results.scanned += messages.length;
 
     for (const ref of messages) {
       try {
-        // Belt-and-suspenders idempotency check.
-        if (await hasMessageBeenLogged(ref.id)) {
+        // Idempotency guard — but only when we're NOT in retry mode (in
+        // retry mode the operator explicitly wants every labelled message
+        // reprocessed against the latest regex).
+        if (!retry && (await hasMessageBeenLogged(ref.id))) {
           results.skipped++;
           await gmail.modifyMessage(ref.id, [processadoId], []);
           continue;
         }
 
         const msg = await gmail.getMessage(ref.id);
-        const outcome = await processMessage(msg, kind, dryRun);
+        const outcome = await processMessage(msg, kind, dryRun, existingByKey);
         if (outcome.status === "parse-failed") {
-          await gmail.modifyMessage(ref.id, [falhouId], []);
+          // Add falhou + clear processado so the next non-retry run skips it.
+          await gmail.modifyMessage(ref.id, [falhouId], [processadoId]);
           results.failed++;
         } else {
-          await gmail.modifyMessage(ref.id, [processadoId], []);
-          results.processed++;
+          // Add processado + clear falhou so a parser that now succeeds
+          // doesn't leave the message in a misleading state.
+          await gmail.modifyMessage(ref.id, [processadoId], [falhouId]);
+          if (outcome.status === "skipped") results.skippedDuplicate++;
+          else results.processed++;
         }
       } catch (e) {
         const err = e as Error;
@@ -129,18 +154,24 @@ async function processMessage(
   msg: GmailMessage,
   kind: ImportLogEntry["kind"],
   dryRun: boolean,
-): Promise<{ status: ImportLogEntry["status"] }> {
+  existingByKey: Set<string>,
+): Promise<{ status: ImportLogStatus }> {
   const subject = getHeader(msg, "Subject") ?? "";
   const from = getHeader(msg, "From") ?? "";
   const receivedDate = new Date(Number(msg.internalDate)).toISOString();
+
+  // Prefer the HTML-stripped body. The Airbnb plain body is tabular and
+  // can't be parsed without a column-aware tokenizer.
   const html = extractHtmlBody(msg);
-  const plain = extractPlainBody(msg) || htmlToText(html);
+  const plain = extractPlainBody(msg);
+  const body = html ? htmlToText(html) : plain;
+  const emailYear = new Date(Number(msg.internalDate)).getUTCFullYear();
 
   let parsed: AirbnbConfirmation | AirbnbPayout | null = null;
   if (kind === "airbnb-confirmation") {
-    parsed = parseAirbnbConfirmation(subject, plain);
+    parsed = parseAirbnbConfirmation(subject, body, emailYear);
   } else if (kind === "airbnb-payout") {
-    parsed = parseAirbnbPayout(subject, plain, receivedDate.slice(0, 10));
+    parsed = parseAirbnbPayout(subject, body, receivedDate.slice(0, 10));
   }
 
   if (!parsed) {
@@ -155,10 +186,7 @@ async function processMessage(
     return { status: "parse-failed" };
   }
 
-  // Listing recognition — separate failure mode so Andre can fix the
-  // listing-map without re-running the parser.
-  const property =
-    "property" in parsed && parsed.property ? parsed.property : null;
+  const property = parsed.property ?? null;
   if (!property) {
     await appendImportLog({
       messageId: msg.id,
@@ -172,23 +200,25 @@ async function processMessage(
     return { status: "unknown-listing" };
   }
 
-  if (dryRun) {
+  // Dedupe against the historical CSV imports. We key by property +
+  // stayWindow because that's the same shape produced both by the CSV
+  // import scripts and by this parser.
+  const stayWindowVal =
+    "stayWindow" in parsed && parsed.stayWindow ? parsed.stayWindow : undefined;
+  if (stayWindowVal && existingByKey.has(`${property}|${stayWindowVal}`)) {
     await appendImportLog({
       messageId: msg.id,
       emailSubject: subject,
       emailFrom: from,
       emailDate: receivedDate,
       kind,
-      status: "dry-run",
+      status: "skipped",
       parsed,
     });
-    return { status: "dry-run" };
+    return { status: "skipped" };
   }
 
-  // TODO (live mode): wire `parsed` into pnl-store via addEntry/updateEntry.
-  // We deliberately leave this for a follow-up — after Andre has validated
-  // ~10 dry-run rows in /admin/email-import-log, the logic to upsert into
-  // the pnl blob is a 30-line change.
+  // Dry-run for both confirmations and payouts until Andre flips IMPORT_LIVE.
   await appendImportLog({
     messageId: msg.id,
     emailSubject: subject,

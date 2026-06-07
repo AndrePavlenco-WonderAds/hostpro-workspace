@@ -1,19 +1,22 @@
-// Parsers for the two Airbnb host emails we care about:
-//   - "Reservation confirmed - {Guest} arrives {Date}"
-//   - "We sent a payout of € {amount} EUR"
+// Parsers for the two Airbnb host emails we care about.
 //
-// Both parsers are defensive: they try several regex variants because Airbnb
-// has rotated their email templates multiple times over the years. Each
-// parser returns `null` when nothing matches — caller decides what to do
-// (label `falhou`, log, push notification).
+// Important findings from the real emails (2026-06-07):
+//   - The PLAIN body is laid out in TABULAR form ("Check-in    Checkout" on
+//     the same line, then "Wed, Apr 8    Wed, Apr 15" on the same line) →
+//     regex can't span across the columns. We use the HTML-stripped body
+//     instead, which is linearised.
+//   - The Airbnb room id in the URL (`/rooms/{id}?...`) is the most stable
+//     signal for property identification — far more reliable than the
+//     listing title (which Andre has rotated between EN and PT).
+//   - Subject for confirmations: "Reservation confirmed - {Guest Name}
+//     arrives {Month Day}"  (no year). Year inferred from the email's
+//     received date.
 
 import type { PropertySlug } from "@/lib/properties";
-import { inferPropertyFromListing } from "../listing-map";
+import { inferProperty } from "../listing-map";
 
 // ---------- shared helpers ----------
 
-/** "Aug 17, 2026" / "Aug 17" / "August 17, 2026" → ISO YYYY-MM-DD.
- *  Falls back to `null` if it can't make sense of the input. */
 export function parseEnglishDate(input: string, defaultYear?: number): string | null {
   const months: Record<string, number> = {
     jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6,
@@ -33,27 +36,15 @@ export function parseEnglishDate(input: string, defaultYear?: number): string | 
   return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
-/** "DD/MM/YYYY" / "MM/DD/YYYY" — Airbnb is US-locale → MM/DD/YYYY. */
-export function parseUsSlashDate(input: string): string | null {
-  const m = input.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (!m) return null;
-  const [, mm, dd, yyyy] = m;
-  return `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
-}
-
-/** "DD/MM-DD/MM" stay-window helper used everywhere in the app. */
+/** "DD/MM-DD/MM" stay-window — same format already used everywhere in pnl. */
 export function stayWindow(checkin: string, checkout: string): string {
-  // Both are ISO YYYY-MM-DD.
-  const [, , a] = checkin.split("-");
-  const [, mA] = checkin.split("-");
-  const [, , b] = checkout.split("-");
-  const [, mB] = checkout.split("-");
-  return `${a}/${mA}-${b}/${mB}`;
+  const [, mA, dA] = checkin.split("-");
+  const [, mB, dB] = checkout.split("-");
+  return `${dA}/${mA}-${dB}/${mB}`;
 }
 
-/** Euro amount → number. Handles "€ 364.70", "€364,70", "EUR 364.70", "364.70 EUR". */
 export function parseEuro(input: string): number | null {
-  const m = input.match(/([\d]+[.,]\d{2}|\d+)/);
+  const m = input.match(/(-?[\d]+[.,]\d{2}|-?\d+)/);
   if (!m) return null;
   const cleaned = m[1].replace(",", ".");
   const v = parseFloat(cleaned);
@@ -63,89 +54,100 @@ export function parseEuro(input: string): number | null {
 // ---------- "Reservation confirmed" ----------
 
 export type AirbnbConfirmation = {
-  confirmationCode: string;        // e.g. "HMQ825SCC8"
+  confirmationCode: string;
   guestName: string;
-  checkin: string;                 // ISO
-  checkout: string;                // ISO
-  property: PropertySlug | null;   // null when listing is unrecognised
-  listingText: string;             // raw listing text we inferred from
-  grossEarnings?: number;          // host-side gross (incl. cleaning, before HOST service fee)
+  checkin: string;                 // ISO YYYY-MM-DD
+  checkout: string;                // ISO YYYY-MM-DD
+  stayWindow: string;              // "DD/MM-DD/MM"
+  roomId?: string;
+  listingText: string;
+  property: PropertySlug | null;
+  /** Total guest paid (incl. cleaning + service fee). Closest to what the
+   *  pnl entries use as `amount` for the OFO / SE imports. */
+  guestTotal?: number;
   cleaningFee?: number;
-  serviceFee?: number;
-  payoutAmount?: number;
+  hostPayout?: number;             // what Airbnb actually transfers to host
 };
 
-/** Best-effort parser for the "Reservation confirmed" host email.
- *  `subject` and `body` should be plain-text (caller runs htmlToText). */
+/** Parser for the host-side confirmation email. `body` should be the HTML
+ *  body run through `htmlToText` (the plain body is tabular and unparseable). */
 export function parseAirbnbConfirmation(
   subject: string,
   body: string,
+  emailYear?: number,
 ): AirbnbConfirmation | null {
-  // 1. Confirmation code — "HM" followed by 8-10 alphanumeric chars.
-  //    Same prefix the Airbnb CSV uses (HMQ825SCC8, HMHAZPKMAT, etc.).
+  // 1. Confirmation code — "HM" + 8-10 alphanumeric.
   const codeMatch = body.match(/\b(HM[A-Z0-9]{8,10})\b/);
   if (!codeMatch) return null;
   const confirmationCode = codeMatch[1];
 
-  // 2. Guest name — try subject first ("Reservation confirmed - {Name} arrives ...").
-  let guestName = "";
-  const subjMatch = subject.match(/Reservation confirmed[\s\-—–]+(.+?)\s+arrives\b/i);
+  // 2. Guest name — strip "Reservation confirmed - " prefix and " arrives X" suffix.
+  let guestName = "—";
+  const subjMatch = subject.match(/Reservation confirmed\s*[-–—]\s*(.+?)\s+arrives\b/i);
   if (subjMatch) guestName = subjMatch[1].trim();
-  if (!guestName) {
-    // Fallback: body has "{Name} arrives"
-    const bodyMatch = body.match(/([A-Z][\w'’\-]+(?:\s+[A-Z][\w'’\-]+)+)\s+arrives\b/);
-    if (bodyMatch) guestName = bodyMatch[1].trim();
-  }
-  if (!guestName) guestName = "—";
 
-  // 3. Check-in / check-out. Airbnb templates show "Check-in" and "Checkout"
-  //    headings followed by a date like "Sun, Jun 5" or "June 5, 2026".
-  //    Year often missing → infer from email's "arrives" date in subject.
-  const arrivesYearMatch = subject.match(/(\d{4})\b/);
-  const fallbackYear = arrivesYearMatch ? parseInt(arrivesYearMatch[1], 10) : undefined;
+  // 3. Room id from any /rooms/{id} URL still present in the body. We strip
+  //    URLs in htmlToText (the `<a href=...>` markup is gone) but the bare
+  //    "rooms/619354998862049574" remains.
+  const roomMatch = body.match(/rooms\/(\d+)/);
+  const roomId = roomMatch?.[1];
 
-  const checkinRaw =
-    body.match(/Check[-\s]?in[\s:]*?([A-Z][a-z]+\.?\s+\d{1,2}(?:,\s*\d{4})?)/)?.[1] ??
-    body.match(/Check[-\s]?in[\s:]*?([A-Z][a-z]+,\s*[A-Z][a-z]+\.?\s+\d{1,2})/)?.[1];
-  const checkoutRaw =
-    body.match(/Check[-\s]?out[\s:]*?([A-Z][a-z]+\.?\s+\d{1,2}(?:,\s*\d{4})?)/)?.[1] ??
-    body.match(/Check[-\s]?out[\s:]*?([A-Z][a-z]+,\s*[A-Z][a-z]+\.?\s+\d{1,2})/)?.[1];
+  // 4. Listing title — first PT/EN apartment phrase before "Entire home/apt".
+  let listingText = "";
+  const titleMatch = body.match(
+    /([A-ZÀ-Ý][\w·.\s&\-\/áéíóúãõçâêô]{6,80}?Apartment[\w·.\s&\-\/áéíóúãõçâêô]{0,60}?|Apartamento[\w·.\s&\-\/áéíóúãõçâêô]{6,80}?Estoril[\w·.\s&\-\/áéíóúãõçâêô]{0,30}?)\s+Entire home\/apt/i,
+  );
+  if (titleMatch) listingText = titleMatch[1].replace(/\s+/g, " ").trim();
 
-  const checkin = checkinRaw ? parseEnglishDate(checkinRaw, fallbackYear) : null;
-  const checkout = checkoutRaw ? parseEnglishDate(checkoutRaw, fallbackYear) : null;
+  // 5. Check-in / Checkout. With htmlToText output the layout is:
+  //      Check-in
+  //      Wed, Apr 8
+  //      3:00 PM
+  //      Checkout
+  //      Wed, Apr 15
+  //      11:00 AM
+  //    so we look for the weekday-comma-month pattern after each header.
+  const ciMatch = body.match(
+    /Check[-\s]?in[\s\S]{0,80}?(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun),\s*([A-Z][a-z]+\.?\s+\d{1,2})/,
+  );
+  const coMatch = body.match(
+    /Checkout[\s\S]{0,80}?(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun),\s*([A-Z][a-z]+\.?\s+\d{1,2})/,
+  );
 
+  // Fallback — older templates may not include the weekday.
+  const ciFallback = !ciMatch
+    ? body.match(/Check[-\s]?in[\s\S]{0,80}?([A-Z][a-z]+\.?\s+\d{1,2}(?:,\s*\d{4})?)/)
+    : null;
+  const coFallback = !coMatch
+    ? body.match(/Checkout[\s\S]{0,80}?([A-Z][a-z]+\.?\s+\d{1,2}(?:,\s*\d{4})?)/)
+    : null;
+
+  const checkinRaw = ciMatch?.[1] ?? ciFallback?.[1];
+  const checkoutRaw = coMatch?.[1] ?? coFallback?.[1];
+  if (!checkinRaw || !checkoutRaw) return null;
+
+  const checkin = parseEnglishDate(checkinRaw, emailYear);
+  const checkout = parseEnglishDate(checkoutRaw, emailYear);
   if (!checkin || !checkout) return null;
 
-  // 4. Listing — appears near the top of the email, usually after the photo
-  //    block. We grab the first line that looks like a listing title.
-  //    Subjects of recent emails include the listing too: e.g.
-  //    "RE: Reservation for 2BR Estoril Apartment ... Jun 5 – 8".
-  let listingText = "";
-  const subjListing = subject.match(/Reservation for\s+(.+?)\s*(?:,\s*[A-Z][a-z]+|\d|$)/i);
-  if (subjListing) listingText = subjListing[1].trim();
-  if (!listingText) {
-    const bodyListing = body.match(/\b(\d?\s*BR\s+[A-Za-z][\w\s&·\/\-]+)\b/);
-    if (bodyListing) listingText = bodyListing[1].trim();
-  }
-  const property = listingText ? inferPropertyFromListing(listingText) : null;
-
-  // 5. Money — Airbnb breaks it as "Host payout" / "You earn" / "Total payout".
-  const payoutMatch = body.match(/(?:Host payout|You earn|Total payout|Payout)\D{0,12}€\s*([\d.,]+)/i);
-  const cleaningMatch = body.match(/Cleaning fee\D{0,8}€\s*([\d.,]+)/i);
-  const serviceMatch = body.match(/(?:Service fee|Host service fee)\D{0,8}€\s*([\d.,]+)/i);
-  const grossMatch = body.match(/(?:Gross earnings|Subtotal)\D{0,8}€\s*([\d.,]+)/i);
+  // 6. Money — "Total (EUR)" is guest-paid total, "You earn" is host payout.
+  //    Both currencies sometimes have a non-breaking space between "€" and digits.
+  const totalMatch = body.match(/Total \(EUR\)\s*€?\s*([\d.,]+)/i);
+  const earnMatch = body.match(/You earn\s*€?\s*([\d.,]+)/i);
+  const cleaningMatch = body.match(/Cleaning fee\s*€?\s*([\d.,]+)/i);
 
   return {
     confirmationCode,
     guestName,
     checkin,
     checkout,
-    property,
+    stayWindow: stayWindow(checkin, checkout),
+    roomId,
     listingText,
-    payoutAmount: payoutMatch ? parseEuro(payoutMatch[1]) ?? undefined : undefined,
+    property: inferProperty({ roomId, listingText }),
+    guestTotal: totalMatch ? parseEuro(totalMatch[1]) ?? undefined : undefined,
+    hostPayout: earnMatch ? parseEuro(earnMatch[1]) ?? undefined : undefined,
     cleaningFee: cleaningMatch ? parseEuro(cleaningMatch[1]) ?? undefined : undefined,
-    serviceFee: serviceMatch ? parseEuro(serviceMatch[1]) ?? undefined : undefined,
-    grossEarnings: grossMatch ? parseEuro(grossMatch[1]) ?? undefined : undefined,
   };
 }
 
@@ -153,8 +155,9 @@ export function parseAirbnbConfirmation(
 
 export type AirbnbPayout = {
   amount: number;
-  payoutDate: string;             // ISO — when Airbnb sent it
-  confirmationCode?: string;      // if mentioned (some templates do)
+  payoutDate: string;
+  confirmationCode?: string;
+  roomId?: string;
   listingText?: string;
   property?: PropertySlug | null;
 };
@@ -162,20 +165,22 @@ export type AirbnbPayout = {
 export function parseAirbnbPayout(
   subject: string,
   body: string,
-  receivedDate: string,         // ISO — fallback when body doesn't carry a date
+  receivedDate: string,
 ): AirbnbPayout | null {
-  // Amount is reliably in the subject: "We sent a payout of € 585.24 EUR"
   const subjMatch = subject.match(/payout of\s*€?\s*([\d.,]+)\s*EUR/i);
   const amount = subjMatch ? parseEuro(subjMatch[1]) : null;
   if (amount == null) return null;
 
-  // Body sometimes mentions the listing and confirmation code; both optional.
   const codeMatch = body.match(/\b(HM[A-Z0-9]{8,10})\b/);
-  let listingText = "";
-  const listingMatch = body.match(/\b(\d?\s*BR\s+[A-Za-z][\w\s&·\/\-]+)\b/);
-  if (listingMatch) listingText = listingMatch[1].trim();
+  const roomMatch = body.match(/rooms\/(\d+)/);
+  const roomId = roomMatch?.[1];
 
-  // "Your money was sent on June 7" → ISO.
+  let listingText = "";
+  const titleMatch = body.match(
+    /([A-ZÀ-Ý][\w·.\s&\-\/áéíóúãõçâêô]{6,80}?Apartment[\w·.\s&\-\/áéíóúãõçâêô]{0,60}?|Apartamento[\w·.\s&\-\/áéíóúãõçâêô]{6,80}?Estoril[\w·.\s&\-\/áéíóúãõçâêô]{0,30}?)/i,
+  );
+  if (titleMatch) listingText = titleMatch[1].replace(/\s+/g, " ").trim();
+
   let payoutDate = receivedDate;
   const sentMatch = body.match(/sent on\s+([A-Z][a-z]+\.?\s+\d{1,2}(?:,\s*\d{4})?)/i);
   if (sentMatch) {
@@ -187,7 +192,8 @@ export function parseAirbnbPayout(
     amount,
     payoutDate,
     confirmationCode: codeMatch?.[1],
+    roomId,
     listingText: listingText || undefined,
-    property: listingText ? inferPropertyFromListing(listingText) : null,
+    property: inferProperty({ roomId, listingText }),
   };
 }

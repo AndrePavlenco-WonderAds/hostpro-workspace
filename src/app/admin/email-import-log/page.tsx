@@ -12,19 +12,29 @@ export const metadata = {
 
 export const dynamic = "force-dynamic";
 
-/** Server action — hits our own cron endpoint with the CRON_SECRET Bearer
- *  header so it runs the exact same code path as the scheduled run. Useful
- *  while in dry-run mode when waiting 24h between scheduled fires is painful. */
+/** Server actions — hit our own cron endpoint with the CRON_SECRET Bearer
+ *  header so they run the exact same code path as the scheduled fire. */
 async function runCronNow() {
   "use server";
+  await callCron({ retry: false });
+}
+
+/** Re-process every labelled message even if it was already marked
+ *  processado/falhou — useful after a parser deploy to catch up old emails
+ *  the previous version got wrong. */
+async function runCronRetry() {
+  "use server";
+  await callCron({ retry: true });
+}
+
+async function callCron({ retry }: { retry: boolean }) {
   const secret = process.env.CRON_SECRET;
   if (!secret) throw new Error("CRON_SECRET missing");
-  const base =
-    process.env.NEXT_PUBLIC_APP_URL ||
-    process.env.VERCEL_PROJECT_PRODUCTION_URL
-      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-      : "https://hostpro-workspace.vercel.app";
-  await fetch(`${base}/api/cron/import-emails`, {
+  const base = process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : "https://hostpro-workspace.vercel.app";
+  const qs = retry ? "?retry=true" : "";
+  await fetch(`${base}/api/cron/import-emails${qs}`, {
     headers: { Authorization: `Bearer ${secret}` },
     cache: "no-store",
   });
@@ -63,14 +73,25 @@ export default async function EmailImportLogPage() {
               correr na hora.
             </p>
           </div>
-          <form action={runCronNow}>
-            <button
-              type="submit"
-              className="inline-flex items-center gap-2 rounded-full bg-brand-cyan px-5 py-2 text-sm font-semibold text-brand-navy shadow-[0_10px_30px_-10px_rgba(0,181,226,0.7)] transition hover:opacity-90"
-            >
-              ▶ Correr cron agora
-            </button>
-          </form>
+          <div className="flex flex-wrap gap-2">
+            <form action={runCronNow}>
+              <button
+                type="submit"
+                className="inline-flex items-center gap-2 rounded-full bg-brand-cyan px-5 py-2 text-sm font-semibold text-brand-navy shadow-[0_10px_30px_-10px_rgba(0,181,226,0.7)] transition hover:opacity-90"
+              >
+                ▶ Correr cron agora
+              </button>
+            </form>
+            <form action={runCronRetry}>
+              <button
+                type="submit"
+                className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.04] px-5 py-2 text-sm font-semibold text-white/85 transition hover:bg-white/[0.08]"
+                title="Reprocessa todos os emails com label hostpro/airbnb-* — útil depois de um deploy do parser"
+              >
+                ↻ Retry todos
+              </button>
+            </form>
+          </div>
         </div>
 
         <section className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">

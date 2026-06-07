@@ -15,6 +15,18 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.9.2",
+    date: "2026-06-07",
+    title: "Parser Airbnb v2 — HTML body, room-id mapping, dedupe by stayWindow",
+    highlights: [
+      "**🐛 Razão das 30 parse-failed.** O body **plain** do Airbnb é tabular (*\"Check-in &nbsp;&nbsp;&nbsp;&nbsp; Checkout\"* na mesma linha, depois *\"Wed, Apr 8 &nbsp;&nbsp;&nbsp;&nbsp; Wed, Apr 15\"* também na mesma linha) — o regex não consegue saltar de coluna. Cron agora usa o body **HTML** stripped (linearizado, uma data por linha), que é o que os 15 payouts já usavam (por isso parseavam OK).",
+      "**🏠 Mapping por room ID.** Inspeccionei 30 emails reais e identifiquei 4 listings Airbnb distintos pelos IDs nos URLs `rooms/{id}`: `1638360824534789511` → **SE2** (2BR Apartment), `1637971491844755599` → **SE5** (2BR Estoril Apartment), `1653792707745872015` → **OFO** (Apartamento T3). O quarto (`619354998862049574`, *\"Apartamento perto da praia do Estoril, Cascais\"*) está em pending — Andre precisa confirmar a qual AL pertence (parece T2, €100/noite, mas pode ser uma listagem duplicada de SE2 ou um 4º AL).",
+      "**🧯 Dedupe contra a base existente.** Antes de criar/logar uma entrada nova, o cron compara `property + stayWindow` contra todas as entradas já existentes no blob pnl. Se já existe → log com status `skipped` (badge SKIPPED) e label `hostpro/processado`. As importações dos CSVs (`se2-bk-001`, `ofo-55`, etc.) usam exactamente a mesma chave `stayWindow` DD/MM-DD/MM, por isso o match é exacto.",
+      "**↻ Botão *Retry todos*** em `/admin/email-import-log`. Reprocessa **TODOS** os emails com label `hostpro/airbnb-*` mesmo os já marcados processado/falhou — útil depois de um deploy do parser para apanhar os antigos. Em retry mode o cron também limpa o label oposto quando o resultado muda (parse-failed → success limpa `hostpro/falhou`).",
+      "**📦 Stack actualizada:** `parsers/airbnb.ts` v2 com regex baseados em estrutura *Check-in / weekday-comma / month-day / time / Checkout / ...*; `listing-map.ts` v2 com prioridade room-id-exact-match → substring rules (PT + EN); `cron/import-emails/route.ts` v2 com snapshot dos `existingByKey` no início + `?retry=true` query param.",
+    ],
+  },
+  {
     version: "0.9.1",
     date: "2026-06-07",
     title: "Gmail cron ajustado ao Hobby (1×/dia) + botão *Correr cron agora*",
