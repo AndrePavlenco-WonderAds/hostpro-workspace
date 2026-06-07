@@ -15,6 +15,16 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.9.1",
+    date: "2026-06-07",
+    title: "Gmail cron ajustado ao Hobby (1×/dia) + botão *Correr cron agora*",
+    highlights: [
+      "**🐛 Build falhava silenciosamente em v0.9.0.** O motivo era a schedule `*/30 * * * *` do `vercel.json` — o plano Hobby da Vercel só permite UMA execução por dia. Cada deploy automático estava a ser rejeitado com erro *\"Hobby accounts are limited to daily cron jobs\"* mas o webhook GitHub → Vercel não trouxe esta info de volta (ficava silenciosa), por isso pareciam pushes sem efeito.",
+      "**⏰ Cron passou a 06:00 UTC (07:00 PT) diária.** Reservas que entrem durante a noite são processadas antes do Andre abrir a app de manhã. Não chega para real-time. Para subir para `*/30 * * * *` há 2 caminhos: (a) upgrade Vercel Pro ~$20/mês; (b) usar um pinger externo grátis (ex: cron-job.org) a apontar para `/api/cron/import-emails` com header `Authorization: Bearer ${CRON_SECRET}` — funciona igual sem custos.",
+      "**▶ Botão *Correr cron agora* em `/admin/email-import-log`.** Dispara o cron na hora via server action (mesma route, mesmo CRON_SECRET) — útil durante o dry-run para não esperar 24h entre validações. Em produção real continuas a deixar o cron schedule fazer o trabalho.",
+    ],
+  },
+  {
     version: "0.9.0",
     date: "2026-06-07",
     title: "Gmail auto-import (Airbnb) — fase 2 deployed em dry-run mode",

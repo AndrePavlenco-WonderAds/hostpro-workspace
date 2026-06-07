@@ -3,6 +3,7 @@
 // blob directly — no client state.
 
 import Link from "next/link";
+import { revalidatePath } from "next/cache";
 import { readImportLog, type ImportLogEntry, type ImportLogStatus } from "@/lib/gmail/import-log";
 
 export const metadata = {
@@ -10,6 +11,25 @@ export const metadata = {
 };
 
 export const dynamic = "force-dynamic";
+
+/** Server action — hits our own cron endpoint with the CRON_SECRET Bearer
+ *  header so it runs the exact same code path as the scheduled run. Useful
+ *  while in dry-run mode when waiting 24h between scheduled fires is painful. */
+async function runCronNow() {
+  "use server";
+  const secret = process.env.CRON_SECRET;
+  if (!secret) throw new Error("CRON_SECRET missing");
+  const base =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : "https://hostpro-workspace.vercel.app";
+  await fetch(`${base}/api/cron/import-emails`, {
+    headers: { Authorization: `Bearer ${secret}` },
+    cache: "no-store",
+  });
+  revalidatePath("/admin/email-import-log");
+}
 
 export default async function EmailImportLogPage() {
   const log = await readImportLog(100);
@@ -31,13 +51,27 @@ export default async function EmailImportLogPage() {
         <Link href="/admin" className="text-sm text-white/55 transition hover:text-white">
           ← Visão geral
         </Link>
-        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-          Email import log
-        </h1>
-        <p className="mt-2 text-sm text-white/55 sm:text-base">
-          Cada linha é uma mensagem do Gmail que o cron tentou processar.
-          Mostra as últimas {log.length}. Cron corre de 30 em 30 min.
-        </p>
+        <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+              Email import log
+            </h1>
+            <p className="mt-2 text-sm text-white/55 sm:text-base">
+              Cada linha é uma mensagem do Gmail que o cron tentou processar.
+              Mostra as últimas {log.length}. Cron automático corre 1×/dia às
+              06:00 UTC (limite do plano Hobby) — usa o botão abaixo para
+              correr na hora.
+            </p>
+          </div>
+          <form action={runCronNow}>
+            <button
+              type="submit"
+              className="inline-flex items-center gap-2 rounded-full bg-brand-cyan px-5 py-2 text-sm font-semibold text-brand-navy shadow-[0_10px_30px_-10px_rgba(0,181,226,0.7)] transition hover:opacity-90"
+            >
+              ▶ Correr cron agora
+            </button>
+          </form>
+        </div>
 
         <section className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
           <Stat label="Dry-run" value={counts["dry-run"]} tone="cyan" />
