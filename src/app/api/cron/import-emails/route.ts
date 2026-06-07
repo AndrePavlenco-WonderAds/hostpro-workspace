@@ -70,13 +70,18 @@ export async function GET(req: Request) {
   const dryRun = process.env.IMPORT_LIVE !== "true";
   const gmail = new GmailClient(refreshToken);
 
-  // Snapshot pnl entries once per cron run for dedup. Key by property +
-  // stayWindow — same shape both the CSV imports and this cron produce.
+  // Snapshot pnl entries once per cron run for dedup. We key two ways:
+  //   (a) HM confirmation code — strongest signal, but only present on
+  //       entries that came through this importer or were backfilled.
+  //   (b) property + stayWindow — fallback for CSV-imported entries that
+  //       don't carry an HM code yet.
   const existingEntries = await getAllEntries();
-  const existingByKey = new Set<string>();
+  const existingByHmCode = new Map<string, string>();   // hmCode → entry id
+  const existingByKey = new Map<string, string>();      // "property|stayWindow" → entry id
   for (const e of existingEntries) {
-    if (e.kind !== "entrada" || !e.stayWindow) continue;
-    existingByKey.add(`${e.property}|${e.stayWindow}`);
+    if (e.kind !== "entrada") continue;
+    if (e.hmCode) existingByHmCode.set(e.hmCode, e.id);
+    if (e.stayWindow) existingByKey.set(`${e.property}|${e.stayWindow}`, e.id);
   }
 
   const processadoId = await gmail.ensureLabel(LABELS.processado);
@@ -115,7 +120,7 @@ export async function GET(req: Request) {
               return;
             }
             const msg = await gmail.getMessage(ref.id);
-            const outcome = processMessageInMemory(msg, kind, existingByKey);
+            const outcome = processMessageInMemory(msg, kind, existingByKey, existingByHmCode);
             logBatch.push(outcome.logEntry);
 
             if (outcome.status === "parse-failed") {
@@ -156,7 +161,8 @@ export async function GET(req: Request) {
 function processMessageInMemory(
   msg: GmailMessage,
   kind: ImportLogEntry["kind"],
-  existingByKey: Set<string>,
+  existingByKey: Map<string, string>,
+  existingByHmCode: Map<string, string>,
 ): { status: ImportLogStatus; logEntry: Omit<ImportLogEntry, "id" | "ts"> } {
   const subject = getHeader(msg, "Subject") ?? "";
   const from = getHeader(msg, "From") ?? "";
@@ -202,13 +208,21 @@ function processMessageInMemory(
     };
   }
 
+  // Dedup: prefer HM code match (precise — survives stayWindow changes
+  // when guests extend their stay), then fall back to property+stayWindow
+  // for CSV-imported entries that haven't been backfilled yet.
+  const hmCode =
+    "confirmationCode" in parsed && parsed.confirmationCode
+      ? parsed.confirmationCode
+      : undefined;
+  if (hmCode && existingByHmCode.has(hmCode)) {
+    return { status: "skipped", logEntry: { ...baseLog, status: "skipped", parsed } };
+  }
+
   const stayWindowVal =
     "stayWindow" in parsed && parsed.stayWindow ? parsed.stayWindow : undefined;
   if (stayWindowVal && existingByKey.has(`${property}|${stayWindowVal}`)) {
-    return {
-      status: "skipped",
-      logEntry: { ...baseLog, status: "skipped", parsed },
-    };
+    return { status: "skipped", logEntry: { ...baseLog, status: "skipped", parsed } };
   }
 
   return { status: "dry-run", logEntry: { ...baseLog, status: "dry-run", parsed } };

@@ -29,8 +29,10 @@ function iva6(amount) {
 
 /** entrada — mirrors the `e()` helper in src/lib/pnl-seed.ts. All bookings
  *  imported here are already paid out, so recebido + noBanco = true and
- *  inIvaVault stays false (Andre flips it during the quarterly IVA push). */
-function entrada(property, id, date, amount, stayWindow) {
+ *  inIvaVault stays false (Andre flips it during the quarterly IVA push).
+ *  Pass `hmCode` for Airbnb-sourced entries so the Gmail importer can
+ *  dedupe by confirmation code. */
+function entrada(property, id, date, amount, stayWindow, hmCode) {
   return {
     id,
     property,
@@ -45,6 +47,7 @@ function entrada(property, id, date, amount, stayWindow) {
     noBanco: true,
     inIvaVault: false,
     outOfAccount: false,
+    ...(hmCode ? { hmCode } : {}),
   };
 }
 
@@ -69,8 +72,8 @@ const se5 = [
 
   // Airbnb — `airbnb_03_2026-06_2026.csv` (listing "2BR Estoril Apartment · Near Beach & Cascais")
   // Date = Date column (payout day) · Amount = Gross earnings · stay = "DD/MM-DD/MM"
-  entrada("sweet-escape-5", "se5-ab-001", "2026-03-20", 210.00, "19/03-22/03"),  // Wei Wang (HMJEBJB9KS)
-  entrada("sweet-escape-5", "se5-ab-002", "2026-06-06", 431.60, "05/06-08/06"),  // Asal Ganji (HMQ825SCC8)
+  entrada("sweet-escape-5", "se5-ab-001", "2026-03-20", 210.00, "19/03-22/03", "HMJEBJB9KS"),  // Wei Wang
+  entrada("sweet-escape-5", "se5-ab-002", "2026-06-06", 431.60, "05/06-08/06", "HMQ825SCC8"),  // Asal Ganji
 ];
 
 // ---------- SE2 — Sweet Escape · 2º ----------
@@ -105,13 +108,13 @@ const se2 = [
   entrada("sweet-escape-2", "se2-bk-022", "2026-05-25",  458.00, "18/05-22/05"),  // ANDERSON MACHADO
 
   // Airbnb — `airbnb_03_2026-06_2026 (1).csv` (listing "2BR Apartment · Near Estoril Beach & Cascais")
-  entrada("sweet-escape-2", "se2-ab-001", "2026-05-01", 230.00, "30/04-02/05"),  // Shannon McIntyre (HMZB5CCS8J)
-  entrada("sweet-escape-2", "se2-ab-002", "2026-05-10", 350.00, "09/05-12/05"),  // Adriana Soares (HMD553RPMK)
-  entrada("sweet-escape-2", "se2-ab-003", "2026-05-13", 823.00, "12/05-18/05"),  // Sara Caballero Álvarez (HM4YAAJQRX)
-  entrada("sweet-escape-2", "se2-ab-004", "2026-05-28", 250.00, "27/05-29/05"),  // Margaux Nicolle (HMWCPXTWJQ)
-  entrada("sweet-escape-2", "se2-ab-005", "2026-05-30", 379.00, "29/05-01/06"),  // Kay Lilley (HMXRBYPFKT)
-  entrada("sweet-escape-2", "se2-ab-006", "2026-06-02", 366.00, "01/06-04/06"),  // John Elvis (HMDWJYJTDY)
-  entrada("sweet-escape-2", "se2-ab-007", "2026-06-06", 261.00, "05/06-07/06"),  // Joana Neiva (HMHAZPKMAT)
+  entrada("sweet-escape-2", "se2-ab-001", "2026-05-01", 230.00, "30/04-02/05", "HMZB5CCS8J"),  // Shannon McIntyre
+  entrada("sweet-escape-2", "se2-ab-002", "2026-05-10", 350.00, "09/05-12/05", "HMD553RPMK"),  // Adriana Soares
+  entrada("sweet-escape-2", "se2-ab-003", "2026-05-13", 823.00, "12/05-18/05", "HM4YAAJQRX"),  // Sara Caballero Álvarez
+  entrada("sweet-escape-2", "se2-ab-004", "2026-05-28", 250.00, "27/05-29/05", "HMWCPXTWJQ"),  // Margaux Nicolle
+  entrada("sweet-escape-2", "se2-ab-005", "2026-05-30", 379.00, "29/05-01/06", "HMXRBYPFKT"),  // Kay Lilley
+  entrada("sweet-escape-2", "se2-ab-006", "2026-06-02", 366.00, "01/06-04/06", "HMDWJYJTDY"),  // John Elvis
+  entrada("sweet-escape-2", "se2-ab-007", "2026-06-06", 261.00, "05/06-07/06", "HMHAZPKMAT"),  // Joana Neiva
 ];
 
 const NEW_ENTRIES = [...se5, ...se2];

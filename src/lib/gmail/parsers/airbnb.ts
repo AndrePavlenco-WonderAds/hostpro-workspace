@@ -137,36 +137,59 @@ export function parseAirbnbConfirmation(
   );
   if (titleMatch) listingText = titleMatch[1].replace(/\s+/g, " ").trim();
 
-  // 5. Check-in / Checkout. With htmlToText output the layout is:
-  //      Check-in
-  //      Wed, Apr 8
-  //      3:00 PM
-  //      Checkout
-  //      Wed, Apr 15
-  //      11:00 AM
-  //    so we look for the weekday-comma-month pattern after each header.
-  const ciMatch = body.match(
-    /Check[-\s]?in[\s\S]{0,80}?(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun),\s*([A-Z][a-z]+\.?\s+\d{1,2})/,
+  // 5. Check-in / Checkout. Two pathways:
+  //
+  // 5a. Prefer the explicit "May 25, 2027" form Airbnb buries elsewhere in
+  //     the body (booking metadata / receipt blocks). These ALWAYS carry
+  //     the year, which is critical for bookings made far in advance —
+  //     defaulting to the email year silently dropped 2027 stays into 2026.
+  //
+  // 5b. If that's not present, fall back to the weekday+month-day form
+  //     visible to the user ("Wed, Apr 8") with the email year heuristic.
+  const explicitDates = [...body.matchAll(/([A-Z][a-z]+\s+\d{1,2},\s+(\d{4}))/g)].map(
+    (m) => ({ raw: m[1], year: parseInt(m[2], 10) }),
   );
-  const coMatch = body.match(
-    /Checkout[\s\S]{0,80}?(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun),\s*([A-Z][a-z]+\.?\s+\d{1,2})/,
-  );
+  // Sort and pick first two distinct dates — check-in then check-out.
+  const uniqueExplicit: { raw: string; year: number }[] = [];
+  for (const d of explicitDates) {
+    if (!uniqueExplicit.find((u) => u.raw === d.raw)) uniqueExplicit.push(d);
+  }
 
-  // Fallback — older templates may not include the weekday.
-  const ciFallback = !ciMatch
-    ? body.match(/Check[-\s]?in[\s\S]{0,80}?([A-Z][a-z]+\.?\s+\d{1,2}(?:,\s*\d{4})?)/)
-    : null;
-  const coFallback = !coMatch
-    ? body.match(/Checkout[\s\S]{0,80}?([A-Z][a-z]+\.?\s+\d{1,2}(?:,\s*\d{4})?)/)
-    : null;
+  let checkin: string | null = null;
+  let checkout: string | null = null;
+  if (uniqueExplicit.length >= 2) {
+    const iso = uniqueExplicit
+      .map((d) => parseEnglishDate(d.raw, d.year))
+      .filter((s): s is string => !!s)
+      .sort();
+    if (iso.length >= 2) {
+      checkin = iso[0];
+      checkout = iso[iso.length - 1];
+    }
+  }
 
-  const checkinRaw = ciMatch?.[1] ?? ciFallback?.[1];
-  const checkoutRaw = coMatch?.[1] ?? coFallback?.[1];
-  if (!checkinRaw || !checkoutRaw) return null;
-
-  const checkin = parseEnglishDate(checkinRaw, emailYear);
-  const checkout = parseEnglishDate(checkoutRaw, emailYear);
-  if (!checkin || !checkout) return null;
+  if (!checkin || !checkout) {
+    // Fallback path — same regex as before, but with the year-bump
+    // heuristic to handle stays in the future that don't carry a year.
+    const ciMatch = body.match(
+      /Check[-\s]?in[\s\S]{0,80}?(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun),\s*([A-Z][a-z]+\.?\s+\d{1,2})/,
+    );
+    const coMatch = body.match(
+      /Checkout[\s\S]{0,80}?(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun),\s*([A-Z][a-z]+\.?\s+\d{1,2})/,
+    );
+    const checkinRaw = ciMatch?.[1];
+    const checkoutRaw = coMatch?.[1];
+    if (!checkinRaw || !checkoutRaw) return null;
+    checkin = parseEnglishDate(checkinRaw, emailYear);
+    checkout = parseEnglishDate(checkoutRaw, emailYear);
+    if (!checkin || !checkout) return null;
+    // If check-out lands before check-in we picked the wrong year for at
+    // least one of them — bump the appropriate side until they're ordered.
+    if (checkout < checkin) {
+      const co = parseEnglishDate(checkoutRaw, (emailYear ?? new Date().getUTCFullYear()) + 1);
+      if (co) checkout = co;
+    }
+  }
 
   // 6. Money — "Total (EUR)" is guest-paid total, "You earn" is host payout.
   //    Both currencies sometimes have a non-breaking space between "€" and digits.

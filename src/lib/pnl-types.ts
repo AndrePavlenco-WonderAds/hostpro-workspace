@@ -43,6 +43,10 @@ export interface EntradaEntry extends BaseEntry {
   recebido: boolean;
   noBanco: boolean;
   inIvaVault: boolean;
+  /** Airbnb confirmation code (HM…) when this entrada came from an Airbnb
+   *  source. Used by the Gmail importer to dedupe confirmations against
+   *  payouts and against re-imports of the same reservation. */
+  hmCode?: string;
 }
 
 /** Lavandaria — quilos de roupa que a lavandaria leva.

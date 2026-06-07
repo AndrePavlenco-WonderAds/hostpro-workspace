@@ -15,6 +15,18 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.9.7",
+    date: "2026-06-07",
+    title: "Ano explícito do Airbnb · dedupe por HM code · backfill 9 entradas",
+    highlights: [
+      "**📅 Bug do ano (Gilles HMYCJMN29X = 2027, não 2026).** O parser assumia o ano do email para datas sem ano (`May 25` → 25/05/2026), mas o Gilles é uma reserva para 2027. O HTML do email ESCONDE a data completa noutro bloco do body — `May 25, 2027` / `Jun 7, 2027` aparecem em metadata. O parser agora procura primeiro o padrão `[Month] [day], [YYYY]` explícito; se não existir (caso de reservas no mesmo ano), usa o fallback weekday+date com year-bump heurístico.",
+      "**🆔 Campo novo `hmCode?: string` em `EntradaEntry`.** Permite ao cron Gmail fazer match de uma confirmação/payout contra uma entrada existente mesmo se o `stayWindow` mudar (e.g. hóspede estica a reserva 1 noite, como o John Elvis HMDWJYJTDY).",
+      "**📦 9 entradas existentes com `hmCode` backfilled.** `scripts/backfill-hm-codes.mjs` (idempotente) mapeou as 9 entradas Airbnb dos CSVs SE2/SE5 para os seus códigos HM (HMZB5CCS8J, HMD553RPMK, HM4YAAJQRX, HMWCPXTWJQ, HMXRBYPFKT, HMDWJYJTDY, HMHAZPKMAT, HMJEBJB9KS, HMQ825SCC8). O `import-bookings-2026.mjs` também ficou actualizado para que re-runs em blob limpo já tragam o hmCode.",
+      "**🧯 Cron dedupe v3 — HM code primeiro.** Antes de classificar uma entrada nova, o cron faz: (1) match por `hmCode` → SKIP; (2) match por `property + stayWindow` → SKIP; (3) caso contrário → DRY-RUN (ou CRIADA em live). O John Elvis HMDWJYJTDY agora vai aparecer como SKIPPED em vez de criar duplicado com stayWindow desactualizado.",
+      "**⚠️ Pendente para LIVE:** o `amount` da entrada deve ser o **host payout** (`You earn`), não o `guestTotal`. Andre confirmou que a app só regista o valor recebido. Já extraímos `hostPayout` no parser — falta o passo final de wiring quando flipparmos `IMPORT_LIVE=true`.",
+    ],
+  },
+  {
     version: "0.9.6",
     date: "2026-06-07",
     title: "parseEuro arranjado — valores > €1000 deixaram de ser truncados",
