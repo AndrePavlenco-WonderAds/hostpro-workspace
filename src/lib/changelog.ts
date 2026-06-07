@@ -15,6 +15,15 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.9.6",
+    date: "2026-06-07",
+    title: "parseEuro arranjado — valores > €1000 deixaram de ser truncados",
+    highlights: [
+      "**🐛 Bug crítico: €1,303.00 → 1.3.** O regex antigo do `parseEuro` era `(-?[\\d]+[.,]\\d{2}|-?\\d+)` — para `1,303.00` apanhava apenas `1,30` (1 dígito + vírgula + 2 dígitos) porque o `[\\d]+` greedy parava quando via a vírgula. Resultado: 7 das 13 confirmações DRY-RUN (todas as >€1000 — Vicky H, Greg, Gilles, Diana, Alvaro, Ian, Karl) tinham `guestTotal` divididos por ~1000.",
+      "**✅ Novo `parseEuro` lida com formatos US e EU.** Apanha a sequência numérica inteira `-?\\d[\\d.,]*`, depois decide se o último separador é decimal ou de milhares com base em (a) presença simultânea de `.` e `,`, (b) contagem de cada e dígitos depois. Testado contra 16 casos: `1,303.00` → 1303, `1.303,00` → 1303, `417.67` → 417.67, `1,17` → 1.17. Airbnb usa US format (vírgula milhares, ponto decimal); regex aceita ambos sem regressão.",
+    ],
+  },
+  {
     version: "0.9.5",
     date: "2026-06-07",
     title: "Parser payouts SE2/SE5 — roomId em parens (não em /rooms/)",

@@ -43,11 +43,39 @@ export function stayWindow(checkin: string, checkout: string): string {
   return `${dA}/${mA}-${dB}/${mB}`;
 }
 
+/** Parse a euro amount string, handling thousands separators in both
+ *  US format ("1,303.00") and EU/PT format ("1.303,00").
+ *  Airbnb uses US format consistently — `€ 1,303.00` — but the old regex
+ *  bailed at `1,30` and returned 1.3, so anything >€1000 was wrong. */
 export function parseEuro(input: string): number | null {
-  const m = input.match(/(-?[\d]+[.,]\d{2}|-?\d+)/);
+  // Capture the whole numeric run including any sign + thousand/decimal seps.
+  const m = input.match(/-?\d[\d.,]*/);
   if (!m) return null;
-  const cleaned = m[1].replace(",", ".");
-  const v = parseFloat(cleaned);
+  let raw = m[0];
+
+  const lastDot = raw.lastIndexOf(".");
+  const lastComma = raw.lastIndexOf(",");
+  if (lastDot >= 0 && lastComma >= 0) {
+    if (lastDot > lastComma) {
+      // US: 1,234.56 — commas are thousand seps, dot is decimal.
+      raw = raw.replace(/,/g, "");
+    } else {
+      // EU: 1.234,56 — dots are thousand seps, comma is decimal.
+      raw = raw.replace(/\./g, "").replace(",", ".");
+    }
+  } else if (lastDot >= 0) {
+    const dotCount = (raw.match(/\./g) || []).length;
+    const after = raw.length - lastDot - 1;
+    // One dot with ≤2 digits after → decimal. Otherwise → thousands separators.
+    if (!(dotCount === 1 && after <= 2)) raw = raw.replace(/\./g, "");
+  } else if (lastComma >= 0) {
+    const commaCount = (raw.match(/,/g) || []).length;
+    const after = raw.length - lastComma - 1;
+    if (commaCount === 1 && after <= 2) raw = raw.replace(",", ".");
+    else raw = raw.replace(/,/g, "");
+  }
+
+  const v = parseFloat(raw);
   return Number.isFinite(v) ? v : null;
 }
 
