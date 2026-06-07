@@ -2,7 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
     {
-      "comment": "Vercel Hobby plan only allows a single cron firing per day. We pick 06:00 UTC (07:00 PT) so reservations that landed overnight are imported by the time Andre opens the app in the morning. For real-time (every 30 min) capture, either upgrade to Pro or use an external pinger like cron-job.org targeting /api/cron/import-emails with the CRON_SECRET Bearer header.",
       "path": "/api/cron/import-emails",
       "schedule": "0 6 * * *"
     }
