@@ -11,6 +11,17 @@ import { GATE_COOKIE, GATE_PASSWORD } from "@/lib/gate-auth";
 const PUBLIC_PATHS = [
   "/unlock",
   "/api/unlock",
+  // Google's redirect to the OAuth callback can't carry our gate cookie, so
+  // the callback must be reachable unauthenticated. State validation inside
+  // the route guards against CSRF.
+  "/api/gmail/callback",
+];
+
+// Vercel Cron hits routes server-to-server with `Authorization: Bearer
+// CRON_SECRET` — no browser cookie. Bypass the gate for the cron prefix; the
+// individual routes enforce the secret.
+const PUBLIC_PREFIXES_API = [
+  "/api/cron/",
 ];
 
 const PUBLIC_PREFIXES = [
@@ -25,6 +36,7 @@ export function proxy(req: NextRequest) {
   if (
     PUBLIC_PATHS.includes(pathname) ||
     PUBLIC_PREFIXES.some((p) => pathname.startsWith(p)) ||
+    PUBLIC_PREFIXES_API.some((p) => pathname.startsWith(p)) ||
     PUBLIC_FILE_RE.test(pathname)
   ) {
     return NextResponse.next();

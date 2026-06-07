@@ -15,6 +15,19 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.9.0",
+    date: "2026-06-07",
+    title: "Gmail auto-import (Airbnb) — fase 2 deployed em dry-run mode",
+    highlights: [
+      "**📬 Pipeline completo de auto-import por email.** A app passou a ter integração com Gmail via OAuth2: lê emails de reserva Airbnb que chegam ao `hostpro.pt@gmail.com`, faz parse com regex defensivos, e regista cada tentativa num log auditável. Por agora corre em **dry-run** — escreve só o que ia criar, não toca no blob pnl, até validares as primeiras ~10 entradas em `/admin/email-import-log`.",
+      "**🔐 Separação total HostPro vs Wonder Ads.** Toda a integração vive dentro do scope HostPro: Google Cloud project sob `hostpro.pt@gmail.com`, env vars no projecto Vercel `hostpro-workspace`, callbacks em `hostpro-workspace.vercel.app`. Nada toca em `wonder-ads.com` ou na conta WonderAds. Regra gravada em memória permanente para nunca mais misturar.",
+      "**🧩 Stack:** `src/lib/gmail/oauth.ts` (OAuth helpers via fetch directo aos endpoints Google) · `src/lib/gmail/client.ts` (wrapper REST da Gmail API com decodificação base64url + MIME walker) · `src/lib/gmail/parsers/airbnb.ts` (parsers defensivos para *Reservation confirmed* + *We sent a payout* com fallback de regex; pesquisei templates online dado que não havia exemplos forward para inspeccionar) · `src/lib/gmail/listing-map.ts` (mapeia listing text → PropertySlug com substring rules para 3BR/2BR Estoril/2BR Apartment) · `src/lib/gmail/import-log.ts` (blob separado `data/gmail-import-log.json`, append + truncate a 500 entradas).",
+      "**🌐 Endpoints:** `/admin/connect-gmail` (UI com tiles de estado das env vars, botão *Ligar Gmail* que arranca OAuth com state cookie anti-CSRF, e os 2 filtros Gmail prontos a copiar) · `/api/gmail/callback` (troca code por refresh_token, mostra-o numa página self-contained com botão Copiar + instruções Vercel) · `/admin/email-import-log` (vista cronológica das últimas 100 tentativas com stats agregadas e JSON expandível por linha) · `/api/cron/import-emails` (gated por `CRON_SECRET` header).",
+      "**⏰ Vercel Cron** a correr a cada 30 min (`vercel.json` novo) — lista mensagens com label `hostpro/airbnb-conf` ou `hostpro/airbnb-payout` que ainda não tenham `processado` nem `falhou`, faz parse, aplica label de outcome, escreve no log.",
+      "**🚪 Proxy ajustado:** `/api/gmail/callback` agora bypass do gate da password (Google redirige sem cookie), e qualquer rota sob `/api/cron/` também — cada uma valida internamente (state cookie para o callback, Bearer `CRON_SECRET` para o cron).",
+    ],
+  },
+  {
     version: "0.8.4",
     date: "2026-06-07",
     title: "Águas Maio (cash) 26/05 — corrigido para split T2s",
