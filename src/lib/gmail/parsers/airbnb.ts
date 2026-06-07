@@ -186,15 +186,32 @@ export function parseAirbnbPayout(
   if (amount == null) return null;
 
   const codeMatch = body.match(/\b(HM[A-Z0-9]{8,10})\b/);
-  const urlSource = plainBody && plainBody.length > 0 ? plainBody : body;
-  const roomMatch = urlSource.match(/rooms\/(\d+)/);
-  const roomId = roomMatch?.[1];
 
+  // Two roomId patterns:
+  //   - Confirmation-style emails: `/rooms/{id}?...` in plain body URLs
+  //   - Payout emails: `Listing title (1638360824534789511)` parens after
+  //     the listing title (no URL anywhere). Airbnb room ids are 17-19
+  //     digits.
+  const urlSource = plainBody && plainBody.length > 0 ? plainBody : body;
+  let roomId = urlSource.match(/rooms\/(\d+)/)?.[1];
+  if (!roomId) {
+    roomId = body.match(/\((\d{15,20})\)/)?.[1];
+  }
+
+  // Two listing patterns: (a) any line ending with `(roomId)` — the payout
+  // layout; (b) generic title followed by Entire home/apt — confirmation
+  // layout (some payouts also include this section).
   let listingText = "";
-  const titleMatch = body.match(
-    /(?:^|\n)\s*([A-ZÀ-Ý][^\n]{6,120}?(?:Apartment|Apartamento)[^\n]{0,80}?)\s*\n/,
-  );
-  if (titleMatch) listingText = titleMatch[1].replace(/\s+/g, " ").trim();
+  const parensTitleMatch = body.match(/(?:^|\n)\s*([^\n()]{6,120}?)\s*\(\d{15,20}\)/);
+  if (parensTitleMatch) {
+    listingText = parensTitleMatch[1].replace(/\s+/g, " ").trim();
+  }
+  if (!listingText) {
+    const titleMatch = body.match(
+      /(?:^|\n)\s*([A-ZÀ-Ý][^\n]{6,120}?(?:Apartment|Apartamento)[^\n]{0,80}?)\s*\n/,
+    );
+    if (titleMatch) listingText = titleMatch[1].replace(/\s+/g, " ").trim();
+  }
 
   let payoutDate = receivedDate;
   const sentMatch = body.match(/sent on\s+([A-Z][a-z]+\.?\s+\d{1,2}(?:,\s*\d{4})?)/i);
