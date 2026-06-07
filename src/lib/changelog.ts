@@ -15,6 +15,14 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.8.4",
+    date: "2026-06-07",
+    title: "Águas Maio (cash) 26/05 — corrigido para split T2s",
+    highlights: [
+      "**💧 Águas Maio €60,68 (26/05) passou a estar split entre os dois T2s.** Andre confirmou que aquela linha era para ambos os T2s, não só SE2 (o default que eu apliquei por descrição não dizer *T2s* plural como em Abril). `cm-dsp-010` (€60,68 SE2) foi substituída por `cm-dsp-010a` (€30,34 SE2) + `cm-dsp-010b` (€30,34 SE5), via `scripts/fix-aguas-maio-split.mjs` (idempotente). O script de import original (`scripts/import-custos-abr-mai-2026.mjs`) também foi corrigido para que, num re-run em blob vazio, o split fique correto desde o início.",
+    ],
+  },
+  {
     version: "0.8.3",
     date: "2026-06-07",
     title: "Import: custos + funcionário Abril e Maio 2026 (SE2, SE5, OFO)",

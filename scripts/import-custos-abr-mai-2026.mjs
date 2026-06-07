@@ -104,8 +104,10 @@ const MAY_DSP = [
   dsp("sweet-escape-2", "cm-dsp-008", "2026-05-09", 20.00, "Técnico Internet", "André", false),
   // Row 11 — 10/05 €71.43 "compras" Mãe OOA ✓ — SE2 default.
   dsp("sweet-escape-2", "cm-dsp-009", "2026-05-10", 71.43, "Compras", "Lilia", true),
-  // Row 27 — 26/05 €60.68 "Aguas Maio Cash" André OOA ✓ — SE2 default (descrição não diz "T2s").
-  dsp("sweet-escape-2", "cm-dsp-010", "2026-05-26", 60.68, "Águas Maio (cash)", "André", true),
+  // Row 27 — 26/05 €60.68 "Aguas Maio Cash" André OOA ✓ → split entre T2s
+  // (Andre confirmou 2026-06-07 que era para ambos, não só SE2).
+  dsp("sweet-escape-2", "cm-dsp-010a", "2026-05-26", 30.34, "Águas Maio (cash, T2s)", "André", true),
+  dsp("sweet-escape-5", "cm-dsp-010b", "2026-05-26", 30.34, "Águas Maio (cash, T2s)", "André", true),
 ];
 
 const NEW_ENTRIES = [...APRIL_FNC, ...APRIL_DSP, ...MAY_FNC, ...MAY_DSP];
