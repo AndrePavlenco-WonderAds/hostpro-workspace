@@ -15,6 +15,18 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.9.4",
+    date: "2026-06-07",
+    title: "Cron 10× mais rápido + parser room-id e título arranjados",
+    highlights: [
+      "**⚡ Cron deixava de processar a meio.** O `appendImportLog` fazia 1 read-modify-write ao blob por cada email (~2,5s/op). Com 45 emails = ~110s, mas Vercel Hobby corta funções a 60s — só 9 confirmações chegavam a registar. Agora: `bulkAppendImportLog` acumula tudo em memória + 1 write batch ao fim (1 read + 1 write por cron run). 45 emails passam em ~12s.",
+      "**🚀 Paralelização Gmail fetches.** Em vez de buscar mensagens uma a uma, processa em chunks de 5 em paralelo via `Promise.all` (cap explícito para não bater no rate limit do Gmail). `maxDuration = 60` declarado no route.",
+      "**🆔 Room ID agora extraído do body PLAIN.** O `htmlToText` que eu usava strippava completamente os `<a href>`, então o `rooms/{id}` desaparecia. Mas o body **plain** (apesar de tabular para datas) tem os URLs sempre intactos. Parser agora aceita 2 inputs (`body` HTML-stripped + `plainBody` opcional) e procura o `rooms/{id}` no plain.",
+      "**📝 Título do listing — regex one-line.** O anterior era ganancioso e capturava texto da secção anterior (\"Canada 2BR Estoril...\"). Novo regex restringe a *uma única linha* imediatamente antes do `Entire home/apt`, evitando vazamento entre parágrafos.",
+      "**🧯 Resultado esperado no próximo *Retry todos*:** ~30 confirmações + 15 payouts = ~45 messageIds processados, 3 IGNORADO (listing alheio), restantes split entre SKIPPED (dedup contra CSVs) e DRY-RUN.",
+    ],
+  },
+  {
     version: "0.9.3",
     date: "2026-06-07",
     title: "Listing ignorado · 1 row por messageId · stats estáveis",

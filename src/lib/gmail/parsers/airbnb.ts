@@ -71,12 +71,16 @@ export type AirbnbConfirmation = {
   hostPayout?: number;             // what Airbnb actually transfers to host
 };
 
-/** Parser for the host-side confirmation email. `body` should be the HTML
- *  body run through `htmlToText` (the plain body is tabular and unparseable). */
+/** Parser for the host-side confirmation email. We use TWO body inputs:
+ *    - `body` = HTML run through `htmlToText` — for dates / money / title
+ *    - `plainBody` = the actual text/plain part — for URL extraction
+ *      (htmlToText strips `<a href>` so room/{id} URLs only survive in plain)
+ */
 export function parseAirbnbConfirmation(
   subject: string,
   body: string,
   emailYear?: number,
+  plainBody?: string,
 ): AirbnbConfirmation | null {
   // 1. Confirmation code — "HM" + 8-10 alphanumeric.
   const codeMatch = body.match(/\b(HM[A-Z0-9]{8,10})\b/);
@@ -88,16 +92,20 @@ export function parseAirbnbConfirmation(
   const subjMatch = subject.match(/Reservation confirmed\s*[-–—]\s*(.+?)\s+arrives\b/i);
   if (subjMatch) guestName = subjMatch[1].trim();
 
-  // 3. Room id from any /rooms/{id} URL still present in the body. We strip
-  //    URLs in htmlToText (the `<a href=...>` markup is gone) but the bare
-  //    "rooms/619354998862049574" remains.
-  const roomMatch = body.match(/rooms\/(\d+)/);
+  // 3. Room id — prefer the plain body because htmlToText strips `<a href>`
+  //    completely, while the plain body always carries the bare URL.
+  const urlSource = plainBody && plainBody.length > 0 ? plainBody : body;
+  const roomMatch = urlSource.match(/rooms\/(\d+)/);
   const roomId = roomMatch?.[1];
 
-  // 4. Listing title — first PT/EN apartment phrase before "Entire home/apt".
+  // 4. Listing title — first PT/EN apartment phrase on a single line right
+  //    before "Entire home/apt". The previous greedy regex sometimes leaked
+  //    into the prior paragraph ("Canada 2BR Estoril..."), so we restrict
+  //    the title to one line (no newlines) and require at least one word
+  //    character at the start so we don't pick up trailing punctuation.
   let listingText = "";
   const titleMatch = body.match(
-    /([A-ZÀ-Ý][\w·.\s&\-\/áéíóúãõçâêô]{6,80}?Apartment[\w·.\s&\-\/áéíóúãõçâêô]{0,60}?|Apartamento[\w·.\s&\-\/áéíóúãõçâêô]{6,80}?Estoril[\w·.\s&\-\/áéíóúãõçâêô]{0,30}?)\s+Entire home\/apt/i,
+    /(?:^|\n)\s*([A-ZÀ-Ý][^\n]{6,120}?)\s*\n\s*Entire home\/apt/,
   );
   if (titleMatch) listingText = titleMatch[1].replace(/\s+/g, " ").trim();
 
@@ -171,18 +179,20 @@ export function parseAirbnbPayout(
   subject: string,
   body: string,
   receivedDate: string,
+  plainBody?: string,
 ): AirbnbPayout | null {
   const subjMatch = subject.match(/payout of\s*€?\s*([\d.,]+)\s*EUR/i);
   const amount = subjMatch ? parseEuro(subjMatch[1]) : null;
   if (amount == null) return null;
 
   const codeMatch = body.match(/\b(HM[A-Z0-9]{8,10})\b/);
-  const roomMatch = body.match(/rooms\/(\d+)/);
+  const urlSource = plainBody && plainBody.length > 0 ? plainBody : body;
+  const roomMatch = urlSource.match(/rooms\/(\d+)/);
   const roomId = roomMatch?.[1];
 
   let listingText = "";
   const titleMatch = body.match(
-    /([A-ZÀ-Ý][\w·.\s&\-\/áéíóúãõçâêô]{6,80}?Apartment[\w·.\s&\-\/áéíóúãõçâêô]{0,60}?|Apartamento[\w·.\s&\-\/áéíóúãõçâêô]{6,80}?Estoril[\w·.\s&\-\/áéíóúãõçâêô]{0,30}?)/i,
+    /(?:^|\n)\s*([A-ZÀ-Ý][^\n]{6,120}?(?:Apartment|Apartamento)[^\n]{0,80}?)\s*\n/,
   );
   if (titleMatch) listingText = titleMatch[1].replace(/\s+/g, " ").trim();
 

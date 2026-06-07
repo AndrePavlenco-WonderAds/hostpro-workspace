@@ -69,18 +69,28 @@ export async function readImportLog(limit = 100): Promise<ImportLogEntry[]> {
 }
 
 export async function appendImportLog(entry: Omit<ImportLogEntry, "id" | "ts"> & { ts?: string }): Promise<void> {
-  const full: ImportLogEntry = {
+  await bulkAppendImportLog([entry]);
+}
+
+/** Batch version — single read + single write regardless of how many new
+ *  entries are being recorded. The cron processes 30-45 emails per run; if
+ *  each one did its own read-modify-write of the blob, the function timed
+ *  out before finishing. With this, the whole run is one blob write. */
+export async function bulkAppendImportLog(
+  newOnes: Array<Omit<ImportLogEntry, "id" | "ts"> & { ts?: string }>,
+): Promise<void> {
+  if (newOnes.length === 0) return;
+  const full: ImportLogEntry[] = newOnes.map((e) => ({
     id: crypto.randomUUID(),
-    ts: entry.ts ?? new Date().toISOString(),
-    ...entry,
-  };
+    ts: e.ts ?? new Date().toISOString(),
+    ...e,
+  }));
   const { entries } = await readLatest();
-  // One row per Gmail message — re-parsing the same email (e.g. via the
-  // "Retry todos" button after a parser deploy) REPLACES the prior log
-  // entry instead of stacking. Without this, repeated retries inflate the
-  // log so the stat tiles bounce between refreshes.
-  const filtered = entries.filter((e) => e.messageId !== full.messageId);
-  const next = [...filtered, full];
+  // Dedup by messageId — for each new entry, drop any older row that
+  // matched the same Gmail message id. Then append the new rows.
+  const newIds = new Set(full.map((e) => e.messageId));
+  const filtered = entries.filter((e) => !newIds.has(e.messageId));
+  const next = [...filtered, ...full];
   const trimmed = next.length > LOG_LIMIT ? next.slice(next.length - LOG_LIMIT) : next;
   await writeBlob(trimmed);
 }
