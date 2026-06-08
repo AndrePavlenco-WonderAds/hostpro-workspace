@@ -513,6 +513,7 @@ function EntradaFormFields({
   // Mounts fresh whenever the parent <form> remounts (via its key), so
   // useState seeds correctly off `editing`.
   const [amount, setAmount] = useState(editing ? String(editing.amount) : "");
+  const [noIva, setNoIva] = useState(editing?.noIva ?? false);
   const ivaSuggestion = amount
     ? (Number(amount.replace(",", ".")) * 0.06).toFixed(2)
     : "";
@@ -569,15 +570,20 @@ function EntradaFormFields({
             ))}
           </select>
         </Field>
-        <Field label="IVA (€) — sugestão 6%">
+        <Field label={noIva ? "IVA — desactivado (sem IVA)" : "IVA (€) — sugestão 6%"}>
+          {/* Quando `Sem IVA` está ligado força-se o valor a 0 e o input fica
+              disabled; um input hidden garante que o FormData traz `iva=0`
+              (inputs disabled NÃO são enviados pelo form). */}
+          {noIva ? <input type="hidden" name="iva" value="0" /> : null}
           <input
             type="number"
-            name="iva"
+            name={noIva ? "iva-disabled" : "iva"}
             step="0.01"
             min="0"
-            defaultValue={editing?.iva ?? ivaSuggestion}
-            placeholder={ivaSuggestion}
-            className={INPUT_CLASS}
+            disabled={noIva}
+            defaultValue={noIva ? "" : (editing?.iva ?? ivaSuggestion)}
+            placeholder={noIva ? "—" : ivaSuggestion}
+            className={`${INPUT_CLASS} ${noIva ? "opacity-40" : ""}`}
           />
         </Field>
       </div>
@@ -593,6 +599,17 @@ function EntradaFormFields({
           label="Já entrou no banco"
           defaultChecked={editing ? editing.noBanco : true}
         />
+        {/* Controlled checkbox — pilota o disabled do input IVA via useState. */}
+        <label className="inline-flex items-center gap-2 text-sm text-white/75">
+          <input
+            type="checkbox"
+            name="noIva"
+            checked={noIva}
+            onChange={(e) => setNoIva(e.target.checked)}
+            className="h-4 w-4 rounded border-white/20 bg-white/[0.05] text-brand-cyan focus:ring-brand-cyan"
+          />
+          Sem IVA
+        </label>
         <Check
           name="inIvaVault"
           label="IVA já no Vault"
@@ -651,7 +668,13 @@ function EntradaTable({
                 {eur(r.amount)}
               </Td>
               <Td align="right" className="text-white/65">
-                {eur(r.iva)}
+                {r.noIva ? (
+                  <span className="inline-flex items-center rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/55 ring-1 ring-white/15">
+                    Sem IVA
+                  </span>
+                ) : (
+                  eur(r.iva)
+                )}
               </Td>
               <Td align="center">
                 <div className="flex flex-wrap justify-center gap-1">

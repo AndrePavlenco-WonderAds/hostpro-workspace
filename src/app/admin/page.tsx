@@ -75,7 +75,7 @@ export default async function AdminPage() {
             </p>
           </div>
           <span className="rounded-full border border-brand-cyan/40 bg-brand-cyan/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-brand-cyan">
-            Ao vivo · v0.9.9
+            Ao vivo · v0.10.0
           </span>
         </header>
 

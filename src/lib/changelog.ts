@@ -15,6 +15,16 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.10.0",
+    date: "2026-06-09",
+    title: "Entradas: toggle *Sem IVA* — opta-se entrada-a-entrada",
+    highlights: [
+      "**🆕 Toggle *Sem IVA* no form de entrada.** Existia antes a sugestão automática de 6% de IVA, mas todas as entradas iam contabilizar IVA mesmo as que não levam (directas, receitas sem retenção, etc.). Agora há uma checkbox ao lado de *Recebido* / *Já entrou no banco* — quando ligada: input IVA fica desactivado, label muda para *IVA — desactivado*, e o servidor força `iva = 0` mesmo que algum valor chegue do form. Linha na tabela passa a mostrar badge cinzento **`SEM IVA`** em vez do valor.",
+      "**📐 Campo novo `noIva?: boolean` em `EntradaEntry`.** Opcional para compatibilidade com entradas antigas. Default `false`/undefined. `addEntryAction` e `updateEntryAction` lêem `formData.get(\"noIva\") === \"on\"` e propagam para o blob; também ZERAM o iva quando true (defensa em profundidade).",
+      "**🎯 Sem mudança em `pnl-math`.** Como `iva` fica forçado a `0` quando `noIva` é true, o aggregate continua naïve (`totals.iva += e.iva`) e o tile IVA + Lucro do mês deixa de ser inflado pela linha. Nada precisa migrar.",
+    ],
+  },
+  {
     version: "0.9.9",
     date: "2026-06-08",
     title: "Cancelamento bug fix + label hostpro/airbnb-cancelled + navegação AL",

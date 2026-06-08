@@ -109,7 +109,10 @@ export async function addEntryAction(formData: FormData): Promise<ActionResult> 
       });
     } else if (kind === "entrada") {
       const stayWindow = asString(formData.get("stayWindow"));
-      const iva = asNumber(formData.get("iva"));
+      const noIva = formData.get("noIva") === "on";
+      // Defensive: even if the disabled IVA input somehow leaks a value,
+      // noIva=true always forces iva=0 server-side.
+      const iva = noIva ? 0 : asNumber(formData.get("iva"));
       if (!stayWindow) return { ok: false, error: "Janela da estadia obrigatória" };
       await addEntry({
         kind: "entrada",
@@ -121,6 +124,7 @@ export async function addEntryAction(formData: FormData): Promise<ActionResult> 
         outOfAccount: false,
         stayWindow,
         iva,
+        noIva,
         recebido: formData.get("recebido") === "on",
         noBanco: formData.get("noBanco") === "on",
         inIvaVault: formData.get("inIvaVault") === "on",
@@ -190,7 +194,8 @@ export async function updateEntryAction(
       } as never);
     } else if (kind === "entrada") {
       const stayWindow = asString(formData.get("stayWindow"));
-      const iva = asNumber(formData.get("iva"));
+      const noIva = formData.get("noIva") === "on";
+      const iva = noIva ? 0 : asNumber(formData.get("iva"));
       if (!stayWindow) return { ok: false, error: "Janela da estadia obrigatória" };
       await updateEntry(id, {
         date,
@@ -199,6 +204,7 @@ export async function updateEntryAction(
         person,
         stayWindow,
         iva,
+        noIva,
         recebido: formData.get("recebido") === "on",
         noBanco: formData.get("noBanco") === "on",
         inIvaVault: formData.get("inIvaVault") === "on",

@@ -38,8 +38,13 @@ export interface EntradaEntry extends BaseEntry {
   kind: "entrada";
   /** Stay window like "16/02-20/02" — kept verbatim for now. */
   stayWindow?: string;
-  /** IVA charged on the booking (6 % short-term rental in PT). */
+  /** IVA charged on the booking (6 % short-term rental in PT). Forced to
+   *  0 when `noIva` is true so the monthly aggregation can stay naive. */
   iva: number;
+  /** When true, the entrada doesn't carry IVA — e.g. directas / under-
+   *  threshold guest payments, or stays for which Andre absorbed the IVA.
+   *  Aggregations treat `iva` as 0, and the UI marks the row "sem IVA". */
+  noIva?: boolean;
   recebido: boolean;
   noBanco: boolean;
   inIvaVault: boolean;
