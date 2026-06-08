@@ -13,7 +13,8 @@ export type ImportLogStatus =
   | "dry-run"         // parsed OK, but write to pnl blob skipped (initial mode)
   | "created"         // new pnl entry written
   | "updated"         // existing pnl entry patched (e.g. payout flipped recebido=true)
-  | "skipped"         // dedupe: already in pnl by property+stayWindow
+  | "skipped"         // dedupe: already in pnl by hmCode or property+stayWindow
+  | "cancelled"       // a "Canceled: Reservation HM…" email exists for this HM
   | "ignored"         // listing is intentionally not a HostPro AL (e.g. brother's apartment)
   | "unknown-listing" // parsed OK but listing didn't match any known mapping
   | "parse-failed"    // regex didn't match — likely template drift
@@ -26,10 +27,10 @@ export type ImportLogEntry = {
   emailSubject: string;
   emailFrom: string;
   emailDate: string;      // ISO — Gmail's internalDate
-  kind: "airbnb-confirmation" | "airbnb-payout" | "booking-confirmation" | "booking-statement" | "unknown";
+  kind: "airbnb-confirmation" | "airbnb-payout" | "airbnb-cancellation" | "booking-confirmation" | "booking-statement" | "unknown";
   status: ImportLogStatus;
   parsed?: unknown;       // structured parser output
-  pnlEntryId?: string;    // when status is created/updated
+  pnlEntryId?: string;    // when status is created/updated/cancelled (deleted)
   error?: string;         // message
 };
 

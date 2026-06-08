@@ -15,6 +15,18 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.9.8",
+    date: "2026-06-08",
+    title: "Sistema de cancelamento Airbnb · status novo CANCELADO · delete em LIVE",
+    highlights: [
+      "**🚫 Cancelamentos detectados e propagados.** Cross-check contra os iCals do Talkguest revelou que Karl Touchais (HM3ZABYY9D, OFO 20-26/07) e Meike Kreisköther (HMHCRZ5D8R, SE2 27-29/11) foram cancelados — emails *\"Canceled: Reservation HM…\"* existem no Gmail mas o filtro só apanhava *\"Reservation confirmed -\"*. Agora o cron faz uma search adicional por `from:noreply@airbnb.com subject:\"Canceled: Reservation\"`, extrai o HM code do subject (regex `Canceled:\\s*Reservation\\s+(HM[A-Z0-9]{8,10})`), e propaga o cancelamento.",
+      "**🗑️ LIVE: delete por hmCode.** Quando o cron corre com `IMPORT_LIVE=true`, cada cancelamento parsed dispara um `deleteEntriesByHmCodes()` no blob pnl — se já existir uma entrada com aquele hmCode (e.g. uma confirmação processada anteriormente), é REMOVIDA. Em dry-run apenas regista no log; nada é apagado. Ambas as situações: badge CANCELADO no `/admin/email-import-log`.",
+      "**🧯 Filtro cruzado nas confirmações/payouts.** Mesmo que o cron processe a confirmação ANTES da cancellation no mesmo run, agora bate-se sempre o set `cancelledHmCodes` primeiro — confirmação com HM no set → CANCELADO em vez de DRY-RUN/CRIADA. Ordem garantida: Pass 0 (cancellations) → Pass 1 (confirmations) → Pass 2 (payouts).",
+      "**🧹 Backfill da Karen Lodder.** A entrada `ent-002` (OFO 06/06-10/06, €709,41) tinha sido criada manualmente sem hmCode e com `stayWindow` em formato \"6/06-10/06\" (sem zero à esquerda) — nenhum dos dois dedupes do cron a apanhava. `scripts/backfill-karen-lodder.mjs` adicionou `hmCode = HMNZZJF543` e normalizou stayWindows de todas as entradas (`6/06` → `06/06`).",
+      "**📊 Status novo no log:** `cancelled` aparece como **CANCELADO** (badge rosa). Grid de stats passou para `lg:grid-cols-9`. Linhas canceladas têm borda + fundo subtilmente rosa para se distinguirem dos skipped/ignored.",
+    ],
+  },
+  {
     version: "0.9.7",
     date: "2026-06-07",
     title: "Ano explícito do Airbnb · dedupe por HM code · backfill 9 entradas",

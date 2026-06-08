@@ -49,6 +49,7 @@ export default async function EmailImportLogPage() {
     "created": 0,
     "updated": 0,
     "skipped": 0,
+    "cancelled": 0,
     "ignored": 0,
     "unknown-listing": 0,
     "parse-failed": 0,
@@ -95,11 +96,12 @@ export default async function EmailImportLogPage() {
           </div>
         </div>
 
-        <section className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
+        <section className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-9">
           <Stat label="Dry-run" value={counts["dry-run"]} tone="cyan" />
           <Stat label="Criadas" value={counts.created} tone="green" />
           <Stat label="Actualizadas" value={counts.updated} tone="green" />
           <Stat label="Skipped" value={counts.skipped} tone="neutral" />
+          <Stat label="Cancelado" value={counts.cancelled} tone="rose" />
           <Stat label="Ignorado" value={counts.ignored} tone="neutral" />
           <Stat label="Listing ?" value={counts["unknown-listing"]} tone="amber" />
           <Stat label="Parse ✗" value={counts["parse-failed"]} tone="red" />
@@ -129,7 +131,7 @@ function Stat({
 }: {
   label: string;
   value: number;
-  tone: "cyan" | "green" | "red" | "amber" | "neutral";
+  tone: "cyan" | "green" | "red" | "rose" | "amber" | "neutral";
 }) {
   const toneClass =
     tone === "cyan"
@@ -138,9 +140,11 @@ function Stat({
         ? "text-emerald-300"
         : tone === "red"
           ? "text-rose-300"
-          : tone === "amber"
-            ? "text-amber-200"
-            : "text-white";
+          : tone === "rose"
+            ? "text-rose-400"
+            : tone === "amber"
+              ? "text-amber-200"
+              : "text-white";
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-3 backdrop-blur-md">
       <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
@@ -163,9 +167,11 @@ function Row({ entry }: { entry: ImportLogEntry }) {
           ? "border-amber-300/30 bg-amber-300/[0.04]"
           : entry.status === "parse-failed" || entry.status === "error"
             ? "border-rose-400/30 bg-rose-400/[0.04]"
-            : entry.status === "skipped" || entry.status === "ignored"
-              ? "border-white/10 bg-white/[0.025] opacity-60"
-              : "border-white/10 bg-white/[0.025]";
+            : entry.status === "cancelled"
+              ? "border-rose-400/30 bg-rose-400/[0.04]"
+              : entry.status === "skipped" || entry.status === "ignored"
+                ? "border-white/10 bg-white/[0.025] opacity-60"
+                : "border-white/10 bg-white/[0.025]";
   const ts = new Date(entry.ts);
   const tsLabel = ts.toLocaleString("en-GB", {
     day: "2-digit",
@@ -206,6 +212,7 @@ function StatusPill({ status }: { status: ImportLogStatus }) {
     created: { label: "CRIADA", cls: "bg-emerald-300/20 text-emerald-200 ring-emerald-300/30" },
     updated: { label: "ACTUALIZADA", cls: "bg-emerald-300/20 text-emerald-200 ring-emerald-300/30" },
     skipped: { label: "SKIPPED", cls: "bg-white/10 text-white/60 ring-white/20" },
+    cancelled: { label: "CANCELADO", cls: "bg-rose-400/20 text-rose-200 ring-rose-400/30" },
     ignored: { label: "IGNORADO", cls: "bg-white/10 text-white/60 ring-white/20" },
     "unknown-listing": { label: "LISTING ?", cls: "bg-amber-300/20 text-amber-100 ring-amber-300/30" },
     "parse-failed": { label: "PARSE ✗", cls: "bg-rose-400/20 text-rose-100 ring-rose-400/30" },

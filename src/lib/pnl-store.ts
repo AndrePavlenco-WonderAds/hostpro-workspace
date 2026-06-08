@@ -139,6 +139,26 @@ export async function deleteEntry(id: string): Promise<void> {
   await writeBlob(all.filter((e) => e.id !== id));
 }
 
+/** Bulk delete by HM code — used by the cron when an Airbnb cancellation
+ *  email is received. Returns the ids that were actually removed. */
+export async function deleteEntriesByHmCodes(hmCodes: Iterable<string>): Promise<string[]> {
+  const set = new Set(hmCodes);
+  if (set.size === 0) return [];
+  const all = (await readBlob()) ?? [...SEED_ENTRIES];
+  const removed: string[] = [];
+  const keep: PnLEntry[] = [];
+  for (const e of all) {
+    if (e.kind === "entrada" && e.hmCode && set.has(e.hmCode)) {
+      removed.push(e.id);
+      continue;
+    }
+    keep.push(e);
+  }
+  if (removed.length === 0) return [];
+  await writeBlob(keep);
+  return removed;
+}
+
 export async function updateEntry(
   id: string,
   patch: Partial<PnLEntry>,

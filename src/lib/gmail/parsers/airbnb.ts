@@ -282,3 +282,30 @@ export function parseAirbnbPayout(
     property: classification.kind === "property" ? classification.slug : null,
   };
 }
+
+// ---------- "Canceled: Reservation HM… for …" ----------
+
+export type AirbnbCancellation = {
+  hmCode: string;
+  /** Original stay window, parsed best-effort from the subject. */
+  rangeText?: string;
+  cancellationDate: string;  // ISO — from email's internalDate
+};
+
+/** Tiny subject-only parser. The body of a cancellation email also exists
+ *  but the subject already carries everything we act on (HM code). Body
+ *  parsing would only matter once we want to surface the refund amount. */
+export function parseAirbnbCancellation(
+  subject: string,
+  receivedDate: string,
+): AirbnbCancellation | null {
+  // "Canceled: Reservation HM3ZABYY9D for Jul 20 – 26, 2026"
+  // "Canceled: Reservation HMHCRZ5D8R for Nov 27 – 29, 2026"
+  const m = subject.match(/Canceled:\s*Reservation\s+(HM[A-Z0-9]{8,10})(?:\s+for\s+(.+))?/i);
+  if (!m) return null;
+  return {
+    hmCode: m[1],
+    rangeText: m[2]?.trim(),
+    cancellationDate: receivedDate.slice(0, 10),
+  };
+}
