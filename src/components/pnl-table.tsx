@@ -513,7 +513,9 @@ function EntradaFormFields({
   // Mounts fresh whenever the parent <form> remounts (via its key), so
   // useState seeds correctly off `editing`.
   const [amount, setAmount] = useState(editing ? String(editing.amount) : "");
-  const [noIva, setNoIva] = useState(editing?.noIva ?? false);
+  // Default para entradas NOVAS: `Sem IVA` ligado (Andre confirmou que as
+  // entradas em cash dele não levam IVA). Em edit usa o valor guardado.
+  const [noIva, setNoIva] = useState(editing ? (editing.noIva ?? false) : true);
   const ivaSuggestion = amount
     ? (Number(amount.replace(",", ".")) * 0.06).toFixed(2)
     : "";

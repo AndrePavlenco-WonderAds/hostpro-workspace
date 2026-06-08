@@ -15,6 +15,15 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.10.1",
+    date: "2026-06-09",
+    title: "*Sem IVA* default em novas entradas + backfill 24 entradas OFO",
+    highlights: [
+      "**☑️ Default ligado para novas entradas.** Andre confirmou que as entradas em cash dele não levam IVA, portanto o toggle *Sem IVA* passa a aparecer **ticked por defeito** em qualquer entrada nova (`useState(editing ? (editing.noIva ?? false) : true)`). Em edit, mantém o valor guardado — preserva entradas com IVA criadas por engano antes deste change.",
+      "**🧹 Backfill: 24 entradas OFO marcadas `noIva=true` + `iva=0`.** Todas as entradas com `property=one-for-one-house` e `date >= 2026-01-01` foram patchadas via `scripts/backfill-ofo-sem-iva.mjs` (idempotente). Total IVA limpo: **€548,42**. Reflexo imediato no tile *IVA* (passa a 0) e no *Lucro* (passa a ser €548,42 mais alto vs. estado anterior).",
+    ],
+  },
+  {
     version: "0.10.0",
     date: "2026-06-09",
     title: "Entradas: toggle *Sem IVA* — opta-se entrada-a-entrada",
