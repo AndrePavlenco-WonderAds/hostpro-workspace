@@ -47,6 +47,12 @@ export default async function PropertyPage({
   const property = getProperty(slug);
   if (!property) notFound();
 
+  // Cyclic prev/next around the PROPERTIES order. Saves Andre a round-trip
+  // to `/` (Home) when comparing one AL against its neighbour.
+  const idx = PROPERTIES.findIndex((p) => p.slug === property.slug);
+  const prevProperty = PROPERTIES[(idx - 1 + PROPERTIES.length) % PROPERTIES.length];
+  const nextProperty = PROPERTIES[(idx + 1) % PROPERTIES.length];
+
   const { m } = await searchParams;
   const entries = await getEntries(property.slug);
 
@@ -77,14 +83,30 @@ export default async function PropertyPage({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-brand-navy-dark via-brand-navy-dark/70 to-brand-navy-dark/30" />
 
-        <div className="absolute inset-x-0 top-0 px-4 pt-4 sm:px-10 sm:pt-8">
+<div className="absolute inset-x-0 top-0 px-4 pt-4 sm:px-10 sm:pt-8">
           <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-2">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/30 px-3 py-1.5 text-xs font-semibold text-white/85 backdrop-blur-sm transition hover:border-brand-cyan hover:text-white"
-            >
-              ← Início
-            </Link>
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                href="/"
+                className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/30 px-3 py-1.5 text-xs font-semibold text-white/85 backdrop-blur-sm transition hover:border-brand-cyan hover:text-white"
+              >
+                ← Início
+              </Link>
+              <Link
+                href={`/alojamentos/${prevProperty.slug}`}
+                className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-black/30 px-3 py-1.5 text-xs font-semibold text-white/85 backdrop-blur-sm transition hover:border-brand-cyan hover:text-white"
+                title={`Anterior: ${prevProperty.shortName}`}
+              >
+                ‹ {prevProperty.shortName}
+              </Link>
+              <Link
+                href={`/alojamentos/${nextProperty.slug}`}
+                className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-black/30 px-3 py-1.5 text-xs font-semibold text-white/85 backdrop-blur-sm transition hover:border-brand-cyan hover:text-white"
+                title={`Seguinte: ${nextProperty.shortName}`}
+              >
+                {nextProperty.shortName} ›
+              </Link>
+            </div>
             <div className="flex flex-wrap items-center gap-2">
               <Link
                 href={`/alojamentos/${property.slug}/reserva`}

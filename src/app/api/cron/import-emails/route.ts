@@ -40,6 +40,7 @@ export const maxDuration = 60;        // Hobby plan max
 const LABELS = {
   airbnbConf: "hostpro/airbnb-conf",
   airbnbPayout: "hostpro/airbnb-payout",
+  airbnbCancelled: "hostpro/airbnb-cancelled",
   processado: "hostpro/processado",
   falhou: "hostpro/falhou",
 } as const;
@@ -87,6 +88,7 @@ export async function GET(req: Request) {
 
   const processadoId = await gmail.ensureLabel(LABELS.processado);
   const falhouId = await gmail.ensureLabel(LABELS.falhou);
+  const cancelledLabelId = await gmail.ensureLabel(LABELS.airbnbCancelled);
 
   const logBatch: Array<Omit<ImportLogEntry, "id" | "ts">> = [];
   const results = {
@@ -108,8 +110,11 @@ export async function GET(req: Request) {
   // for a cancelled HM never produces a pnl entry, and an existing pnl
   // entry with that hmCode is deleted in LIVE mode.
   const cancelledHmCodes = new Set<string>();
+  // Cancellations come from `automated@airbnb.com` (NOT noreply@), so we
+  // use a broader `from:airbnb.com` filter that catches both. The subject
+  // prefix is unique enough that we don't need stricter scoping.
   const cancellationRefs = await gmail.listMessages(
-    `from:noreply@airbnb.com subject:"Canceled: Reservation"`,
+    `from:airbnb.com subject:"Canceled: Reservation"`,
     100,
   );
   for (const ref of cancellationRefs) {
@@ -133,6 +138,9 @@ export async function GET(req: Request) {
         parsed: { ...parsed, matchedEntryId: existingId },
         pnlEntryId: existingId,
       });
+      // Tag the cancellation email in Gmail so it shows up alongside the
+      // other hostpro/* labels in the user's Labels panel.
+      await gmail.modifyMessage(ref.id, [cancelledLabelId, processadoId], [falhouId]);
       results.cancelled++;
     } catch (e) {
       // Cancellation parsing is best-effort; don't fail the whole run.

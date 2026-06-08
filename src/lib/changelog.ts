@@ -15,6 +15,16 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.9.9",
+    date: "2026-06-08",
+    title: "Cancelamento bug fix + label hostpro/airbnb-cancelled + navegação AL",
+    highlights: [
+      "**🐛 Bug v0.9.8 — CANCELADO ficou em 0.** A Gmail search procurava `from:noreply@airbnb.com` mas as cancellations chegam de `automated@airbnb.com`. Trocado para `from:airbnb.com` (apanha noreply E automated). Karl Touchais HM3ZABYY9D + Meike Kreisköther HMHCRZ5D8R agora vão aparecer como CANCELADO na próxima corrida.",
+      "**🏷️ Label novo no Gmail: `hostpro/airbnb-cancelled`.** A pedido do Andre, o cron agora aplica este label a cada email de cancelamento processado (paralelo aos `hostpro/airbnb-conf`/`-payout` que já existem). Aparece no painel Labels do Gmail com contador, sem filtro manual ter de ser criado (o cron procura por subject, não por label).",
+      "**↔️ Botões prev/next AL no header das páginas de alojamento.** No topo da página `/alojamentos/[slug]`, ao lado do `← Início`, aparecem dois chips cíclicos *‹ Sweet Escape 5* e *One For One ›* (exemplo a partir do SE2). Ordem fixa: SE2 → SE5 → OFO → SE2. Permite saltar entre ALs sem voltar à home.",
+    ],
+  },
+  {
     version: "0.9.8",
     date: "2026-06-08",
     title: "Sistema de cancelamento Airbnb · status novo CANCELADO · delete em LIVE",
