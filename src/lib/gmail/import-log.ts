@@ -102,3 +102,13 @@ export async function hasMessageBeenLogged(messageId: string): Promise<boolean> 
   const { entries } = await readLatest();
   return entries.some((e) => e.messageId === messageId);
 }
+
+/** Read the full log once and return the set of Gmail messageIds seen so
+ *  far — used by the cron to dedupe in-memory instead of doing one Blob
+ *  `list()` per email reference (the per-message `hasMessageBeenLogged`
+ *  was the single biggest contributor to Blob operations: 40 emails × 2
+ *  label loops = 80 list() ops per cron run). v0.10.2. */
+export async function getAllLoggedMessageIds(): Promise<Set<string>> {
+  const { entries } = await readLatest();
+  return new Set(entries.map((e) => e.messageId));
+}

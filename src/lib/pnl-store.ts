@@ -9,9 +9,16 @@
 // taking a full request cycle to surface back. Blob reads are cheap (single
 // HTTP fetch, same region as the function) so caching on top buys little
 // for a single-user admin app and complicates read-your-own-writes.
+//
+// v0.10.2 — Hobby plan operations budget (Blob `list`/`del` are "advanced"
+// ops, the most expensive bucket). Mutations used to do 4 ops each:
+//   readBlob (list+fetch) → writeBlob (list+put+del)
+// The two `list()` calls return the same blobs (server-action mutations
+// are serialized). We now do a single `list()` inside `readBlob` and pass
+// the snapshot to `writeBlob`, dropping every mutation to 3 ops.
 
 import "server-only";
-import { list, put, del } from "@vercel/blob";
+import { list, put, del, type ListBlobResult } from "@vercel/blob";
 import { SEED_ENTRIES } from "./pnl-seed";
 import type { PropertySlug } from "./properties";
 import type {
@@ -27,6 +34,8 @@ import type {
 const BLOB_PREFIX = "data/pnl";
 const BLOB_BASENAME = "data/pnl.json";
 
+type ExistingBlobs = ListBlobResult["blobs"];
+
 // ---------- low-level Blob I/O ----------
 //
 // Vercel Blob's public CDN serves every blob URL with a hard-coded 60-second
@@ -40,7 +49,7 @@ const BLOB_BASENAME = "data/pnl.json";
 // always pick the latest blob by `uploadedAt`. Old blobs are deleted after
 // the write succeeds so the store doesn't grow.
 
-async function readBlob(): Promise<PnLEntry[] | null> {
+async function readBlob(): Promise<{ entries: PnLEntry[]; existing: ExistingBlobs } | null> {
   if (!process.env.BLOB_READ_WRITE_TOKEN) return null;
   const { blobs } = await list({ prefix: BLOB_PREFIX });
   if (blobs.length === 0) return null;
@@ -50,15 +59,18 @@ async function readBlob(): Promise<PnLEntry[] | null> {
   );
   const res = await fetch(newest.url, { cache: "no-store" });
   if (!res.ok) throw new Error(`Blob fetch failed: ${res.status}`);
-  return (await res.json()) as PnLEntry[];
+  return { entries: (await res.json()) as PnLEntry[], existing: blobs };
 }
 
-async function writeBlob(entries: PnLEntry[]): Promise<void> {
+async function writeBlob(entries: PnLEntry[], existing?: ExistingBlobs): Promise<void> {
   if (!process.env.BLOB_READ_WRITE_TOKEN) {
     throw new Error("BLOB_READ_WRITE_TOKEN missing — Vercel Blob não está ligado.");
   }
   // Snapshot existing blobs so we can delete them after the new write lands.
-  const { blobs: existing } = await list({ prefix: BLOB_PREFIX });
+  // Mutations pass through the snapshot they already loaded via `readBlob`
+  // so we don't do a redundant `list()` (v0.10.2). Standalone writers (e.g.
+  // the first-time seed) still take the hit.
+  const toGc = existing ?? (await list({ prefix: BLOB_PREFIX })).blobs;
 
   // Write to a new randomly-suffixed URL — the CDN has never seen it, so
   // immediate reads return the new content.
@@ -72,9 +84,9 @@ async function writeBlob(entries: PnLEntry[]): Promise<void> {
   // Garbage-collect the old versions. Don't block the response on this — we
   // still want it to await so the next list() returns clean results, but if
   // del fails (transient network) we shouldn't fail the whole mutation.
-  if (existing.length > 0) {
+  if (toGc.length > 0) {
     try {
-      await del(existing.map((b) => b.url));
+      await del(toGc.map((b) => b.url));
     } catch {
       // best-effort
     }
@@ -85,9 +97,10 @@ async function writeBlob(entries: PnLEntry[]): Promise<void> {
 
 export async function getAllEntries(): Promise<PnLEntry[]> {
   const stored = await readBlob();
-  if (stored) return stored;
+  if (stored) return stored.entries;
   // First time touching the store — seed it so all readers see the same
-  // baseline going forward.
+  // baseline going forward. No `existing` to pass through (the store is
+  // empty), so writeBlob takes its own snapshot — once, ever.
   try {
     await writeBlob(SEED_ENTRIES);
   } catch {
@@ -127,16 +140,18 @@ function nextId(existing: PnLEntry[], kind: EntryKind): string {
 }
 
 export async function addEntry(input: NewEntryInput): Promise<PnLEntry> {
-  const all = (await readBlob()) ?? [...SEED_ENTRIES];
+  const stored = await readBlob();
+  const all = stored?.entries ?? [...SEED_ENTRIES];
   const id = input.id ?? nextId(all, input.kind);
   const entry = { ...input, id } as PnLEntry;
-  await writeBlob([...all, entry]);
+  await writeBlob([...all, entry], stored?.existing);
   return entry;
 }
 
 export async function deleteEntry(id: string): Promise<void> {
-  const all = (await readBlob()) ?? [...SEED_ENTRIES];
-  await writeBlob(all.filter((e) => e.id !== id));
+  const stored = await readBlob();
+  const all = stored?.entries ?? [...SEED_ENTRIES];
+  await writeBlob(all.filter((e) => e.id !== id), stored?.existing);
 }
 
 /** Bulk delete by HM code — used by the cron when an Airbnb cancellation
@@ -144,7 +159,8 @@ export async function deleteEntry(id: string): Promise<void> {
 export async function deleteEntriesByHmCodes(hmCodes: Iterable<string>): Promise<string[]> {
   const set = new Set(hmCodes);
   if (set.size === 0) return [];
-  const all = (await readBlob()) ?? [...SEED_ENTRIES];
+  const stored = await readBlob();
+  const all = stored?.entries ?? [...SEED_ENTRIES];
   const removed: string[] = [];
   const keep: PnLEntry[] = [];
   for (const e of all) {
@@ -155,7 +171,7 @@ export async function deleteEntriesByHmCodes(hmCodes: Iterable<string>): Promise
     keep.push(e);
   }
   if (removed.length === 0) return [];
-  await writeBlob(keep);
+  await writeBlob(keep, stored?.existing);
   return removed;
 }
 
@@ -163,11 +179,12 @@ export async function updateEntry(
   id: string,
   patch: Partial<PnLEntry>,
 ): Promise<void> {
-  const all = (await readBlob()) ?? [...SEED_ENTRIES];
+  const stored = await readBlob();
+  const all = stored?.entries ?? [...SEED_ENTRIES];
   const next = all.map((e) =>
     e.id === id ? ({ ...e, ...patch } as PnLEntry) : e,
   );
-  await writeBlob(next);
+  await writeBlob(next, stored?.existing);
 }
 
 export type { Person, PnLEntry, EntryKind };

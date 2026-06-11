@@ -29,7 +29,7 @@ import {
 } from "@/lib/gmail/parsers/airbnb";
 import {
   bulkAppendImportLog,
-  hasMessageBeenLogged,
+  getAllLoggedMessageIds,
   type ImportLogEntry,
   type ImportLogStatus,
 } from "@/lib/gmail/import-log";
@@ -78,6 +78,11 @@ export async function GET(req: Request) {
   //   (b) property + stayWindow — fallback for CSV-imported entries that
   //       don't carry an HM code yet.
   const existingEntries = await getAllEntries();
+  // Snapshot the import log once too — we use it to dedupe by Gmail
+  // messageId before fetching the message body. Previously this was a
+  // `hasMessageBeenLogged(ref.id)` call PER message, each one doing a
+  // Blob `list()`. v0.10.2: read once, lookup in-memory Set.
+  const loggedMessageIds = retry ? new Set<string>() : await getAllLoggedMessageIds();
   const existingByHmCode = new Map<string, string>();   // hmCode → entry id
   const existingByKey = new Map<string, string>();      // "property|stayWindow" → entry id
   for (const e of existingEntries) {
@@ -175,7 +180,7 @@ export async function GET(req: Request) {
       await Promise.all(
         chunk.map(async (ref) => {
           try {
-            if (!retry && (await hasMessageBeenLogged(ref.id))) {
+            if (!retry && loggedMessageIds.has(ref.id)) {
               results.skipped++;
               await gmail.modifyMessage(ref.id, [processadoId], []);
               return;

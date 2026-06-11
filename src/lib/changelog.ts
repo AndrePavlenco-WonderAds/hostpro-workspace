@@ -15,6 +15,18 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.10.2",
+    date: "2026-06-11",
+    title: "Blob ops budget — cron dedupe in-memory + mutations partilham snapshot",
+    highlights: [
+      "**🚨 Razão real do crash de hoje (3.232/3.200 ops no `hostpro-data`).** O limit do Hobby plan do Vercel Blob é por OPERAÇÕES (chamadas à API — list/put/del), não por GB armazenado. Apagar dados antigos não baixa o gráfico: o pnl.json já é GC-ed a cada write (1 ficheiro só, alguns KB). O que estoirou foi o número de `list()`/`del()` (advanced ops, o bucket mais caro) durante os releases do dia 7 e 9.",
+      "**🪓 Smoking gun: `hasMessageBeenLogged(ref.id)` dentro do loop do cron.** Cada email referenciado disparava `list({ prefix: 'data/gmail-import-log' })` — 40 emails × 2 label loops (confirmações + payouts) = **80 list() ops por cada run manual do cron** a partir do `/admin/email-import-log`. Trocado por um único `getAllLoggedMessageIds()` no topo do handler que carrega o log uma vez e devolve `Set<string>`; o check passa a ser `loggedMessageIds.has(ref.id)` em memória. Em modo `?retry=true` salta-se a leitura porque queremos re-processar tudo de propósito.",
+      "**🤝 Mutações partilham o snapshot do `list()`.** Antes: `addEntry`/`updateEntry`/`deleteEntry`/`deleteEntriesByHmCodes` faziam `readBlob` (list+fetch) seguido de `writeBlob` (list+put+del) = **4 advanced ops por mutação**. `readBlob` agora devolve `{ entries, existing }` e `writeBlob(entries, existing?)` reutiliza o array de blobs — 1 list a menos = **3 ops por mutação** (-25%). As Server Actions são serializadas por request, portanto o snapshot não fica stale entre o read e o write.",
+      "**📉 Custo estimado por run do cron** caiu de ~90 ops (1 getAllEntries + 80 hasMessageBeenLogged + 4 bulkAppend + ~5 cancellation pass) para ~10 ops. Page views da dashboard mantêm-se em 1 op cada (já era o mínimo).",
+      "**🧯 O que NÃO mexi:** o read cache no servidor (`unstable_cache`) continua off como em v0.5.2 — read-your-own-write é mais valioso que poupar 1 list por pageview num app single-user.",
+    ],
+  },
+  {
     version: "0.10.1",
     date: "2026-06-09",
     title: "*Sem IVA* default em novas entradas + backfill 24 entradas OFO",
