@@ -16,9 +16,18 @@
 // The two `list()` calls return the same blobs (server-action mutations
 // are serialized). We now do a single `list()` inside `readBlob` and pass
 // the snapshot to `writeBlob`, dropping every mutation to 3 ops.
+//
+// v0.10.3 — reversed the v0.5.2 decision because the cost model changed
+// (Hobby ops cap is small, page-load list() ops add up fast during dev).
+// `getAllEntries` is now cached for 5 minutes with tag `hostpro-pnl`;
+// every mutation in `pnl-actions.ts` calls `revalidateTag('hostpro-pnl')`
+// AFTER the write, so read-your-own-writes work correctly. The cache is
+// per-store-instance, so rapid page refreshes during a dev session
+// collapse to a single Blob op instead of one per refresh.
 
 import "server-only";
 import { list, put, del, type ListBlobResult } from "@vercel/blob";
+import { unstable_cache } from "next/cache";
 import { SEED_ENTRIES } from "./pnl-seed";
 import type { PropertySlug } from "./properties";
 import type {
@@ -95,7 +104,12 @@ async function writeBlob(entries: PnLEntry[], existing?: ExistingBlobs): Promise
 
 // ---------- reads ----------
 
-export async function getAllEntries(): Promise<PnLEntry[]> {
+// Internal — does the actual Blob read. Wrapped by `getAllEntries` below.
+// Split out so the cache layer wraps only the pure read path: the
+// "seed on first touch" write is a side effect that we DON'T want
+// memoized (we want it to run exactly once on first store creation,
+// not be skipped by a stale cache hit).
+async function _readAllEntriesUncached(): Promise<PnLEntry[]> {
   const stored = await readBlob();
   if (stored) return stored.entries;
   // First time touching the store — seed it so all readers see the same
@@ -108,6 +122,21 @@ export async function getAllEntries(): Promise<PnLEntry[]> {
   }
   return SEED_ENTRIES;
 }
+
+// Cache key prefix is intentionally version-suffixed so a deploy that
+// changes the entry shape invalidates the cache automatically (the prefix
+// is part of the cache key — change it, you get a fresh entry).
+export const getAllEntries = unstable_cache(
+  _readAllEntriesUncached,
+  ["hostpro-pnl-v1"],
+  {
+    tags: ["hostpro-pnl"],
+    // 5-minute revalidation as the safety floor — even if a mutation
+    // forgets to call revalidateTag (shouldn't happen, all paths in
+    // pnl-actions.ts do), stale reads expire on their own.
+    revalidate: 300,
+  },
+);
 
 export async function getEntries(slug: PropertySlug): Promise<PnLEntry[]> {
   const all = await getAllEntries();

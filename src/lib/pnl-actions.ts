@@ -4,8 +4,22 @@
 // Called directly from client components — Next.js handles the RPC.
 // All mutations go through src/lib/pnl-store.ts which is server-only.
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { addEntry, deleteEntry, updateEntry } from "./pnl-store";
+
+// Centralised cache invalidation. Every mutation calls this AFTER the
+// Blob write succeeds so the cached `getAllEntries` result is dropped
+// and the next read returns fresh data. v0.10.3: required because
+// `getAllEntries` is now wrapped in `unstable_cache` (tag: hostpro-pnl).
+// Uses `updateTag` (not `revalidateTag`) — server-action-only API with
+// read-your-own-writes guarantees, so the redirect after the mutation
+// sees the fresh data without a race window.
+function invalidatePnlCaches(property: string) {
+  updateTag("hostpro-pnl");
+  revalidatePath(`/alojamentos/${property}`);
+  revalidatePath("/admin");
+  revalidatePath("/");
+}
 import type { PropertySlug } from "./properties";
 import type { Person, EntryKind } from "./pnl-types";
 import { PEOPLE } from "./pnl-types";
@@ -67,9 +81,7 @@ export async function addEntryAction(formData: FormData): Promise<ActionResult> 
     } catch (err) {
       return { ok: false, error: err instanceof Error ? err.message : "Erro" };
     }
-    revalidatePath(`/alojamentos/${property}`);
-    revalidatePath("/admin");
-    revalidatePath("/");
+    invalidatePnlCaches(property);
     return { ok: true };
   }
 
@@ -137,9 +149,7 @@ export async function addEntryAction(formData: FormData): Promise<ActionResult> 
   }
 
   // Refresh the property page + admin overview.
-  revalidatePath(`/alojamentos/${property}`);
-  revalidatePath("/admin");
-  revalidatePath("/");
+  invalidatePnlCaches(property);
   return { ok: true };
 }
 
@@ -165,9 +175,7 @@ export async function updateEntryAction(
     } catch (err) {
       return { ok: false, error: err instanceof Error ? err.message : "Erro" };
     }
-    revalidatePath(`/alojamentos/${property}`);
-    revalidatePath("/admin");
-    revalidatePath("/");
+    invalidatePnlCaches(property);
     return { ok: true };
   }
 
@@ -216,9 +224,7 @@ export async function updateEntryAction(
     return { ok: false, error: err instanceof Error ? err.message : "Erro" };
   }
 
-  revalidatePath(`/alojamentos/${property}`);
-  revalidatePath("/admin");
-  revalidatePath("/");
+  invalidatePnlCaches(property);
   return { ok: true };
 }
 
@@ -231,9 +237,7 @@ export async function deleteEntryAction(id: string, property: string): Promise<A
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Erro" };
   }
-  revalidatePath(`/alojamentos/${property}`);
-  revalidatePath("/admin");
-  revalidatePath("/");
+  invalidatePnlCaches(property);
   return { ok: true };
 }
 
@@ -250,8 +254,7 @@ export async function toggleFlagAction(
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Erro" };
   }
-  revalidatePath(`/alojamentos/${property}`);
-  revalidatePath("/admin");
+  invalidatePnlCaches(property);
   return { ok: true };
 }
 
@@ -268,7 +271,6 @@ export async function changePersonAction(
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Erro" };
   }
-  revalidatePath(`/alojamentos/${property}`);
-  revalidatePath("/admin");
+  invalidatePnlCaches(property);
   return { ok: true };
 }

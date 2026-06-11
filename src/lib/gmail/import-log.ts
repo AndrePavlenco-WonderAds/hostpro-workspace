@@ -96,18 +96,14 @@ export async function bulkAppendImportLog(
   await writeBlob(trimmed);
 }
 
-/** True when the cron has already processed this Gmail message in any
- *  status — used as an extra guard before the Gmail label kicks in. */
-export async function hasMessageBeenLogged(messageId: string): Promise<boolean> {
-  const { entries } = await readLatest();
-  return entries.some((e) => e.messageId === messageId);
-}
-
 /** Read the full log once and return the set of Gmail messageIds seen so
  *  far — used by the cron to dedupe in-memory instead of doing one Blob
- *  `list()` per email reference (the per-message `hasMessageBeenLogged`
- *  was the single biggest contributor to Blob operations: 40 emails × 2
- *  label loops = 80 list() ops per cron run). v0.10.2. */
+ *  `list()` per email reference. (The previous `hasMessageBeenLogged`
+ *  helper was removed in v0.10.3 to prevent anyone re-introducing the
+ *  per-email loop — that pattern was the single biggest contributor to
+ *  the 2026-06-11 Hobby ops cap blowup: 40 emails × 2 label loops = 80
+ *  `list()` ops per cron run. If you need a single-message check, build
+ *  one Set from `getAllLoggedMessageIds()` and reuse it.) */
 export async function getAllLoggedMessageIds(): Promise<Set<string>> {
   const { entries } = await readLatest();
   return new Set(entries.map((e) => e.messageId));

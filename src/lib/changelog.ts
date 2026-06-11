@@ -15,6 +15,19 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.10.3",
+    date: "2026-06-11",
+    title: "Defesa em profundidade contra outro blowup do Blob ops cap",
+    highlights: [
+      "**⏰ Cron passou de diário a dia-sim-dia-não** (`0 6 * * *` → `0 6 */2 * *`). Reservas continuam a entrar antes do Andre abrir a app, agora a cada 48h em vez de 24h. Acordado para baixar o consumo basal do Blob de ~300 ops/mês para ~150 (cron já estava nos ~10 ops por run desde v0.10.2). Pedido directo do Andre depois do incidente de hoje.",
+      "**🧠 `getAllEntries` voltou a ter cache, agora com revalidateTag.** Reverte parcialmente a decisão de v0.5.2 — a razão original era 'mutações não surfaceavam' mas isso era por falta de invalidação activa, não por falha do cache. Agora: `unstable_cache` com `tags: ['hostpro-pnl']`, revalidate de 5 min como floor de segurança, e TODAS as mutations em `pnl-actions.ts` chamam `revalidateTag('hostpro-pnl')` via novo helper `invalidatePnlCaches`. Resultado: 20 refreshes seguidos em dev colapsam a 1 op (em vez de 20). Read-your-own-write continua a funcionar porque a tag é invalidada antes do redirect.",
+      "**🛡️ Confirm dialog nos botões *Correr cron agora* / *Retry todos*** em `/admin/email-import-log`. Componente novo `<ConfirmForm>` (client) embrulha o form action e abre `window.confirm()` com o custo em ops antes de disparar. Bloqueia a click-spam pattern que estoirou o cap a 11/06 (Andre andou a clicar para testar parser fixes; cada click ~80-90 ops na versão antiga, ~10 agora, ainda assim queremos travão de mão).",
+      "**🧯 `hasMessageBeenLogged` removido do export público.** Era a função que fazia `list()` por mensagem — eliminada para garantir que ninguém a re-introduz no loop do cron por engano. Só `getAllLoggedMessageIds()` (lê 1×, devolve Set) é exposto. Comentário deixa explícito o motivo histórico.",
+      "**📊 Orçamento mensal estimado pós-v0.10.3:** cron ~150 ops + mutations ~150 + page reads cacheados ~200 = **~500 ops/mês**. Hobby Blob cap = 2k advanced ops. Headroom de 4× — comporta dev sessions intensas (releases, backfills, testes de parser) sem voltar a estourar.",
+      "**🩹 Wiring extra:** cron route também chama `revalidateTag('hostpro-pnl')` depois de `deleteEntriesByHmCodes` em LIVE mode (bypass das server actions). Helper `invalidatePnlCaches(property)` centraliza os 4 calls que estavam duplicados em 7 sítios em `pnl-actions.ts`.",
+    ],
+  },
+  {
     version: "0.10.2",
     date: "2026-06-11",
     title: "Blob ops budget — cron dedupe in-memory + mutations partilham snapshot",

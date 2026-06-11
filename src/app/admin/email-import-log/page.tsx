@@ -5,6 +5,7 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { readImportLog, type ImportLogEntry, type ImportLogStatus } from "@/lib/gmail/import-log";
+import { ConfirmForm } from "@/components/confirm-form";
 
 export const metadata = {
   title: "Email import log — HostPro Workspace",
@@ -70,21 +71,31 @@ export default async function EmailImportLogPage() {
             </h1>
             <p className="mt-2 text-sm text-white/55 sm:text-base">
               Cada linha é uma mensagem do Gmail que o cron tentou processar.
-              Mostra as últimas {log.length}. Cron automático corre 1×/dia às
-              06:00 UTC (limite do plano Hobby) — usa o botão abaixo para
-              correr na hora.
+              Mostra as últimas {log.length}. Cron automático corre dia sim,
+              dia não, às 06:00 UTC (a partir de v0.10.3, para poupar Blob
+              ops no Hobby) — usa o botão abaixo para correr na hora.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <form action={runCronNow}>
+            {/* v0.10.3: each cron run consumes ~10 Blob ops on the new
+                tighter budget. The confirm dialog blocks accidental
+                double-clicks during dev, which was the root cause of the
+                2026-06-11 Hobby-cap outage. */}
+            <ConfirmForm
+              action={runCronNow}
+              message="Correr cron agora? Cada run consome ~10 Blob ops do orçamento mensal."
+            >
               <button
                 type="submit"
                 className="inline-flex items-center gap-2 rounded-full bg-brand-cyan px-5 py-2 text-sm font-semibold text-brand-navy shadow-[0_10px_30px_-10px_rgba(0,181,226,0.7)] transition hover:opacity-90"
               >
                 ▶ Correr cron agora
               </button>
-            </form>
-            <form action={runCronRetry}>
+            </ConfirmForm>
+            <ConfirmForm
+              action={runCronRetry}
+              message="Reprocessar TODOS os emails (mesmo os já processados)? Consome mais ops que uma run normal — usar só depois de um deploy do parser."
+            >
               <button
                 type="submit"
                 className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.04] px-5 py-2 text-sm font-semibold text-white/85 transition hover:bg-white/[0.08]"
@@ -92,7 +103,7 @@ export default async function EmailImportLogPage() {
               >
                 ↻ Retry todos
               </button>
-            </form>
+            </ConfirmForm>
           </div>
         </div>
 

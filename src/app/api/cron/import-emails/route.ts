@@ -12,6 +12,7 @@
 //   - With these changes a full retry over 45 emails completes in ~12 s.
 
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import {
   GmailClient,
   extractHtmlBody,
@@ -162,6 +163,14 @@ export async function GET(req: Request) {
       for (const [k, v] of existingByHmCode) if (v === id) existingByHmCode.delete(k);
       for (const [k, v] of existingByKey) if (v === id) existingByKey.delete(k);
     }
+    // v0.10.3: invalidate the pnl cache so the next page load sees the
+    // post-deletion state. (`pnl-actions.ts` mutations also do this; here
+    // we do it explicitly because the cron bypasses server actions.)
+    // Cron is a route handler (not a server action) so `updateTag` is not
+    // available — `revalidateTag` with a short-lived `seconds` profile
+    // purges the entry and accepts brief staleness on the next read,
+    // which is fine because the cron runs while no one's clicking.
+    if (removed.length > 0) revalidateTag("hostpro-pnl", "seconds");
   }
 
   for (const [labelName, kind] of [
