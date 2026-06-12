@@ -15,6 +15,16 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.10.5",
+    date: "2026-06-12",
+    title: "Home — fim do scroll fantasma horizontal + vertical",
+    highlights: [
+      "**🪲 Scroll lateral e vertical sem razão na home.** Causa: a `<Image>` de fundo (`/hero-living-room.jpg`) tinha `fill + scale-110` mas o pai (`<div className=\"relative flex min-h-screen flex-col\">`) não tinha `overflow-hidden`. Com `scale-110`, a imagem renderizava 10 % maior que o seu containing block em ambos os eixos — o browser detectava conteúdo a 110 % do viewport, adicionava scrollbars. Visivel: a vista geral aparecia centrada ligeiramente fora, com o terceiro card cortado à esquerda.",
+      "**✅ Fix:** imagem + gradiente movidos para dentro de um wrapper próprio `<div className=\"absolute inset-0 overflow-hidden\">` que clipa a fugida nos dois eixos. O `min-h-screen` exterior continua a deixar a página crescer conforme o conteúdo (mobile mantém scroll natural). `scale-110` mantém-se porque esconde as bordas do `blur-2xl` que seriam um halo branco no limite da imagem.",
+      "**🔍 Audit cruzado:** confirmado que `unlock/page.tsx` já tinha `overflow-hidden` no wrapper desde o início (tinha o mesmo padrão sem o bug) e que o hover `group-hover:scale-105` no `property-card.tsx` está dentro de um `overflow-hidden` próprio. Só a home precisava da correcção.",
+    ],
+  },
+  {
     version: "0.10.4",
     date: "2026-06-12",
     title: "*Funcionário* → *Limpezas* · data de pagamento + data de limpeza",

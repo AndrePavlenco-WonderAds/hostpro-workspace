@@ -54,19 +54,23 @@ export default async function Home() {
   });
 
   return (
-    // `min-h-screen` (sem `h-screen`) + sem `overflow-hidden` → no mobile a
-    // home faz scroll natural. Em desktops continua a parecer one-page
-    // porque o conteúdo cabe naturalmente.
+    // `min-h-screen` deixa a home crescer só o que o conteúdo precisa. A
+    // imagem de fundo está dentro de um wrapper próprio com `overflow-hidden`
+    // porque o `scale-110` (preserva-se para esconder bordas do blur) faz a
+    // imagem ultrapassar o pai em 10% nos dois eixos — sem clip era a
+    // origem do scroll lateral E vertical "fantasma" da home (v0.10.5).
     <div className="relative flex min-h-screen flex-col bg-brand-navy-dark">
-      <Image
-        src="/hero-living-room.jpg"
-        alt=""
-        fill
-        priority
-        sizes="100vw"
-        className="object-cover opacity-30 blur-2xl scale-110"
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-brand-navy-dark/75 via-brand-navy-dark/90 to-brand-navy-dark" />
+      <div className="absolute inset-0 overflow-hidden">
+        <Image
+          src="/hero-living-room.jpg"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="scale-110 object-cover opacity-30 blur-2xl"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-brand-navy-dark/75 via-brand-navy-dark/90 to-brand-navy-dark" />
+      </div>
 
       <main className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col items-center gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-10">
         <header className="flex flex-col items-center gap-3 text-center">
