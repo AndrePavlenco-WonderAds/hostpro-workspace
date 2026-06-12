@@ -15,6 +15,18 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.10.4",
+    date: "2026-06-12",
+    title: "*Funcionário* → *Limpezas* · data de pagamento + data de limpeza",
+    highlights: [
+      "**🧹 Secção renomeada para *Limpezas* (👷 → 🧹).** Na prática todas as entradas de funcionário são limpezas (Carol, etc.) — alinhar o label com a realidade evita ambiguidade quando aparecer outro tipo de pagamento a pessoal no futuro. Tile *Funcionários* na overview também passou a *Limpezas*. Internamente o `kind` continua `funcionario` no blob para zero migration risk.",
+      "**📅 Cada linha tem agora DUAS datas: *Data pagamento* + *Data limpeza*.** A primeira é o dia em que o pagamento saiu (mantém o campo `date` existente). A segunda é nova — `cleaningDate?: string` em `FuncionarioEntry`, opcional para entradas antigas (fallback render mostra a data de pagamento). Sort da tabela passa a usar a data de limpeza (a ordem operacional, não a financeira). Form pede ambas; ambas obrigatórias em entradas novas.",
+      "**🗑️ Coluna *Descrição* removida.** Era sempre `Limpeza` — ocupa espaço sem dizer nada. O campo continua a existir internamente (preenchido com `\"Limpeza\"` por defeito em criações) para não partir a `BaseEntry` shape nem o `/admin` activity row.",
+      "**📦 Cache key prefix bumped (`hostpro-pnl-v1` → `v2`).** Necessário porque a shape de `FuncionarioEntry` mudou — o `unstable_cache` ignora o entry antigo e força um re-fetch limpo no primeiro request pós-deploy. Lição da memory [[feedback-workspace-cached-data-renames]] aplicada.",
+      "**📝 Form copy:** *Novo pagamento a funcionário* → *Nova limpeza*; *Editar pagamento · DD/MM/YYYY* → *Editar limpeza · pagamento DD/MM/YYYY*. Empty state: *Sem limpezas registadas neste mês*.",
+    ],
+  },
+  {
     version: "0.10.3",
     date: "2026-06-11",
     title: "Defesa em profundidade contra outro blowup do Blob ops cap",

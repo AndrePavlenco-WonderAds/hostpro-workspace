@@ -126,9 +126,11 @@ async function _readAllEntriesUncached(): Promise<PnLEntry[]> {
 // Cache key prefix is intentionally version-suffixed so a deploy that
 // changes the entry shape invalidates the cache automatically (the prefix
 // is part of the cache key — change it, you get a fresh entry).
+// v0.10.4 bump: FuncionarioEntry gained `cleaningDate` — old cached
+// reads wouldn't expose it.
 export const getAllEntries = unstable_cache(
   _readAllEntriesUncached,
-  ["hostpro-pnl-v1"],
+  ["hostpro-pnl-v2"],
   {
     tags: ["hostpro-pnl"],
     // 5-minute revalidation as the safety floor — even if a mutation

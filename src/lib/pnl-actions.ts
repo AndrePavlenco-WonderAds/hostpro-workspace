@@ -91,7 +91,9 @@ export async function addEntryAction(formData: FormData): Promise<ActionResult> 
 
   if (!isPerson(person)) return { ok: false, error: "Pessoa inválida" };
   if (amount <= 0) return { ok: false, error: "Valor tem de ser positivo" };
-  if (!description && kind !== "entrada") {
+  // v0.10.4: `funcionario` (now "Limpezas" UI) also bypasses this — the
+  // form no longer has a description input and we hard-code "Limpeza".
+  if (!description && kind !== "entrada" && kind !== "funcionario") {
     return { ok: false, error: "Descrição obrigatória" };
   }
 
@@ -109,15 +111,22 @@ export async function addEntryAction(formData: FormData): Promise<ActionResult> 
         outOfAccount,
       });
     } else if (kind === "funcionario") {
+      // v0.10.4: section renamed to "Limpezas" and the description column
+      // was dropped (always "Limpeza" in practice). The form no longer
+      // sends `description`, so we default it here. `cleaningDate` is the
+      // new field — falls back to `date` if the form omits it.
+      const cleaningDate = asString(formData.get("cleaningDate")) || date;
+      if (!isISODate(cleaningDate)) return { ok: false, error: "Data de limpeza inválida (YYYY-MM-DD)" };
       await addEntry({
         kind: "funcionario",
         property,
         date,
         amount,
-        description,
+        description: description || "Limpeza",
         person,
         outOfAccount,
         pago: formData.get("pago") === "on",
+        cleaningDate,
       });
     } else if (kind === "entrada") {
       const stayWindow = asString(formData.get("stayWindow"));
@@ -192,14 +201,20 @@ export async function updateEntryAction(
     if (kind === "despesa") {
       await updateEntry(id, { date, amount, description, person, outOfAccount } as never);
     } else if (kind === "funcionario") {
-      await updateEntry(id, {
+      // v0.10.4: keep whatever description was saved (don't overwrite with
+      // empty string from the now-absent form input); add `cleaningDate`.
+      const cleaningDate = asString(formData.get("cleaningDate")) || date;
+      if (!isISODate(cleaningDate)) return { ok: false, error: "Data de limpeza inválida (YYYY-MM-DD)" };
+      const patch: Record<string, unknown> = {
         date,
         amount,
-        description,
         person,
         outOfAccount,
         pago: formData.get("pago") === "on",
-      } as never);
+        cleaningDate,
+      };
+      if (description) patch.description = description;
+      await updateEntry(id, patch as never);
     } else if (kind === "entrada") {
       const stayWindow = asString(formData.get("stayWindow"));
       const noIva = formData.get("noIva") === "on";

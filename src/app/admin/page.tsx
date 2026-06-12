@@ -398,7 +398,7 @@ function ActivityRow({ entry }: { entry: PnLEntry }) {
       : entry.kind === "despesa"
         ? "Custo"
         : entry.kind === "funcionario"
-          ? "Funcionário"
+          ? "Limpeza"
           : "Lavandaria";
   const tone =
     entry.kind === "entrada"

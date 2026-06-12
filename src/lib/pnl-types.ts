@@ -32,6 +32,12 @@ export interface FuncionarioEntry extends BaseEntry {
   kind: "funcionario";
   /** True when the staff member was already paid. */
   pago: boolean;
+  /** Date of the actual cleaning this payment corresponds to (ISO
+   *  YYYY-MM-DD). `date` on the BaseEntry is the payment date. v0.10.4 —
+   *  optional for backwards compat with entries created before the
+   *  field existed; UI falls back to `date` when missing so older rows
+   *  still render. New entries are required to set it. */
+  cleaningDate?: string;
 }
 
 export interface EntradaEntry extends BaseEntry {

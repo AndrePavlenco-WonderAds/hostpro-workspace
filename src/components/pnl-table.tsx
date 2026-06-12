@@ -1090,21 +1090,25 @@ function FuncionarioSection({
     mode.kind === "editing" ? rows.find((r) => r.id === mode.id) : undefined;
   const today = defaultDate ?? new Date().toISOString().slice(0, 10);
 
-  // Cleaning is by far the most common funcionário entry (one per turn-over)
-  // and the rate per property is fixed: T2 = 25€, T3 (One For One) = 35€.
-  // Pre-fill description + amount on `Novo pagamento` so Andre only confirms
-  // the date and *Registar* — editing still respects whatever was saved.
+  // Each turn-over is one row and the rate per property is fixed:
+  // T2 = 25€, T3 (One For One) = 35€. Pre-fill amount on novo pagamento
+  // so Andre só confirma datas + *Registar*. v0.10.4: secção renomeada
+  // de "Funcionário" para "Limpezas" e a coluna Descrição foi removida
+  // (era sempre "Limpeza"). Cada linha passa a ter duas datas: pagamento
+  // e limpeza (data da limpeza efectivamente prestada).
   const billing = BILLING[property as PropertySlug] as
     | (typeof BILLING)[PropertySlug]
     | undefined;
-  const defaultDescription = editing?.description ?? "Limpeza";
   const defaultAmount =
     editing?.amount ?? billing?.defaultCleaningPaymentEur ?? undefined;
+  // Cleaning date defaults to the entry's stored cleaningDate, falling
+  // back to the payment date for legacy entries, then to today.
+  const defaultCleaningDate = editing?.cleaningDate ?? editing?.date ?? today;
 
   const formTitle =
     mode.kind === "editing" && editing
-      ? `Editar pagamento · ${ddmmyyyy(editing.date)}`
-      : "Novo pagamento a funcionário";
+      ? `Editar limpeza · pagamento ${ddmmyyyy(editing.date)}`
+      : "Nova limpeza";
 
   const formContent = (
     <>
@@ -1112,7 +1116,7 @@ function FuncionarioSection({
       <input type="hidden" name="kind" value="funcionario" />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Field label="Data">
+        <Field label="Data de pagamento">
           <input
             type="date"
             name="date"
@@ -1121,13 +1125,12 @@ function FuncionarioSection({
             className={INPUT_CLASS}
           />
         </Field>
-        <Field label="Descrição">
+        <Field label="Data da limpeza">
           <input
-            type="text"
-            name="description"
+            type="date"
+            name="cleaningDate"
             required
-            placeholder="ex: Limpeza"
-            defaultValue={defaultDescription}
+            defaultValue={defaultCleaningDate}
             className={INPUT_CLASS}
           />
         </Field>
@@ -1177,11 +1180,11 @@ function FuncionarioSection({
 
   return (
     <SectionShell
-      title="Funcionário"
-      emoji="👷"
+      title="Limpezas"
+      emoji="🧹"
       accent="amber"
       count={rows.length}
-      addLabel="+ Adicionar pagamento"
+      addLabel="+ Adicionar limpeza"
       mode={mode}
       onAdd={() => open({ kind: "adding" })}
       onCancelForm={close}
@@ -1190,7 +1193,7 @@ function FuncionarioSection({
       formSubmit={submit}
       isPending={isPending}
       error={error}
-      empty="Sem pagamentos a funcionários neste mês."
+      empty="Sem limpezas registadas neste mês."
     >
       <FuncionarioTable
         rows={rows}
@@ -1216,13 +1219,19 @@ function FuncionarioTable({
   isPending: boolean;
   onEdit: (id: string) => void;
 }) {
-  const sorted = [...rows].sort((a, b) => (a.date < b.date ? -1 : 1));
+  // Sort by cleaning date (the operational date — quando a limpeza
+  // aconteceu), not payment date. Falls back to `date` for legacy rows.
+  const sorted = [...rows].sort((a, b) => {
+    const ka = a.cleaningDate ?? a.date;
+    const kb = b.cleaningDate ?? b.date;
+    return ka < kb ? -1 : 1;
+  });
   return tableWrap(
     <>
       <thead>
         <tr>
-          <Th>Data</Th>
-          <Th>Descrição</Th>
+          <Th>Data pagamento</Th>
+          <Th>Data limpeza</Th>
           <Th>Pessoa pagou</Th>
           <Th align="right">Valor</Th>
           <Th align="center">Estado</Th>
@@ -1232,13 +1241,14 @@ function FuncionarioTable({
       <tbody className="divide-y divide-white/5">
         {sorted.map((r) => {
           const editing = editingId === r.id;
+          const cleaningDate = r.cleaningDate ?? r.date;
           return (
             <tr
               key={r.id}
               className={`transition ${editing ? ACCENT.amber.rowEditing : "hover:bg-white/[0.025]"}`}
             >
               <Td className="text-white/65">{ddmmyyyy(r.date)}</Td>
-              <Td className="text-white">{r.description}</Td>
+              <Td className="text-white">{ddmmyyyy(cleaningDate)}</Td>
               <Td>
                 <PersonPillEditable
                   entryId={r.id}
