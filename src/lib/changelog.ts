@@ -15,6 +15,15 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.12.1",
+    date: "2026-06-28",
+    title: "Home sem scroll — bloqueada a um ecrã",
+    highlights: [
+      "**🚫 Home deixou de fazer scroll.** Causa: o root da home era `min-h-screen` (100vh) **e** o footer global ficava por baixo — esses ~40px do footer eram o scroll morto que se sentia. Fix: o contentor de conteúdo do layout passou a `flex flex-col min-h-0` e a home a `flex-1 / h-full` + `overflow-hidden`, por isso preenche exactamente o ecrã (viewport menos o footer) sem gerar barra. Conteúdo passou a centrado vertical com espaçamentos mais justos (`gap`/`py` reduzidos).",
+      "**↔️ Outras páginas não mexem.** Admin, alojamentos e marketing continuam a crescer e a fazer scroll normalmente — usam o seu próprio `min-h-screen`, que continua a funcionar dentro do novo contentor flex.",
+    ],
+  },
+  {
     version: "0.12.0",
     date: "2026-06-28",
     title: "Foto Sweet Escape 2 · home com navegação de mês · canal da reserva (Airbnb/Booking/Interno) + VAT invoice",

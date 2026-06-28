@@ -46,7 +46,11 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <div className="flex-1">{children}</div>
+        {/* `flex flex-col min-h-0` dá às páginas um contentor de altura
+            definida — a home usa-o para preencher exactamente o ecrã (menos
+            o footer) e ficar sem scroll; as outras páginas crescem na mesma
+            via o seu próprio `min-h-screen`. */}
+        <div className="flex flex-1 flex-col min-h-0">{children}</div>
         <AppFooter />
       </body>
     </html>

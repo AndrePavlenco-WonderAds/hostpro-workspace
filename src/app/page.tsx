@@ -66,12 +66,12 @@ export default async function Home({
   });
 
   return (
-    // `min-h-screen` deixa a home crescer só o que o conteúdo precisa. A
-    // imagem de fundo está dentro de um wrapper próprio com `overflow-hidden`
-    // porque o `scale-110` (preserva-se para esconder bordas do blur) faz a
-    // imagem ultrapassar o pai em 10% nos dois eixos — sem clip era a
-    // origem do scroll lateral E vertical "fantasma" da home (v0.10.5).
-    <div className="relative flex min-h-screen flex-col bg-brand-navy-dark">
+    // Home sem scroll: `h-full` faz a página preencher exactamente a área de
+    // conteúdo do layout (viewport menos o footer, via a cadeia flex do
+    // sticky-footer), e `overflow-hidden` garante que nada gera barra de
+    // scroll. O wrapper da imagem de fundo mantém o seu próprio
+    // `overflow-hidden` por causa do `scale-110` (v0.10.5).
+    <div className="relative flex h-full flex-col overflow-hidden bg-brand-navy-dark">
       <div className="absolute inset-0 overflow-hidden">
         <Image
           src="/hero-living-room.jpg"
@@ -84,7 +84,7 @@ export default async function Home({
         <div className="absolute inset-0 bg-gradient-to-b from-brand-navy-dark/75 via-brand-navy-dark/90 to-brand-navy-dark" />
       </div>
 
-      <main className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col items-center gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-10">
+      <main className="relative z-10 mx-auto flex h-full min-h-0 w-full max-w-6xl flex-1 flex-col items-center justify-center gap-4 px-4 py-4 sm:gap-6 sm:px-6 sm:py-6">
         <header className="flex flex-col items-center gap-3 text-center">
           <Image
             src="/hostpro-logo-white.png"
