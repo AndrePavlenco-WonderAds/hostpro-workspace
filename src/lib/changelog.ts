@@ -15,6 +15,17 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.11.0",
+    date: "2026-06-28",
+    title: "Valor recebido na conta · Lucro s/ IVA · Postagem de conteúdo · fim do auto-import de emails",
+    highlights: [
+      "**💶 Novo campo *Valor recebido na conta* nas entradas.** O *Valor* (o que o hóspede paga) mantém-se como referência, mas os **Ganhos passam a ser calculados pelo valor que realmente entra na conta** (líquido de comissões Airbnb, etc.). Nova coluna *Na conta* na tabela de Entradas e botão rápido *= ao valor* no form para quando recebido = bruto. Decisão do Andre: entradas **sem** este campo preenchido contam como **0** nos Ganhos (não somam o valor bruto) — por isso é preciso preencher cada entrada para os Ganhos voltarem a aparecer.",
+      "**🏷️ Novo tile *Lucro s/ IVA* na overview mensal.** Mostra o lucro a contar **IVA = 0** (`Ganhos − Custos − Limpezas`, sem subtrair IVA), ao lado do *Lucro* normal. A linha de tiles passou de 5 para 6 colunas.",
+      "**📣 Nova página *Postagem de conteúdo* (marketing HostPro).** Botão novo na home, ao lado de *Visão Geral*. É um banco de ideias de outros criadores — TikToks, vídeos, links e imagens (com upload) — guardadas para recriarmos mais tarde. Cada ideia tem tipo, nota, link opcional, imagem opcional, data e um toggle *Recriado*. Persistência em Vercel Blob (`data/marketing.json` + `marketing-uploads/`), seguindo a disciplina de ops do [[feedback-hostpro-blob-ops-budget]].",
+      "**🗑️ Removido todo o auto-import de emails.** Andre prefere registar tudo à mão. Apagado: o cron `import-emails`, a integração Gmail (OAuth, parsers Airbnb, log de imports), as páginas `/admin/connect-gmail` e `/admin/email-import-log`, o card *Gmail · auto-import* no admin, o `vercel.json` (só tinha o cron) e os campos/funções órfãos (`hmCode`, `deleteEntriesByHmCodes`). O gate (`proxy.ts`) deixou de abrir excepções para `/api/gmail/callback` e `/api/cron/`.",
+    ],
+  },
+  {
     version: "0.10.5",
     date: "2026-06-12",
     title: "Home — fim do scroll fantasma horizontal + vertical",

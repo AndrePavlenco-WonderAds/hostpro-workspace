@@ -42,6 +42,13 @@ export interface FuncionarioEntry extends BaseEntry {
 
 export interface EntradaEntry extends BaseEntry {
   kind: "entrada";
+  /** Valor que o hóspede paga (bruto). É `amount` na BaseEntry — mantido
+   *  como referência e mostrado na tabela, mas NÃO é a base dos Ganhos. */
+  /** Valor efectivamente recebido na conta (líquido de comissões Airbnb,
+   *  taxas, etc.). É ESTE o valor que entra nos Ganhos / Lucro. Opcional
+   *  para retrocompat: entradas sem o campo preenchido contam como 0 nos
+   *  Ganhos (decisão do Andre — preencher manualmente cada entrada). */
+  valorRecebido?: number;
   /** Stay window like "16/02-20/02" — kept verbatim for now. */
   stayWindow?: string;
   /** IVA charged on the booking (6 % short-term rental in PT). Forced to
@@ -54,10 +61,6 @@ export interface EntradaEntry extends BaseEntry {
   recebido: boolean;
   noBanco: boolean;
   inIvaVault: boolean;
-  /** Airbnb confirmation code (HM…) when this entrada came from an Airbnb
-   *  source. Used by the Gmail importer to dedupe confirmations against
-   *  payouts and against re-imports of the same reservation. */
-  hmCode?: string;
 }
 
 /** Lavandaria — quilos de roupa que a lavandaria leva.

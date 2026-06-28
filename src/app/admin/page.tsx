@@ -180,52 +180,9 @@ export default async function AdminPage() {
           </div>
         </section>
 
-        <GmailIntegrationCard />
         <IntegrationsRoadmap />
       </div>
     </div>
-  );
-}
-
-function GmailIntegrationCard() {
-  const connected = Boolean(process.env.GOOGLE_OAUTH_REFRESH_TOKEN);
-  return (
-    <section className="mt-14 rounded-2xl border border-white/10 bg-white/[0.025] p-6 backdrop-blur-md">
-      <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-white/45">
-          Gmail · auto-import de reservas
-        </h2>
-        <span
-          className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.22em] ring-1 ${
-            connected
-              ? "bg-emerald-300/15 text-emerald-200 ring-emerald-300/30"
-              : "bg-rose-400/15 text-rose-200 ring-rose-400/30"
-          }`}
-        >
-          {connected ? "Ligado · dry-run" : "Não ligado"}
-        </span>
-      </div>
-      <p className="mt-3 text-sm text-white/65">
-        Quando um email Airbnb chega à inbox{" "}
-        <strong className="text-white">hostpro.pt@gmail.com</strong>, o cron lê
-        e regista a reserva. Em dry-run mode até validares as primeiras (~10
-        emails) — depois viramos para live.
-      </p>
-      <div className="mt-5 flex flex-wrap gap-3 text-sm">
-        <Link
-          href="/admin/connect-gmail"
-          className="inline-flex items-center gap-2 rounded-full border border-brand-cyan/40 bg-brand-cyan/10 px-4 py-2 text-brand-cyan transition hover:bg-brand-cyan/20"
-        >
-          ⚙️ Ligar / configurar
-        </Link>
-        <Link
-          href="/admin/email-import-log"
-          className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-4 py-2 text-white/85 transition hover:bg-white/[0.08]"
-        >
-          📋 Ver log de imports
-        </Link>
-      </div>
-    </section>
   );
 }
 

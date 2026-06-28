@@ -9,7 +9,7 @@ export function OverviewTiles({
   previous?: MonthlyTotals;
 }) {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-6">
       <Tile
         label="Ganhos"
         value={eur(totals.revenue)}
@@ -43,7 +43,13 @@ export function OverviewTiles({
         accent={totals.profit >= 0 ? "green" : "red"}
         emphasis
         delta={previous ? totals.profit - previous.profit : undefined}
-        spanFullOnMobile
+      />
+      <Tile
+        label="Lucro s/ IVA"
+        value={eur(totals.profitNoIva)}
+        accent={totals.profitNoIva >= 0 ? "green" : "red"}
+        emphasis
+        delta={previous ? totals.profitNoIva - previous.profitNoIva : undefined}
       />
     </div>
   );

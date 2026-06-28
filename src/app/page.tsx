@@ -114,13 +114,22 @@ export default async function Home() {
           </div>
         </section>
 
-        <Link
-          href="/admin"
-          className="inline-flex items-center gap-2 rounded-full bg-brand-cyan px-6 py-2.5 text-sm font-semibold text-brand-navy shadow-[0_15px_40px_-12px_rgba(0,181,226,0.7)] transition hover:opacity-90"
-        >
-          Visão Geral
-          <span aria-hidden>→</span>
-        </Link>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <Link
+            href="/admin"
+            className="inline-flex items-center gap-2 rounded-full bg-brand-cyan px-6 py-2.5 text-sm font-semibold text-brand-navy shadow-[0_15px_40px_-12px_rgba(0,181,226,0.7)] transition hover:opacity-90"
+          >
+            Visão Geral
+            <span aria-hidden>→</span>
+          </Link>
+          <Link
+            href="/marketing"
+            className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.06] px-6 py-2.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-brand-cyan hover:text-white"
+          >
+            <span aria-hidden>📣</span>
+            Postagem de conteúdo
+          </Link>
+        </div>
       </main>
     </div>
   );

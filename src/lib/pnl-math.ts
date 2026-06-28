@@ -6,12 +6,13 @@ import type { MonthKey } from "./dates";
 import { monthLabelShort } from "./dates";
 
 export type MonthlyTotals = {
-  revenue: number;       // sum of entrada.amount
+  revenue: number;       // sum of entrada.valorRecebido (valor recebido na conta)
   expenses: number;      // sum of despesa.amount
   employees: number;     // sum of funcionario.amount
   iva: number;           // sum of entrada.iva
   totalExpenses: number; // expenses + employees + iva
   profit: number;        // revenue - totalExpenses
+  profitNoIva: number;   // revenue - expenses - employees (lucro a contar IVA = 0)
   entryCount: number;
 };
 
@@ -22,6 +23,7 @@ const EMPTY: MonthlyTotals = {
   iva: 0,
   totalExpenses: 0,
   profit: 0,
+  profitNoIva: 0,
   entryCount: 0,
 };
 
@@ -37,7 +39,9 @@ export function aggregate(entries: PnLEntry[]): MonthlyTotals {
   let revenue = 0, expenses = 0, employees = 0, iva = 0;
   for (const e of entries) {
     if (e.kind === "entrada") {
-      revenue += e.amount;
+      // Ganhos = valor recebido na conta. Entradas sem este campo
+      // preenchido contam como 0 (não somam o valor bruto `amount`).
+      revenue += e.valorRecebido ?? 0;
       iva += e.iva;
     } else if (e.kind === "despesa") {
       expenses += e.amount;
@@ -53,6 +57,7 @@ export function aggregate(entries: PnLEntry[]): MonthlyTotals {
     iva,
     totalExpenses,
     profit: revenue - totalExpenses,
+    profitNoIva: revenue - expenses - employees,
     entryCount: entries.length,
   };
 }

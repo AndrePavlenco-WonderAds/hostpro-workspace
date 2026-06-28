@@ -135,6 +135,9 @@ export async function addEntryAction(formData: FormData): Promise<ActionResult> 
       // noIva=true always forces iva=0 server-side.
       const iva = noIva ? 0 : asNumber(formData.get("iva"));
       if (!stayWindow) return { ok: false, error: "Janela da estadia obrigatória" };
+      // Valor recebido na conta — opcional. Vazio = undefined (conta 0 nos Ganhos).
+      const valorRecebidoRaw = asString(formData.get("valorRecebido"));
+      const valorRecebido = valorRecebidoRaw ? asNumber(formData.get("valorRecebido")) : undefined;
       await addEntry({
         kind: "entrada",
         property,
@@ -144,6 +147,7 @@ export async function addEntryAction(formData: FormData): Promise<ActionResult> 
         person,
         outOfAccount: false,
         stayWindow,
+        valorRecebido,
         iva,
         noIva,
         recebido: formData.get("recebido") === "on",
@@ -220,12 +224,15 @@ export async function updateEntryAction(
       const noIva = formData.get("noIva") === "on";
       const iva = noIva ? 0 : asNumber(formData.get("iva"));
       if (!stayWindow) return { ok: false, error: "Janela da estadia obrigatória" };
+      const valorRecebidoRaw = asString(formData.get("valorRecebido"));
+      const valorRecebido = valorRecebidoRaw ? asNumber(formData.get("valorRecebido")) : undefined;
       await updateEntry(id, {
         date,
         amount,
         description: stayWindow,
         person,
         stayWindow,
+        valorRecebido,
         iva,
         noIva,
         recebido: formData.get("recebido") === "on",

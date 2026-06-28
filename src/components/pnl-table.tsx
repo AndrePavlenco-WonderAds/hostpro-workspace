@@ -513,6 +513,10 @@ function EntradaFormFields({
   // Mounts fresh whenever the parent <form> remounts (via its key), so
   // useState seeds correctly off `editing`.
   const [amount, setAmount] = useState(editing ? String(editing.amount) : "");
+  // Valor recebido na conta (líquido). Opcional — é a base dos Ganhos.
+  const [valorRecebido, setValorRecebido] = useState(
+    editing?.valorRecebido != null ? String(editing.valorRecebido) : "",
+  );
   // Default para entradas NOVAS: `Sem IVA` ligado (Andre confirmou que as
   // entradas em cash dele não levam IVA). Em edit usa o valor guardado.
   const [noIva, setNoIva] = useState(editing ? (editing.noIva ?? false) : true);
@@ -546,8 +550,8 @@ function EntradaFormFields({
         </Field>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <Field label="Valor (€)">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Field label="Valor que o hóspede paga (€)">
           <input
             type="number"
             name="amount"
@@ -559,6 +563,33 @@ function EntradaFormFields({
             className={INPUT_CLASS}
           />
         </Field>
+        <label className="block">
+          <span className="mb-1 flex items-center justify-between gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">
+            <span>Valor recebido na conta (€)</span>
+            {amount && (
+              <button
+                type="button"
+                onClick={() => setValorRecebido(amount)}
+                className="rounded-full border border-brand-cyan/40 bg-brand-cyan/10 px-2 py-0.5 text-[9px] font-semibold normal-case tracking-normal text-brand-cyan transition hover:border-brand-cyan hover:bg-brand-cyan/20"
+              >
+                = ao valor
+              </button>
+            )}
+          </span>
+          <input
+            type="number"
+            name="valorRecebido"
+            step="0.01"
+            min="0"
+            value={valorRecebido}
+            onChange={(e) => setValorRecebido(e.target.value)}
+            placeholder="usado nos Ganhos · vazio = 0"
+            className={INPUT_CLASS}
+          />
+        </label>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label="Pessoa">
           <select
             name="person"
@@ -644,6 +675,7 @@ function EntradaTable({
           <Th>Estadia</Th>
           <Th>Pessoa</Th>
           <Th align="right">Valor</Th>
+          <Th align="right">Na conta</Th>
           <Th align="right">IVA</Th>
           <Th align="center">Estado</Th>
           <Th align="center"> </Th>
@@ -668,6 +700,13 @@ function EntradaTable({
               </Td>
               <Td align="right" className="font-semibold text-brand-cyan">
                 {eur(r.amount)}
+              </Td>
+              <Td align="right" className="font-semibold text-emerald-300">
+                {r.valorRecebido != null ? (
+                  eur(r.valorRecebido)
+                ) : (
+                  <span className="text-white/30">—</span>
+                )}
               </Td>
               <Td align="right" className="text-white/65">
                 {r.noIva ? (
