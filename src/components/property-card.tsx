@@ -12,12 +12,7 @@ export function PropertyCard({
   monthProfit,
   monthProfitPositive,
   monthLavandariaKg,
-  ytdRevenue,
-  ytdProfit,
-  ytdProfitPositive,
-  reservasYtd,
   lastActivity,
-  year,
 }: {
   property: Property;
   hasData: boolean;
@@ -27,12 +22,7 @@ export function PropertyCard({
   monthProfit: string;
   monthProfitPositive: boolean;
   monthLavandariaKg: string;
-  ytdRevenue: string;
-  ytdProfit: string;
-  ytdProfitPositive: boolean;
-  reservasYtd: number;
   lastActivity?: string;
-  year: string;
 }) {
   return (
     <Link
@@ -70,8 +60,8 @@ export function PropertyCard({
           )}
         </div>
 
-        {/* Mês actual — 4 KPIs in a 2×2 grid, with the colour-coding Andre
-            asked for: ganhos verde, custos vermelho, lucro segue o sinal. */}
+        {/* Mês seleccionado — 4 KPIs in a 2×2 grid, with the colour-coding
+            Andre asked for: ganhos verde, custos vermelho, lucro segue o sinal. */}
         <section>
           <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-white/45">
             {monthLabel}
@@ -91,38 +81,6 @@ export function PropertyCard({
             />
           </div>
         </section>
-
-        {/* YTD strip — same colour rules. */}
-        <section>
-          <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-white/45">
-            {year} · YTD
-          </p>
-          <div className="mt-1.5 grid grid-cols-3 gap-2 rounded-xl border border-white/10 bg-white/[0.025] p-2.5">
-            <YtdMini label="Ganhos" value={hasData ? ytdRevenue : "—"} tone="green" />
-            <YtdMini
-              label="Lucro"
-              value={hasData ? ytdProfit : "—"}
-              tone={hasData ? (ytdProfitPositive ? "green" : "red") : "neutral"}
-            />
-            <YtdMini
-              label="Reservas"
-              value={hasData ? String(reservasYtd) : "—"}
-              tone="neutral"
-            />
-          </div>
-        </section>
-
-        <div className="flex items-center justify-between pt-1 text-xs">
-          <span className="text-white/45 transition group-hover:text-brand-cyan">
-            Abrir página
-          </span>
-          <span
-            aria-hidden
-            className="text-white/45 transition group-hover:translate-x-0.5 group-hover:text-brand-cyan"
-          >
-            →
-          </span>
-        </div>
       </div>
     </Link>
   );
@@ -154,29 +112,6 @@ function Mini({
       </p>
       <p
         className={`mt-1 truncate text-sm font-semibold tracking-tight tabular-nums ${toneClass(tone)}`}
-      >
-        {value}
-      </p>
-    </div>
-  );
-}
-
-function YtdMini({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone: Tone;
-}) {
-  return (
-    <div className="min-w-0">
-      <p className="truncate text-[8.5px] font-semibold uppercase tracking-[0.16em] text-white/40">
-        {label}
-      </p>
-      <p
-        className={`mt-0.5 truncate text-xs font-semibold tabular-nums ${toneClass(tone)}`}
       >
         {value}
       </p>

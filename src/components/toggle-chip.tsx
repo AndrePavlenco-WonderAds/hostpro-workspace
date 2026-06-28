@@ -9,7 +9,8 @@ export type ToggleFlag =
   | "recebido"
   | "noBanco"
   | "inIvaVault"
-  | "outOfAccount";
+  | "outOfAccount"
+  | "vatInvoiceInDrive";
 
 /**
  * Interactive status chip — click to toggle the underlying boolean without

@@ -11,6 +11,20 @@ export const PEOPLE: Person[] = ["André", "Carol", "Alex", "Lilia"];
 
 export type EntryKind = "entrada" | "despesa" | "funcionario" | "lavandaria";
 
+/** Canal por onde a reserva entrou. Usado para colorir/identificar a origem
+ *  e para o workflow do VAT invoice (só Airbnb). */
+export type ReservationSource = "airbnb" | "booking" | "interno";
+export const RESERVATION_SOURCES: ReservationSource[] = [
+  "airbnb",
+  "booking",
+  "interno",
+];
+export const SOURCE_LABEL: Record<ReservationSource, string> = {
+  airbnb: "Airbnb",
+  booking: "Booking",
+  interno: "Interno",
+};
+
 interface BaseEntry {
   id: string;
   property: PropertySlug;
@@ -61,6 +75,12 @@ export interface EntradaEntry extends BaseEntry {
   recebido: boolean;
   noBanco: boolean;
   inIvaVault: boolean;
+  /** Canal da reserva (Airbnb / Booking / Interno). Opcional para
+   *  retrocompat: entradas antigas sem canal mostram um pill neutro. */
+  source?: ReservationSource;
+  /** Só relevante quando `source === "airbnb"`: marca que já demos upload do
+   *  VAT invoice (reverse charge da plataforma) na drive da contabilidade. */
+  vatInvoiceInDrive?: boolean;
 }
 
 /** Lavandaria — quilos de roupa que a lavandaria leva.

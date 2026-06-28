@@ -3,14 +3,20 @@ import Link from "next/link";
 import { PROPERTIES } from "@/lib/properties";
 import { getAllEntries } from "@/lib/pnl-store";
 import {
-  aggregate,
   aggregateMonth,
   totalLavandariaKg,
   filterMonth,
+  listMonths,
 } from "@/lib/pnl-math";
-import { currentMonthKey, monthLabelShort } from "@/lib/dates";
+import {
+  currentMonthKey,
+  monthLabelShort,
+  shiftMonth,
+  type MonthKey,
+} from "@/lib/dates";
 import { eur } from "@/lib/money";
 import { PropertyCard } from "@/components/property-card";
+import { MonthPicker } from "@/components/month-picker";
 import { Typewriter } from "@/components/typewriter";
 
 function kg(value: number): string {
@@ -20,35 +26,41 @@ function kg(value: number): string {
   })} kg`;
 }
 
-export default async function Home() {
-  const current = currentMonthKey();
-  const year = current.slice(0, 4);
-  const monthShort = monthLabelShort(current);
-
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ m?: string }>;
+}) {
   // One read covers every property — we slice by slug locally.
   const all = await getAllEntries();
 
+  // Mês seleccionado via ?m=YYYY-MM (default: mês actual). Permite navegar
+  // por meses anteriores sem entrar em cada card.
+  const { m } = await searchParams;
+  const month: MonthKey =
+    m && /^\d{4}-\d{2}$/.test(m) ? (m as MonthKey) : currentMonthKey();
+  const monthShort = monthLabelShort(month);
+
+  const pickerOptions = listMonths(all, [
+    currentMonthKey(),
+    shiftMonth(currentMonthKey(), -1),
+    shiftMonth(currentMonthKey(), +1),
+  ]);
+
   const cards = PROPERTIES.map((p) => {
     const entries = all.filter((e) => e.property === p.slug);
-    const month = aggregateMonth(entries, current);
-    const monthEntries = filterMonth(entries, current);
+    const totals = aggregateMonth(entries, month);
+    const monthEntries = filterMonth(entries, month);
     const lavandariaKgMes = totalLavandariaKg(monthEntries);
-    const ytdEntries = entries.filter((e) => e.date.startsWith(year));
-    const ytdProp = aggregate(ytdEntries);
-    const reservasYtdProp = ytdEntries.filter((e) => e.kind === "entrada").length;
     const lastEntry = [...entries].sort((a, b) => (a.date < b.date ? 1 : -1))[0];
     return {
       property: p,
       hasData: entries.length > 0,
-      monthRevenue: eur(month.revenue),
-      monthExpenses: eur(month.totalExpenses),
-      monthProfit: eur(month.profit),
-      monthProfitPositive: month.profit >= 0,
+      monthRevenue: eur(totals.revenue),
+      monthExpenses: eur(totals.totalExpenses),
+      monthProfit: eur(totals.profit),
+      monthProfitPositive: totals.profit >= 0,
       monthLavandariaKg: kg(lavandariaKgMes),
-      ytdRevenue: eur(ytdProp.revenue),
-      ytdProfit: eur(ytdProp.profit),
-      ytdProfitPositive: ytdProp.profit >= 0,
-      reservasYtd: reservasYtdProp,
       lastActivity: lastEntry?.date,
     };
   });
@@ -90,7 +102,14 @@ export default async function Home() {
           </h1>
         </header>
 
-        <section className="w-full">
+        <section className="flex w-full flex-col items-center gap-4">
+          <div className="flex flex-col items-center gap-1.5">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/45">
+              A ver o mês de
+            </span>
+            <MonthPicker current={month} options={pickerOptions} basePath="/" />
+          </div>
+
           <div className="grid w-full gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
             {cards.map((c) => (
               <PropertyCard
@@ -103,12 +122,7 @@ export default async function Home() {
                 monthProfit={c.monthProfit}
                 monthProfitPositive={c.monthProfitPositive}
                 monthLavandariaKg={c.monthLavandariaKg}
-                ytdRevenue={c.ytdRevenue}
-                ytdProfit={c.ytdProfit}
-                ytdProfitPositive={c.ytdProfitPositive}
-                reservasYtd={c.reservasYtd}
                 lastActivity={c.lastActivity}
-                year={year}
               />
             ))}
           </div>

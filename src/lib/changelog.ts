@@ -15,6 +15,18 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.12.0",
+    date: "2026-06-28",
+    title: "Foto Sweet Escape 2 · home com navegação de mês · canal da reserva (Airbnb/Booking/Interno) + VAT invoice",
+    highlights: [
+      "**📸 Nova foto do Sweet Escape 2.** Foto real da sala carregada da drive da HostPro (`public/properties/sweet-escape-2.jpg`) — aplica-se ao card na home e ao background da página do alojamento (ambos usam o mesmo `property.photo`).",
+      "**🗓️ Navegação de mês na home.** Novo seletor de mês por cima dos cards (setas ‹ ›  + dropdown) que muda o mês mostrado em **todos** os cards de uma vez, sem ter de entrar em cada alojamento. Controlado por `?m=YYYY-MM`, com fallback no mês actual.",
+      "**🧹 Cards da home mais limpos.** Removida a secção *2026 · YTD* (os 3 mini-KPIs em baixo) e a label *Abrir página*. Cada card mostra agora só os 4 KPIs do mês seleccionado + última actividade.",
+      "**🎟️ Canal da reserva nas Entradas: Airbnb / Booking / Interno.** Novo segmented control no form, com as cores de cada plataforma (Airbnb coral `#FF5A5F`, Booking azul `#0071C2`, Interno cyan da casa). Nova coluna *Canal* na tabela com o badge colorido. Default *Interno* (directas); campo opcional para retrocompat (entradas antigas mostram um traço).",
+      "**🧾 VAT invoice na drive (só Airbnb).** Quando o canal é Airbnb, aparece um box coral no form — *VAT invoice na drive* — para marcar que o reverse charge da plataforma já foi carregado na drive da contabilidade. Na tabela, as entradas Airbnb ganham um chip *VAT na drive* clicável (toggle directo, como o *Recebido* / *No banco*).",
+    ],
+  },
+  {
     version: "0.11.0",
     date: "2026-06-28",
     title: "Valor recebido na conta · Lucro s/ IVA · Postagem de conteúdo · fim do auto-import de emails",

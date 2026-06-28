@@ -21,8 +21,8 @@ function invalidatePnlCaches(property: string) {
   revalidatePath("/");
 }
 import type { PropertySlug } from "./properties";
-import type { Person, EntryKind } from "./pnl-types";
-import { PEOPLE } from "./pnl-types";
+import type { Person, EntryKind, ReservationSource } from "./pnl-types";
+import { PEOPLE, RESERVATION_SOURCES } from "./pnl-types";
 
 // ---------- shared validation ----------
 
@@ -37,6 +37,10 @@ function asNumber(value: unknown): number {
 
 function isPerson(value: string): value is Person {
   return (PEOPLE as readonly string[]).includes(value);
+}
+
+function isSource(value: string): value is ReservationSource {
+  return (RESERVATION_SOURCES as string[]).includes(value);
 }
 
 function isISODate(value: string): boolean {
@@ -138,6 +142,10 @@ export async function addEntryAction(formData: FormData): Promise<ActionResult> 
       // Valor recebido na conta — opcional. Vazio = undefined (conta 0 nos Ganhos).
       const valorRecebidoRaw = asString(formData.get("valorRecebido"));
       const valorRecebido = valorRecebidoRaw ? asNumber(formData.get("valorRecebido")) : undefined;
+      // Canal da reserva. VAT invoice só faz sentido para Airbnb.
+      const sourceRaw = asString(formData.get("source"));
+      const source: ReservationSource = isSource(sourceRaw) ? sourceRaw : "interno";
+      const vatInvoiceInDrive = source === "airbnb" ? formData.get("vatInvoiceInDrive") === "on" : undefined;
       await addEntry({
         kind: "entrada",
         property,
@@ -150,6 +158,8 @@ export async function addEntryAction(formData: FormData): Promise<ActionResult> 
         valorRecebido,
         iva,
         noIva,
+        source,
+        vatInvoiceInDrive,
         recebido: formData.get("recebido") === "on",
         noBanco: formData.get("noBanco") === "on",
         inIvaVault: formData.get("inIvaVault") === "on",
@@ -226,6 +236,9 @@ export async function updateEntryAction(
       if (!stayWindow) return { ok: false, error: "Janela da estadia obrigatória" };
       const valorRecebidoRaw = asString(formData.get("valorRecebido"));
       const valorRecebido = valorRecebidoRaw ? asNumber(formData.get("valorRecebido")) : undefined;
+      const sourceRaw = asString(formData.get("source"));
+      const source: ReservationSource = isSource(sourceRaw) ? sourceRaw : "interno";
+      const vatInvoiceInDrive = source === "airbnb" ? formData.get("vatInvoiceInDrive") === "on" : undefined;
       await updateEntry(id, {
         date,
         amount,
@@ -235,6 +248,8 @@ export async function updateEntryAction(
         valorRecebido,
         iva,
         noIva,
+        source,
+        vatInvoiceInDrive,
         recebido: formData.get("recebido") === "on",
         noBanco: formData.get("noBanco") === "on",
         inIvaVault: formData.get("inIvaVault") === "on",
@@ -267,7 +282,7 @@ export async function deleteEntryAction(id: string, property: string): Promise<A
 
 export async function toggleFlagAction(
   id: string,
-  flag: "pago" | "recebido" | "noBanco" | "inIvaVault" | "outOfAccount",
+  flag: "pago" | "recebido" | "noBanco" | "inIvaVault" | "outOfAccount" | "vatInvoiceInDrive",
   next: boolean,
   property: string,
 ): Promise<ActionResult> {

@@ -26,11 +26,14 @@ import { BILLING } from "@/lib/property-billing";
 import type { PropertySlug } from "@/lib/properties";
 import {
   PEOPLE,
+  RESERVATION_SOURCES,
+  SOURCE_LABEL,
   type DespesaEntry,
   type EntradaEntry,
   type FuncionarioEntry,
   type LavandariaEntry,
   type PnLEntry,
+  type ReservationSource,
 } from "@/lib/pnl-types";
 
 import { DeleteEntryButton } from "./delete-entry-button";
@@ -87,6 +90,44 @@ const ACCENT: Record<
 
 const INPUT_CLASS =
   "w-full rounded-lg border border-white/12 bg-white/[0.05] px-3 py-2 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-brand-cyan disabled:opacity-60 [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:brightness-75";
+
+// Cores de cada plataforma — Airbnb coral (#FF5A5F), Booking azul (#0071C2),
+// Interno usa o cyan da casa. `selected` = botão activo no segmented control,
+// `idle` = botão inactivo, `pill` = badge na tabela.
+const SOURCE_STYLES: Record<
+  ReservationSource,
+  { selected: string; idle: string; pill: string }
+> = {
+  airbnb: {
+    selected:
+      "border-transparent bg-[#FF5A5F] text-white shadow-[0_8px_24px_-10px_rgba(255,90,95,0.8)]",
+    idle: "border-[#FF5A5F]/40 bg-[#FF5A5F]/10 text-[#FF8E91] hover:bg-[#FF5A5F]/20",
+    pill: "bg-[#FF5A5F]/15 text-[#FF8E91] ring-[#FF5A5F]/40",
+  },
+  booking: {
+    selected:
+      "border-transparent bg-[#0071C2] text-white shadow-[0_8px_24px_-10px_rgba(0,113,194,0.8)]",
+    idle: "border-[#0071C2]/40 bg-[#0071C2]/10 text-[#5AAEE8] hover:bg-[#0071C2]/20",
+    pill: "bg-[#0071C2]/20 text-[#5AAEE8] ring-[#0071C2]/45",
+  },
+  interno: {
+    selected:
+      "border-transparent bg-brand-cyan text-brand-navy shadow-[0_8px_24px_-10px_rgba(0,181,226,0.8)]",
+    idle: "border-brand-cyan/40 bg-brand-cyan/10 text-brand-cyan hover:bg-brand-cyan/20",
+    pill: "bg-brand-cyan/15 text-brand-cyan ring-brand-cyan/40",
+  },
+};
+
+function SourcePill({ source }: { source?: ReservationSource }) {
+  if (!source) return <span className="text-white/30">—</span>;
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] ring-1 ${SOURCE_STYLES[source].pill}`}
+    >
+      {SOURCE_LABEL[source]}
+    </span>
+  );
+}
 
 const formatKg = (n: number) =>
   n.toLocaleString("pt-PT", {
@@ -520,6 +561,9 @@ function EntradaFormFields({
   // Default para entradas NOVAS: `Sem IVA` ligado (Andre confirmou que as
   // entradas em cash dele não levam IVA). Em edit usa o valor guardado.
   const [noIva, setNoIva] = useState(editing ? (editing.noIva ?? false) : true);
+  // Canal da reserva. Default `interno` (directas). O box do VAT invoice só
+  // aparece quando o canal é Airbnb.
+  const [source, setSource] = useState<ReservationSource>(editing?.source ?? "interno");
   const ivaSuggestion = amount
     ? (Number(amount.replace(",", ".")) * 0.06).toFixed(2)
     : "";
@@ -548,6 +592,49 @@ function EntradaFormFields({
             className={INPUT_CLASS}
           />
         </Field>
+      </div>
+
+      {/* Canal da reserva — segmented control com as cores de cada plataforma.
+          `source` é controlado; um input hidden leva o valor no FormData. */}
+      <div className="space-y-2.5">
+        <span className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">
+          Canal da reserva
+        </span>
+        <input type="hidden" name="source" value={source} />
+        <div className="grid grid-cols-3 gap-2">
+          {RESERVATION_SOURCES.map((s) => {
+            const active = source === s;
+            return (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setSource(s)}
+                aria-pressed={active}
+                className={`inline-flex items-center justify-center rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${
+                  active ? SOURCE_STYLES[s].selected : SOURCE_STYLES[s].idle
+                }`}
+              >
+                {SOURCE_LABEL[s]}
+              </button>
+            );
+          })}
+        </div>
+        {source === "airbnb" && (
+          <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-[#FF5A5F]/40 bg-[#FF5A5F]/10 px-3.5 py-2.5">
+            <input
+              type="checkbox"
+              name="vatInvoiceInDrive"
+              defaultChecked={editing?.vatInvoiceInDrive ?? false}
+              className="mt-0.5 h-4 w-4 rounded border-white/20 bg-white/[0.05] text-[#FF5A5F] focus:ring-[#FF5A5F]"
+            />
+            <span className="text-sm leading-snug text-white/85">
+              <span className="font-semibold text-[#FF8E91]">VAT invoice na drive</span>
+              <span className="mt-0.5 block text-[11px] text-white/45">
+                Reverse charge da Airbnb já carregado na drive da contabilidade.
+              </span>
+            </span>
+          </label>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -673,6 +760,7 @@ function EntradaTable({
         <tr>
           <Th>Data</Th>
           <Th>Estadia</Th>
+          <Th>Canal</Th>
           <Th>Pessoa</Th>
           <Th align="right">Valor</Th>
           <Th align="right">Na conta</Th>
@@ -691,6 +779,9 @@ function EntradaTable({
             >
               <Td className="text-white/65">{ddmmyyyy(r.date)}</Td>
               <Td className="text-white">{r.stayWindow ?? r.description}</Td>
+              <Td>
+                <SourcePill source={r.source} />
+              </Td>
               <Td>
                 <PersonPillEditable
                   entryId={r.id}
@@ -743,6 +834,16 @@ function EntradaTable({
                     label="IVA Vault"
                     tone="good"
                   />
+                  {r.source === "airbnb" && (
+                    <ToggleChip
+                      entryId={r.id}
+                      property={property}
+                      flag="vatInvoiceInDrive"
+                      active={r.vatInvoiceInDrive ?? false}
+                      label="VAT na drive"
+                      tone="good"
+                    />
+                  )}
                 </div>
               </Td>
               <Td align="center">
