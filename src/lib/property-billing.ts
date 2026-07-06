@@ -1,12 +1,12 @@
-// Address, default rates and banking info per property.
-// Used by the /alojamentos/[slug]/reserva page to pre-fill the invoice form.
+// Company-wide invoice constants + the per-property billing SHAPE.
 //
-// 🔴 As moradas exactas da Sweet Escape 2 e 5 ainda não estão confirmadas —
-// os placeholders abaixo precisam de ser substituídos quando o Andre mandar
-// (são edifícios diferentes, ambos em Monte Estoril).
+// v0.13.0 — the per-property BILLING record moved into the property objects
+// themselves (now stored in Vercel Blob via `properties-store.ts`) so a single
+// edit updates address, rates and cleaning pay everywhere. Only the banking
+// block and the tagline — which are the same across every reserva — stay here.
 
-import type { PropertySlug } from "./properties";
-
+/** The billing fields the reserva form consumes. Property objects already
+ *  satisfy this shape, so callers can pass a Property straight through. */
 export type PropertyBilling = {
   /** Multi-line address rendered right-aligned under "APARTAMENTO:". */
   addressLines: string[];
@@ -14,47 +14,8 @@ export type PropertyBilling = {
   defaultNightlyRate: number;
   /** Default cleaning fee in € — 0 means render the dash like the reference PDF. */
   defaultCleaningFee: number;
-  /** Standard payment to the cleaner per turn-over, in €. Used to pre-fill
-   *  the *Novo pagamento a funcionário* form on the property page. T2 = 25€,
-   *  T3 (One For One House) = 35€. */
+  /** Standard payment to the cleaner per turn-over, in €. */
   defaultCleaningPaymentEur: number;
-};
-
-export const BILLING: Record<PropertySlug, PropertyBilling> = {
-  "one-for-one-house": {
-    addressLines: [
-      "Rua Gil Vicente Nº141",
-      "R/C B",
-      "São João Do Estoril",
-      "Cascais, Lisboa",
-      "Portugal",
-    ],
-    defaultNightlyRate: 130,
-    defaultCleaningFee: 0,
-    defaultCleaningPaymentEur: 35,
-  },
-  "sweet-escape-2": {
-    addressLines: [
-      "Rua do Viveiro 15",
-      "2ºB",
-      "2765-294 Estoril",
-      "Portugal",
-    ],
-    defaultNightlyRate: 100,
-    defaultCleaningFee: 0,
-    defaultCleaningPaymentEur: 25,
-  },
-  "sweet-escape-5": {
-    addressLines: [
-      "Rua do Viveiro 15",
-      "5ºD",
-      "2765-294 Estoril",
-      "Portugal",
-    ],
-    defaultNightlyRate: 100,
-    defaultCleaningFee: 0,
-    defaultCleaningPaymentEur: 25,
-  },
 };
 
 /** Banking info printed under DADOS BANCÁRIOS in every reserva. */

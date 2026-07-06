@@ -22,8 +22,6 @@ import { useRouter } from "next/navigation";
 import { ddmmyyyy } from "@/lib/dates";
 import { eur } from "@/lib/money";
 import { addEntryAction, updateEntryAction } from "@/lib/pnl-actions";
-import { BILLING } from "@/lib/property-billing";
-import type { PropertySlug } from "@/lib/properties";
 import {
   PEOPLE,
   RESERVATION_SOURCES,
@@ -141,10 +139,14 @@ export function PnLTable({
   entries,
   propertySlug,
   defaultDate,
+  defaultCleaningPaymentEur,
 }: {
   entries: PnLEntry[];
   propertySlug: string;
   defaultDate?: string;
+  /** Cleaning pay to pre-fill "Nova limpeza". Comes from the property store
+   *  (was the static BILLING record before v0.13.0). */
+  defaultCleaningPaymentEur?: number;
 }) {
   const entradas = entries.filter(
     (e): e is EntradaEntry => e.kind === "entrada",
@@ -180,6 +182,7 @@ export function PnLTable({
         rows={funcionario}
         property={propertySlug}
         defaultDate={defaultDate}
+        defaultCleaningPaymentEur={defaultCleaningPaymentEur}
       />
     </div>
   );
@@ -1220,10 +1223,12 @@ function FuncionarioSection({
   rows,
   property,
   defaultDate,
+  defaultCleaningPaymentEur,
 }: {
   rows: FuncionarioEntry[];
   property: string;
   defaultDate?: string;
+  defaultCleaningPaymentEur?: number;
 }) {
   const { mode, open, close, submit, isPending, error } = useSectionForm();
   const editing =
@@ -1235,12 +1240,9 @@ function FuncionarioSection({
   // so Andre só confirma datas + *Registar*. v0.10.4: secção renomeada
   // de "Funcionário" para "Limpezas" e a coluna Descrição foi removida
   // (era sempre "Limpeza"). Cada linha passa a ter duas datas: pagamento
-  // e limpeza (data da limpeza efectivamente prestada).
-  const billing = BILLING[property as PropertySlug] as
-    | (typeof BILLING)[PropertySlug]
-    | undefined;
-  const defaultAmount =
-    editing?.amount ?? billing?.defaultCleaningPaymentEur ?? undefined;
+  // e limpeza (data da limpeza efectivamente prestada). v0.13.0: a tarifa
+  // por propriedade chega via prop (vinda do store) em vez do BILLING estático.
+  const defaultAmount = editing?.amount ?? defaultCleaningPaymentEur ?? undefined;
   // Cleaning date defaults to the entry's stored cleaningDate, falling
   // back to the payment date for legacy entries, then to today.
   const defaultCleaningDate = editing?.cleaningDate ?? editing?.date ?? today;

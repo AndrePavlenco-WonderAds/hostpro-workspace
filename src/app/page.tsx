@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { PROPERTIES } from "@/lib/properties";
+import { getAllProperties } from "@/lib/properties-store";
 import { getAllEntries } from "@/lib/pnl-store";
 import {
   aggregateMonth,
@@ -32,7 +32,7 @@ export default async function Home({
   searchParams: Promise<{ m?: string }>;
 }) {
   // One read covers every property — we slice by slug locally.
-  const all = await getAllEntries();
+  const [all, properties] = await Promise.all([getAllEntries(), getAllProperties()]);
 
   // Mês seleccionado via ?m=YYYY-MM (default: mês actual). Permite navegar
   // por meses anteriores sem entrar em cada card.
@@ -47,7 +47,7 @@ export default async function Home({
     shiftMonth(currentMonthKey(), +1),
   ]);
 
-  const cards = PROPERTIES.map((p) => {
+  const cards = properties.map((p) => {
     const entries = all.filter((e) => e.property === p.slug);
     const totals = aggregateMonth(entries, month);
     const monthEntries = filterMonth(entries, month);
@@ -142,6 +142,13 @@ export default async function Home({
           >
             <span aria-hidden>📣</span>
             Postagem de conteúdo
+          </Link>
+          <Link
+            href="/alojamentos/novo"
+            className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.06] px-6 py-2.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-brand-cyan hover:text-white"
+          >
+            <span aria-hidden>＋</span>
+            Novo alojamento
           </Link>
         </div>
       </main>

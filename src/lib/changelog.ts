@@ -15,6 +15,17 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.13.0",
+    date: "2026-07-06",
+    title: "Adicionar alojamentos diretamente na app",
+    highlights: [
+      "**🏠 Novo alojamento pela app.** Botão **＋ Novo alojamento** na página inicial e na visão geral abre `/alojamentos/novo` — um formulário com nome, localização, descrição, foto (upload opcional), morada (para as reservas) e valores por defeito (preço/noite, taxa e pagamento de limpeza). Ao criar, aparece logo na home, na visão geral e ganha página própria de P&L e de reservas.",
+      "**🗄️ Alojamentos passaram a viver no Vercel Blob.** Deixaram de ser uma constante no código (`properties.ts`) e passaram para um store (`data/properties.json`), com o mesmo padrão à prova de ops-cap do P&L — uma única `list()` partilhada entre leitura e escrita, por isso cada criação custa 3 advanced ops, nunca mais. Os 3 alojamentos atuais entram como seed na primeira leitura.",
+      "**🧾 Morada + tarifas migraram para dentro de cada alojamento.** O antigo `BILLING` (moradas, preço/noite, pagamento de limpeza) fundiu-se no próprio alojamento — uma edição atualiza a reserva, o form de limpeza e o /admin de uma vez. O bloco bancário e o slogan (iguais em todas as reservas) ficaram em `property-billing.ts`.",
+      "**🖼️ Fotos.** Sem foto, o card e o cabeçalho usam um degradé navy; com foto, sobe para o Blob (prefixo próprio, nunca apanhado pelo GC do JSON) e o `next.config` passou a permitir o CDN do Blob no `next/image`. O slug é gerado a partir do nome (com `novo` reservado para não chocar com a página do formulário).",
+    ],
+  },
+  {
     version: "0.12.1",
     date: "2026-06-28",
     title: "Home sem scroll — bloqueada a um ecrã",

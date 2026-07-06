@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 import { Cormorant_Garamond } from "next/font/google";
 
-import { getProperty } from "@/lib/properties";
-import { BILLING, BANKING, TAGLINE } from "@/lib/property-billing";
+import { getProperty } from "@/lib/properties-store";
+import { BANKING, TAGLINE, type PropertyBilling } from "@/lib/property-billing";
 import { ReservaForm } from "@/components/reserva-form";
 
 // Serif for the big "RESERVA" / "Obrigado!" titles.
@@ -18,7 +18,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const p = getProperty(slug);
+  const p = await getProperty(slug);
   return { title: p ? `Reserva — ${p.name} — HostPro` : "Reserva — HostPro" };
 }
 
@@ -28,10 +28,17 @@ export default async function ReservaPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const property = getProperty(slug);
+  const property = await getProperty(slug);
   if (!property) notFound();
 
-  const billing = BILLING[property.slug];
+  // Billing lives on the property itself now (merged from the old BILLING
+  // record in v0.13.0) — pluck just the fields the form needs.
+  const billing: PropertyBilling = {
+    addressLines: property.addressLines,
+    defaultNightlyRate: property.defaultNightlyRate,
+    defaultCleaningFee: property.defaultCleaningFee,
+    defaultCleaningPaymentEur: property.defaultCleaningPaymentEur,
+  };
 
   return (
     <div className={`min-h-screen bg-brand-navy-dark ${cormorant.variable}`}>

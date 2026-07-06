@@ -1,7 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { PROPERTIES } from "@/lib/properties";
+import { getAllProperties } from "@/lib/properties-store";
+import type { Property } from "@/lib/properties";
+import { getCurrentVersion } from "@/lib/changelog";
 import { getAllEntries } from "@/lib/pnl-store";
 import {
   aggregate,
@@ -18,7 +20,10 @@ export const metadata = {
 };
 
 export default async function AdminPage() {
-  const all = await getAllEntries();
+  const [all, properties] = await Promise.all([getAllEntries(), getAllProperties()]);
+  // slug → shortName lookup for the ranked lists / activity table (properties
+  // are dynamic now, so we resolve names from the store snapshot).
+  const nameBySlug = new Map(properties.map((p) => [p.slug, p.shortName]));
   const month = currentMonthKey();
   const prevMonth = shiftMonth(month, -1);
 
@@ -28,7 +33,7 @@ export default async function AdminPage() {
   const ytdYear = month.slice(0, 4);
   const ytd = aggregate(all.filter((e) => e.date.startsWith(ytdYear)));
 
-  const perProperty = PROPERTIES.map((p) => {
+  const perProperty = properties.map((p) => {
     const entries = all.filter((e) => e.property === p.slug);
     return {
       property: p,
@@ -69,14 +74,23 @@ export default async function AdminPage() {
               Visão geral
             </h1>
             <p className="mt-2 text-sm text-white/55 sm:text-base">
-              Operação consolidada dos {PROPERTIES.length} alojamentos em{" "}
+              Operação consolidada dos {properties.length} alojamentos em{" "}
               <strong className="text-white">{monthLabel(month)}</strong> e
               acumulado de {ytdYear}.
             </p>
           </div>
-          <span className="rounded-full border border-brand-cyan/40 bg-brand-cyan/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-brand-cyan">
-            Ao vivo · v0.10.1
-          </span>
+          <div className="flex flex-col items-end gap-2">
+            <span className="rounded-full border border-brand-cyan/40 bg-brand-cyan/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-brand-cyan">
+              Ao vivo · v{getCurrentVersion()}
+            </span>
+            <Link
+              href="/alojamentos/novo"
+              className="inline-flex items-center gap-1.5 rounded-full bg-brand-cyan px-3.5 py-1.5 text-xs font-semibold text-brand-navy shadow-[0_10px_30px_-8px_rgba(0,181,226,0.6)] transition hover:opacity-90"
+            >
+              <span aria-hidden>＋</span>
+              Novo alojamento
+            </Link>
+          </div>
         </header>
 
         <section className="mt-10">
@@ -129,6 +143,7 @@ export default async function AdminPage() {
           <TopList
             title="Top 5 reservas (sempre)"
             emoji="🏆"
+            nameBySlug={nameBySlug}
             rows={topEntradas.map((e) => ({
               key: e.id,
               property: e.property,
@@ -141,6 +156,7 @@ export default async function AdminPage() {
           <TopList
             title="Top 5 custos (sempre)"
             emoji="💸"
+            nameBySlug={nameBySlug}
             rows={topCustos.map((e) => ({
               key: e.id,
               property: e.property,
@@ -172,7 +188,7 @@ export default async function AdminPage() {
                 </thead>
                 <tbody className="divide-y divide-white/5">
                   {recent.map((e) => (
-                    <ActivityRow key={e.id} entry={e} />
+                    <ActivityRow key={e.id} entry={e} nameBySlug={nameBySlug} />
                   ))}
                 </tbody>
               </table>
@@ -223,7 +239,7 @@ function PropertyComparisonCard({
   year,
 }: {
   row: {
-    property: typeof PROPERTIES[number];
+    property: Property;
     month: ReturnType<typeof aggregate>;
     prev: ReturnType<typeof aggregate>;
     ytd: ReturnType<typeof aggregate>;
@@ -303,6 +319,7 @@ function TopList({
   title,
   emoji,
   rows,
+  nameBySlug,
 }: {
   title: string;
   emoji: string;
@@ -314,6 +331,7 @@ function TopList({
     right: string;
     accent: "cyan" | "rose";
   }>;
+  nameBySlug: Map<string, string>;
 }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.025] backdrop-blur-md">
@@ -326,7 +344,7 @@ function TopList({
           <li className="px-5 py-6 text-center text-xs text-white/45">Sem dados.</li>
         ) : (
           rows.map((r) => {
-            const propertyName = PROPERTIES.find((p) => p.slug === r.property)?.shortName ?? r.property;
+            const propertyName = nameBySlug.get(r.property) ?? r.property;
             const accent = r.accent === "cyan" ? "text-brand-cyan" : "text-rose-200";
             return (
               <li key={r.key} className="flex items-center justify-between gap-3 px-5 py-3">
@@ -346,9 +364,14 @@ function TopList({
   );
 }
 
-function ActivityRow({ entry }: { entry: PnLEntry }) {
-  const propertyName =
-    PROPERTIES.find((p) => p.slug === entry.property)?.shortName ?? entry.property;
+function ActivityRow({
+  entry,
+  nameBySlug,
+}: {
+  entry: PnLEntry;
+  nameBySlug: Map<string, string>;
+}) {
+  const propertyName = nameBySlug.get(entry.property) ?? entry.property;
   const typeLabel =
     entry.kind === "entrada"
       ? "Entrada"

@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { PROPERTIES, getProperty } from "@/lib/properties";
+import { getAllProperties, getProperty } from "@/lib/properties-store";
 import { getEntries } from "@/lib/pnl-store";
 import {
   aggregateMonth,
@@ -22,9 +22,8 @@ import { MonthPicker } from "@/components/month-picker";
 import { PnLTable } from "@/components/pnl-table";
 import { DashboardStats } from "@/components/dashboard-stats";
 
-export function generateStaticParams() {
-  return PROPERTIES.map((p) => ({ slug: p.slug }));
-}
+// Properties are stored in Vercel Blob now, so slugs are only known at
+// request time — this route renders dynamically (no generateStaticParams).
 
 export async function generateMetadata({
   params,
@@ -32,7 +31,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const p = getProperty(slug);
+  const p = await getProperty(slug);
   return { title: p ? `${p.name} — HostPro` : "Alojamento — HostPro" };
 }
 
@@ -44,14 +43,15 @@ export default async function PropertyPage({
   searchParams: Promise<{ m?: string }>;
 }) {
   const { slug } = await params;
-  const property = getProperty(slug);
+  const properties = await getAllProperties();
+  const property = properties.find((p) => p.slug === slug);
   if (!property) notFound();
 
-  // Cyclic prev/next around the PROPERTIES order. Saves Andre a round-trip
+  // Cyclic prev/next around the stored order. Saves Andre a round-trip
   // to `/` (Home) when comparing one AL against its neighbour.
-  const idx = PROPERTIES.findIndex((p) => p.slug === property.slug);
-  const prevProperty = PROPERTIES[(idx - 1 + PROPERTIES.length) % PROPERTIES.length];
-  const nextProperty = PROPERTIES[(idx + 1) % PROPERTIES.length];
+  const idx = properties.findIndex((p) => p.slug === property.slug);
+  const prevProperty = properties[(idx - 1 + properties.length) % properties.length];
+  const nextProperty = properties[(idx + 1) % properties.length];
 
   const { m } = await searchParams;
   const entries = await getEntries(property.slug);
@@ -73,14 +73,18 @@ export default async function PropertyPage({
   return (
     <div className="min-h-screen bg-brand-navy-dark">
       <section className="relative h-56 sm:h-72">
-        <Image
-          src={property.photo}
-          alt={property.name}
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover"
-        />
+        {property.photo ? (
+          <Image
+            src={property.photo}
+            alt={property.name}
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-brand-navy via-brand-navy-dark to-black" />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-brand-navy-dark via-brand-navy-dark/70 to-brand-navy-dark/30" />
 
 <div className="absolute inset-x-0 top-0 px-4 pt-4 sm:px-10 sm:pt-8">
@@ -177,6 +181,7 @@ export default async function PropertyPage({
               entries={monthEntries}
               propertySlug={property.slug}
               defaultDate={defaultDateForMonth(month)}
+              defaultCleaningPaymentEur={property.defaultCleaningPaymentEur}
             />
           </div>
         </section>

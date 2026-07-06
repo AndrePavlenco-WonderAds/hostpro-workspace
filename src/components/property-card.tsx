@@ -30,13 +30,17 @@ export function PropertyCard({
       className="group relative flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] transition hover:-translate-y-0.5 hover:border-brand-cyan/50 hover:bg-white/[0.05]"
     >
       <div className="relative h-36 w-full overflow-hidden sm:h-44">
-        <Image
-          src={property.photo}
-          alt={property.name}
-          fill
-          sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-          className="object-cover transition-transform duration-700 group-hover:scale-105"
-        />
+        {property.photo ? (
+          <Image
+            src={property.photo}
+            alt={property.name}
+            fill
+            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+            className="object-cover transition-transform duration-700 group-hover:scale-105"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-brand-navy via-brand-navy-dark to-black" />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-brand-navy-dark via-brand-navy-dark/30 to-transparent" />
         <span className="absolute left-3 top-3 inline-flex items-center rounded-full bg-black/45 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/90 ring-1 ring-white/15">
           {property.location}
