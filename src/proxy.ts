@@ -15,6 +15,9 @@ const PUBLIC_PATHS = [
 
 const PUBLIC_PREFIXES = [
   "/_next/",
+  // Relatório de prospecting partilhado com o cliente — protegido por um token
+  // não-adivinhável no URL, por isso pode passar o gate da password.
+  "/prospecting/r/",
 ];
 
 const PUBLIC_FILE_RE = /\.(?:ico|png|jpg|jpeg|svg|webp|gif|txt|xml|map|woff2?)$/i;

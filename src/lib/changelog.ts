@@ -15,6 +15,18 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.14.0",
+    date: "2026-07-06",
+    title: "Prospecting — auditoria de listings + relatório para o cliente",
+    highlights: [
+      "**🔎 Nova secção Prospecting.** Metes o link de um listing de um potencial cliente e a app audita-o contra o checklist de otimização da HostPro (o Master File). Botões na home e no /admin. Cada análise tem um score, o que já está bem e as oportunidades de melhoria.",
+      "**🤖 Airbnb lido automaticamente.** O scrape server-side lê o Airbnb via JSON-LD + estado da página: título, descrição, **contagem real de fotos**, rating e **amenidades** (WiFi, cozinha, aquecimento, café, Smart TV, berço, essenciais de praia…). A análise de texto (título <50 chars, keywords, distâncias a pé, estrutura, self check-in) e de amenidades/extras é **automática**.",
+      "**✍️ Booking e o resto ficam assistidos.** O Booking bloqueia leitura automática (muro anti-bot), por isso nesses casos colas título/descrição/comodidades à mão. Fotos (qualidade), PriceLabs, automação e operações — que não se veem do exterior — ficam num checklist que confirmas com um toque (OK / a melhorar / N/A).",
+      "**📄 Relatório bonito para o cliente.** Cada análise gera um relatório apresentável (branding HostPro, score, oportunidades e pontos fortes, CTA) partilhável por **link público com token** (fora do gate da password) e **imprimível / Guardar PDF**. As tuas notas internas nunca aparecem no relatório.",
+      "**🗄️ Guardado no Blob** (`data/prospects.json`) com o padrão ops-safe do costume. ⚠️ O preço/flutuação não vem no HTML do Airbnb — essa parte fica em avaliação manual por agora (a API de calendário é frágil; podemos ligar mais tarde).",
+    ],
+  },
+  {
     version: "0.13.1",
     date: "2026-07-06",
     title: "Nova foto do Sweet Escape 5º",

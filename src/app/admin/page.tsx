@@ -83,13 +83,22 @@ export default async function AdminPage() {
             <span className="rounded-full border border-brand-cyan/40 bg-brand-cyan/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-brand-cyan">
               Ao vivo · v{getCurrentVersion()}
             </span>
-            <Link
-              href="/alojamentos/novo"
-              className="inline-flex items-center gap-1.5 rounded-full bg-brand-cyan px-3.5 py-1.5 text-xs font-semibold text-brand-navy shadow-[0_10px_30px_-8px_rgba(0,181,226,0.6)] transition hover:opacity-90"
-            >
-              <span aria-hidden>＋</span>
-              Novo alojamento
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/prospecting"
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.06] px-3.5 py-1.5 text-xs font-semibold text-white transition hover:border-brand-cyan"
+              >
+                <span aria-hidden>🔎</span>
+                Prospecting
+              </Link>
+              <Link
+                href="/alojamentos/novo"
+                className="inline-flex items-center gap-1.5 rounded-full bg-brand-cyan px-3.5 py-1.5 text-xs font-semibold text-brand-navy shadow-[0_10px_30px_-8px_rgba(0,181,226,0.6)] transition hover:opacity-90"
+              >
+                <span aria-hidden>＋</span>
+                Novo alojamento
+              </Link>
+            </div>
           </div>
         </header>
 
