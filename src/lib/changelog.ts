@@ -15,6 +15,14 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.13.1",
+    date: "2026-07-06",
+    title: "Nova foto do Sweet Escape 5º",
+    highlights: [
+      "**📸 Sweet Escape 5º com foto nova.** Substituída a foto do 5º pela imagem da cozinha (HEIC → JPEG, 1200×1600). Como o caminho `/properties/sweet-escape-5.jpg` se mantém, atualiza no card da home e no cabeçalho da página sem tocar no store.",
+    ],
+  },
+  {
     version: "0.13.0",
     date: "2026-07-06",
     title: "Adicionar alojamentos diretamente na app",
