@@ -15,6 +15,16 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.14.1",
+    date: "2026-07-07",
+    title: "Relatório de prospecting mais vendedor",
+    highlights: [
+      "**🎯 'Oportunidades de melhoria' com muito mais destaque.** Passou a um painel realçado (fundo azul-claro, barra lateral cyan, contador '{n} a corrigir') e cada ponto virou um item de checklist com caixa por marcar — salta à vista o que há a melhorar.",
+      "**👀 Nova secção 'E isto é apenas uma amostra'.** Por baixo das oportunidades, um teaser com alguns pontos **desfocados** (sem nada real por trás) a sugerir que a auditoria completa tem muito mais — a puxar para o serviço.",
+      "**📞 Footer corrigido.** Cobertura passou de 'Costa do Estoril' para **'de Cascais a Oeiras'** e adicionado o contacto **936 535 306** ao lado do email.",
+    ],
+  },
+  {
     version: "0.14.0",
     date: "2026-07-06",
     title: "Prospecting — auditoria de listings + relatório para o cliente",
