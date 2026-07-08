@@ -33,6 +33,9 @@ export type ItemStatus = "pass" | "fail" | "manual" | "na";
 /** Como o estado foi determinado. */
 export type ItemMode = "auto" | "manual";
 
+/** Gravidade/prioridade de resolução — usada no roadmap do relatório. */
+export type Priority = "alta" | "media" | "baixa";
+
 export type AuditItem = {
   id: string;                    // estável, ex: "title.under50"
   label: string;
@@ -40,6 +43,8 @@ export type AuditItem = {
    *  para o operador confirmar (fotos, PriceLabs, operações…). */
   mode: ItemMode;
   status: ItemStatus;
+  /** Gravidade — quão fundamental é resolver isto. */
+  priority: Priority;
   /** Evidência curta do porquê (auto) — ex: "Título tem 61 caracteres". */
   evidence?: string;
   /** Recomendação concreta mostrada ao cliente quando o item falha. */
@@ -68,8 +73,12 @@ export type Prospect = {
   name: string;
   url: string;
   platform: Platform;
-  /** Notas manuais do operador — "detalhes que não estão bons". */
+  /** Notas manuais do operador — "detalhes que não estão bons". Internas,
+   *  nunca aparecem no relatório do cliente. */
   operatorNotes: string;
+  /** Notas da HostPro PARA o cliente/lead — o plano de ação escrito à mão
+   *  que aparece no relatório (o roadmap que podemos fazer já). */
+  clientNotes: string;
   listing: ListingData;
   audit: AuditResult;
   /** Overrides manuais item-a-item: id → status escolhido pelo operador.

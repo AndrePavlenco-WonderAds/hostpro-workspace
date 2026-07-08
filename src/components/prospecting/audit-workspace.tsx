@@ -17,6 +17,7 @@ type Props = {
   url: string;
   publicToken: string;
   operatorNotes: string;
+  clientNotes: string;
   listing: ListingData;
   categories: AuditCategory[];
   score: number;
@@ -36,6 +37,7 @@ export function AuditWorkspace(props: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [notes, setNotes] = useState(props.operatorNotes);
+  const [clientNotes, setClientNotes] = useState(props.clientNotes);
   const [copied, setCopied] = useState(false);
 
   const reportPath = `/prospecting/r/${props.publicToken}`;
@@ -49,6 +51,12 @@ export function AuditWorkspace(props: Props) {
   function saveNotes() {
     startTransition(async () => {
       await updateProspectMetaAction(props.id, { operatorNotes: notes });
+      router.refresh();
+    });
+  }
+  function saveClientNotes() {
+    startTransition(async () => {
+      await updateProspectMetaAction(props.id, { clientNotes });
       router.refresh();
     });
   }
@@ -128,6 +136,26 @@ export function AuditWorkspace(props: Props) {
         />
         <button onClick={saveNotes} disabled={isPending} className="mt-2 rounded-full border border-white/15 bg-white/[0.06] px-3.5 py-1.5 text-xs font-semibold text-white transition hover:border-brand-cyan disabled:opacity-60">
           Guardar notas
+        </button>
+      </div>
+
+      {/* Notas da HostPro PARA o cliente — aparecem no relatório */}
+      <div className="rounded-2xl border border-brand-cyan/25 bg-brand-cyan/[0.05] p-4">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-cyan">
+          Notas da HostPro para o cliente · plano de ação
+        </p>
+        <p className="mt-0.5 text-[11px] text-white/45">
+          Isto <strong>aparece no relatório</strong> do cliente. Usa para situar o roadmap: o que fazemos já, prioridades, próximos passos.
+        </p>
+        <textarea
+          value={clientNotes}
+          onChange={(e) => setClientNotes(e.target.value)}
+          rows={4}
+          placeholder={"ex: Começamos pelas fotos (sessão profissional) e reescrita do título esta semana; depois ativamos preços dinâmicos e automação de mensagens. Em 30 dias esperamos +15% de ocupação."}
+          className="mt-2 w-full resize-y rounded-lg border border-white/12 bg-white/[0.05] px-3 py-2 text-sm text-white outline-none focus:border-brand-cyan"
+        />
+        <button onClick={saveClientNotes} disabled={isPending} className="mt-2 rounded-full bg-brand-cyan px-3.5 py-1.5 text-xs font-semibold text-brand-navy transition hover:opacity-90 disabled:opacity-60">
+          Guardar plano de ação
         </button>
       </div>
 

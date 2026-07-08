@@ -31,6 +31,7 @@ export default async function ProspectWorkspacePage({
             url={p.url}
             publicToken={p.publicToken}
             operatorNotes={p.operatorNotes}
+            clientNotes={p.clientNotes ?? ""}
             listing={p.listing}
             categories={audit.categories}
             score={audit.score}

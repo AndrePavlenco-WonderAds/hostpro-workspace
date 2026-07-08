@@ -85,6 +85,7 @@ export async function createProspectAction(formData: FormData): Promise<CreateRe
     url,
     platform: listing.platform,
     operatorNotes,
+    clientNotes: "",
     listing,
     audit,
     overrides: {},
@@ -120,7 +121,7 @@ export async function setOverrideAction(
 
 export async function updateProspectMetaAction(
   id: string,
-  patch: { name?: string; operatorNotes?: string },
+  patch: { name?: string; operatorNotes?: string; clientNotes?: string },
 ): Promise<ActionResult> {
   try {
     await updateProspect(id, patch);

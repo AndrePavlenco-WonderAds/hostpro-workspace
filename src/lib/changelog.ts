@@ -15,6 +15,18 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.15.0",
+    date: "2026-07-08",
+    title: "Relatório de prospecting: roadmap prioritizado, plano de ação e assinatura",
+    highlights: [
+      "**🗺️ Plano de melhorias prioritizado (roadmap).** As oportunidades passaram a estar ordenadas por gravidade (Crítico → Importante → Menor), com etiqueta de prioridade por bloco e um ponto colorido por item. O contador ficou alarmante (**⚠ N a corrigir** em vermelho) e a home mostra também os pontos críticos.",
+      "**📝 Notas da HostPro para o cliente.** Novo campo no workspace — 'Plano de ação' escrito à mão que **aparece no relatório** (num bloco navy 'O que a HostPro faz por si'). Serve para situar o roadmap concreto para o lead. As notas internas continuam a nunca aparecer.",
+      "**✍️ Assinatura do consultor.** O relatório fecha com a assinatura do André Pavlenco (foto + Consultor HostPro + contactos).",
+      "**🖨️ Impressão corrigida + UX.** Acabou o espaçaço gigante em branco na 1ª página (secções deixaram de forçar quebra inteira), margens mais justas e layout mais apertado e atraente. Removida a checkbox estranha e o bloco 'apenas uma amostra' desfocado.",
+      "**🏷️ Categorias do anúncio + rodapé.** Passou a 'Título & Descrição do Anúncio', 'Fotos do Anúncio', etc. O rodapé interno deixou de aparecer nas páginas de prospecting e a cobertura passou a **'de Cascais a Lisboa'**.",
+    ],
+  },
+  {
     version: "0.14.1",
     date: "2026-07-07",
     title: "Relatório de prospecting mais vendedor",

@@ -4,6 +4,7 @@ import type {
   AuditCategory,
   AuditResult,
   ItemStatus,
+  Priority,
 } from "./types";
 
 // Motor de auditoria — mapeia o ListingData para o checklist de otimização
@@ -39,6 +40,24 @@ type Check = {
   /** undefined => item manual. */
   auto?: (ctx: Ctx) => { pass: boolean; evidence?: string };
   recommendation?: string;
+  /** Override de prioridade; senão herda a da categoria. */
+  priority?: Priority;
+};
+
+// Prioridade por categoria — base do roadmap. O que gera mais reservas/receita
+// (título, fotos, preços) é "alta"; extras/bónus é "baixa".
+const CATEGORY_PRIORITY: Record<string, Priority> = {
+  titulo: "alta",
+  fotos: "alta",
+  qualidade: "alta",
+  pricelabs: "alta",
+  cobertura: "media",
+  editor: "media",
+  amenidades: "media",
+  automacao: "media",
+  extras: "baixa",
+  operacoes: "baixa",
+  bonus: "baixa",
 };
 
 type Ctx = {
@@ -54,7 +73,7 @@ type Ctx = {
 const CATEGORIES: { id: string; label: string; items: Check[] }[] = [
   {
     id: "titulo",
-    label: "Título & Descrição",
+    label: "Título & Descrição do Anúncio",
     items: [
       {
         id: "titulo.tipologia_local",
@@ -146,7 +165,7 @@ const CATEGORIES: { id: string; label: string; items: Check[] }[] = [
   },
   {
     id: "fotos",
-    label: "Fotos",
+    label: "Fotos do Anúncio",
     items: [
       {
         id: "fotos.quantidade",
@@ -166,7 +185,7 @@ const CATEGORIES: { id: string; label: string; items: Check[] }[] = [
   },
   {
     id: "qualidade",
-    label: "Qualidade das fotos",
+    label: "Qualidade das Fotos do Anúncio",
     items: [
       { id: "qual.luz", label: "Todas as fotos com luz natural", recommendation: "Fotografe de dia, com luz natural; evite fotos escuras." },
       { id: "qual.estilo", label: "Estilo consistente (mesma edição)", recommendation: "Mantenha o mesmo tom de edição em todas as fotos." },
@@ -348,6 +367,7 @@ export function runAudit(l: ListingData): AuditResult {
     id: cat.id,
     label: cat.label,
     items: cat.items.map((c): AuditItem => {
+      const priority: Priority = c.priority ?? CATEGORY_PRIORITY[cat.id] ?? "media";
       if (c.auto && (textUsable || cat.id === "fotos")) {
         const r = c.auto(ctx);
         return {
@@ -355,6 +375,7 @@ export function runAudit(l: ListingData): AuditResult {
           label: c.label,
           mode: "auto",
           status: r.pass ? "pass" : "fail",
+          priority,
           evidence: r.evidence,
           recommendation: c.recommendation,
         };
@@ -364,6 +385,7 @@ export function runAudit(l: ListingData): AuditResult {
         label: c.label,
         mode: "manual",
         status: "manual",
+        priority,
         recommendation: c.recommendation,
       };
     }),
