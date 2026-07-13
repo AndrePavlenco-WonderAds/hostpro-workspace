@@ -15,6 +15,14 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.16.1",
+    date: "2026-07-13",
+    title: "Globo do relatório: mais localidades de Cascais reconhecidas",
+    highlights: [
+      "**📍 Marcador mais preciso.** O globo passou a reconhecer São Domingos de Rana, Tires, Alcabideche, Birre, Quinta da Marinha e Guincho — o ponto no mapa cai na localidade certa em vez do centro genérico da costa.",
+    ],
+  },
+  {
     version: "0.16.0",
     date: "2026-07-13",
     title: "Relatório de prospecting reimaginado — globo, dashboard e PDF dedicado",
