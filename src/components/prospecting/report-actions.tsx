@@ -38,7 +38,7 @@ export function ReportActions() {
         className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur transition hover:border-brand-cyan hover:text-white"
       >
         <ShareIcon />
-        {copied ? "Link copiado ✓" : "Partilhar"}
+        {copied ? "Link copiado ✓" : "Copiar Link"}
       </button>
       <button
         onClick={() => window.print()}

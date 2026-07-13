@@ -28,8 +28,6 @@ function healthColor(ratio: number): string {
   return ratio >= 0.7 ? "#16a34a" : ratio >= 0.4 ? "#d97706" : "#dc2626";
 }
 
-// Descrição curta de cada área — mostrada a cinzento claro por baixo do nome
-// para o cliente perceber o que está a ser avaliado. Chave = label da categoria.
 const CATEGORY_DESC: Record<string, string> = {
   "Título & Descrição do Anúncio": "As palavras que aparecem na pesquisa e convencem a reservar.",
   "Fotos do Anúncio": "Quantidade e ordem das fotos que mostram o espaço.",
@@ -92,17 +90,21 @@ export default async function ReportPage({
         : "Há margem significativa para otimizar — o potencial de crescimento é grande.";
 
   const scoreColor = audit.score >= 70 ? "#16a34a" : audit.score >= 40 ? "#d97706" : "#dc2626";
+  const scoreBand = audit.score >= 70 ? "Bom" : audit.score >= 40 ? "A otimizar" : "Grande potencial";
 
   return (
-    <main style={{ background: "#f4f6f8", color: NAVY }} className="min-h-screen">
+    <main style={{ background: "linear-gradient(180deg,#f7f9fb 0%,#eef2f6 100%)", color: NAVY }} className="min-h-screen">
       <style
         dangerouslySetInnerHTML={{
           __html: `
             .print-only { display: none; }
+            .font-hand { font-family: var(--font-hand), "Segoe Script", cursive; }
             @keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
             .rise { animation: rise 0.7s cubic-bezier(0.22,1,0.36,1) both; }
             .rise-2 { animation-delay: 0.08s; }
             .rise-3 { animation-delay: 0.16s; }
+            .lift { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+            .lift:hover { transform: translateY(-2px); box-shadow: 0 16px 40px -18px rgba(16,24,40,0.28); }
             @media print {
               @page { size: A4 portrait; margin: 12mm; }
               html, body { background: #fff !important; }
@@ -116,7 +118,7 @@ export default async function ReportPage({
         }}
       />
 
-      {/* ======================= BARRA DE AÇÕES (não imprime) ======================= */}
+      {/* ======================= BARRA DE AÇÕES ======================= */}
       <header
         className="no-print sticky top-0 z-30 flex items-center justify-between gap-3 px-5 py-3 sm:px-8"
         style={{ background: NAVY_DARK, borderBottom: "1px solid rgba(255,255,255,0.08)" }}
@@ -131,11 +133,11 @@ export default async function ReportPage({
         <ReportActions />
       </header>
 
-      {/* ======================= HERO (só ecrã) ======================= */}
+      {/* ======================= HERO ======================= */}
       <section
         className="no-print relative overflow-hidden px-5 pb-16 pt-10 sm:px-8 sm:pb-20 sm:pt-14"
         style={{
-          background: `radial-gradient(1200px 600px at 82% -10%, rgba(0,181,226,0.2), transparent 55%), linear-gradient(180deg, ${NAVY_DARK} 0%, ${NAVY} 100%)`,
+          background: `radial-gradient(1200px 620px at 82% -10%, rgba(0,181,226,0.22), transparent 55%), linear-gradient(180deg, ${NAVY_DARK} 0%, ${NAVY} 100%)`,
         }}
       >
         <div
@@ -159,20 +161,42 @@ export default async function ReportPage({
             </p>
 
             {/* Resumo assinado */}
-            <div
-              className="mt-6 max-w-lg rounded-2xl border p-5"
-              style={{ borderColor: "rgba(255,255,255,0.14)", background: "rgba(255,255,255,0.05)" }}
+            <figure
+              className="relative mt-6 max-w-lg overflow-hidden rounded-3xl border p-6"
+              style={{
+                borderColor: "rgba(0,181,226,0.28)",
+                background: "linear-gradient(150deg, rgba(255,255,255,0.09), rgba(255,255,255,0.03))",
+              }}
             >
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">
-                Assinado por André Pavlenco · Fundador
-              </p>
-              <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.22em] text-brand-cyan">
+              <span
+                aria-hidden
+                className="absolute -left-1 -top-6 select-none text-[110px] leading-none"
+                style={{ color: "rgba(0,181,226,0.22)", fontFamily: "Georgia, serif" }}
+              >
+                “
+              </span>
+              <p className="relative text-[11px] font-bold uppercase tracking-[0.22em] text-brand-cyan">
                 Resumo
               </p>
-              <p className="mt-1.5 text-lg font-semibold leading-relaxed text-white sm:text-xl">
+              <blockquote className="relative mt-2 text-lg font-semibold leading-relaxed text-white sm:text-xl">
                 {verdict}
-              </p>
-            </div>
+              </blockquote>
+              <figcaption className="relative mt-4 flex items-end justify-between gap-3 border-t border-white/10 pt-3">
+                <div>
+                  <p className="font-hand text-3xl leading-none text-brand-cyan">André Pavlenco</p>
+                  <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/45">
+                    Fundador · HostPro
+                  </p>
+                </div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/team/andre-pavlenco.jpg"
+                  alt=""
+                  className="h-11 w-11 rounded-full object-cover"
+                  style={{ border: "2px solid rgba(0,181,226,0.6)" }}
+                />
+              </figcaption>
+            </figure>
 
             <div className="mt-6 flex flex-wrap gap-2.5">
               <HeroChip n={strengths.length} label="pontos fortes" color="#4ade80" />
@@ -187,11 +211,13 @@ export default async function ReportPage({
               className="flex items-center gap-3 rounded-2xl border px-5 py-3 backdrop-blur"
               style={{ borderColor: "rgba(255,255,255,0.14)", background: "rgba(255,255,255,0.05)" }}
             >
-              <CountUp
-                value={audit.score}
-                duration={1200}
-                className="text-4xl font-extrabold tabular-nums"
-              />
+              <span style={{ color: scoreColor }}>
+                <CountUp
+                  value={audit.score}
+                  duration={1200}
+                  className="text-4xl font-extrabold tabular-nums"
+                />
+              </span>
               <div className="text-left">
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/50">
                   Índice de otimização
@@ -203,24 +229,22 @@ export default async function ReportPage({
         </div>
       </section>
 
-      {/* ======================= PRINT HEADER (só impressão) ======================= */}
+      {/* ======================= PRINT HEADER ======================= */}
       <section className="print-only" style={{ borderBottom: `2px solid ${CYAN}`, paddingBottom: 14, marginBottom: 18 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/hostpro-logo.png" alt="HostPro" style={{ height: 32, width: "auto" }} />
           <div style={{ textAlign: "right", fontSize: 11, color: "#6b7280" }}>
             <p>Auditoria de Alojamento Local · {p.platform}</p>
-            <p>{ddmmyyyy(p.createdAt)}</p>
+            <p>{ddmmyyyy(p.createdAt)} · hostpro.pt</p>
           </div>
         </div>
         <div style={{ marginTop: 12, display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
           <div>
             <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.02em", color: NAVY }}>{p.name}</h1>
             <p style={{ marginTop: 2, fontSize: 12, color: "#6b7280" }}>📍 {geo.place} · de Cascais a Lisboa</p>
-            <p style={{ marginTop: 10, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: "#9ca3af" }}>
-              Assinado por André Pavlenco · Fundador
-            </p>
-            <p style={{ marginTop: 4, maxWidth: 440, fontSize: 14, fontWeight: 600, color: "#1f2937" }}>{verdict}</p>
+            <p style={{ marginTop: 8, maxWidth: 440, fontSize: 14, fontWeight: 600, color: "#1f2937" }}>{verdict}</p>
+            <p style={{ marginTop: 6, fontSize: 12, color: "#6b7280" }}>— André Pavlenco, Fundador</p>
           </div>
           <div style={{ textAlign: "center", flexShrink: 0 }}>
             <div style={{ fontSize: 40, fontWeight: 800, lineHeight: 1, color: scoreColor }}>{audit.score}</div>
@@ -230,207 +254,250 @@ export default async function ReportPage({
       </section>
 
       {/* ======================= CORPO DASHBOARD ======================= */}
-      <div className="mx-auto w-full max-w-6xl px-5 py-10 sm:px-8 print:px-0 print:py-0">
-        {/* --- Diagnóstico --- */}
-        <section className="rise">
-          <SectionTitle eyebrow="Diagnóstico" title="Como está o seu Alojamento Local" />
+      <div className="relative">
+        {/* Fundo decorativo — malha de pontos + brilhos, para as secções não ficarem planas */}
+        <div
+          aria-hidden
+          className="no-print pointer-events-none absolute inset-0 overflow-hidden"
+        >
+          <div
+            className="absolute inset-0 opacity-[0.5]"
+            style={{
+              backgroundImage: `radial-gradient(${NAVY}0f 1px, transparent 1px)`,
+              backgroundSize: "24px 24px",
+            }}
+          />
+          <div
+            className="absolute -left-32 top-24 h-96 w-96 rounded-full blur-3xl"
+            style={{ background: "radial-gradient(circle, rgba(0,181,226,0.12), transparent 70%)" }}
+          />
+          <div
+            className="absolute -right-32 top-[40%] h-[28rem] w-[28rem] rounded-full blur-3xl"
+            style={{ background: "radial-gradient(circle, rgba(32,50,71,0.1), transparent 70%)" }}
+          />
+        </div>
 
-          <div className="mt-5 grid gap-4 lg:grid-cols-3 print:grid-cols-3">
-            <Card className="flex flex-col items-center justify-center gap-2">
-              <Donut score={audit.score} color={scoreColor} />
-              <p className="text-xs font-semibold" style={{ color: "#6b7280" }}>
-                Índice de otimização
-              </p>
-            </Card>
+        <div className="relative z-10 mx-auto w-full max-w-6xl px-5 py-10 sm:px-8 print:px-0 print:py-0">
+          {/* --- Diagnóstico --- */}
+          <section className="rise">
+            <SectionHeader eyebrow="Diagnóstico" title="Como está o seu Alojamento Local" />
 
-            <div className="grid grid-cols-2 gap-3 lg:col-span-2">
-              <StatTile label="Pontos fortes" value={strengths.length} color="#16a34a" hint="já bem feitos" />
-              <StatTile label="A melhorar" value={audit.failCount} color={CYAN} hint="oportunidades" />
-              <StatTile label="Críticos" value={criticalCount} color="#dc2626" hint="prioridade máxima" />
-              <StatTile label="Por confirmar" value={audit.manualCount} color="#64748b" hint="análise HostPro" />
-            </div>
-          </div>
-
-          {categoryPerf.length > 0 && (
-            <Card className="mt-4">
-              <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: "#6b7280" }}>
-                Desempenho por área
-              </p>
-              <div className="mt-4 grid gap-x-8 gap-y-3.5 sm:grid-cols-2 print:grid-cols-2">
-                {categoryPerf.map((c) => (
-                  <CategoryBar key={c.label} {...c} />
-                ))}
-              </div>
-            </Card>
-          )}
-        </section>
-
-        {/* --- Roadmap de melhorias --- */}
-        {opportunities.length > 0 && (
-          <section className="mt-10 rise">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <SectionTitle eyebrow="Plano de ação" title="Oportunidades de melhoria" />
-              <span
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-extrabold"
-                style={{ background: "#dc2626", color: "#fff" }}
-              >
-                <span aria-hidden>⚠</span> {audit.failCount} a corrigir
-              </span>
-            </div>
-
-            <div className="mt-5 grid items-start gap-4 sm:grid-cols-2 print:grid-cols-1">
-              {opportunities.map((cat, ci) => {
-                const prio = PRIO[cat.priority];
-                return (
-                  <div
-                    key={cat.label}
-                    className="avoid-break overflow-hidden rounded-2xl border bg-white"
-                    style={{ borderColor: "#e6eaed", boxShadow: "0 1px 3px rgba(16,24,40,0.05)" }}
-                  >
-                    <div
-                      className="flex items-center justify-between gap-2 px-4 py-3"
-                      style={{ background: prio.bg, borderBottom: `1px solid ${prio.color}22` }}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <span
-                          className="flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-extrabold text-white"
-                          style={{ background: prio.color }}
-                        >
-                          {ci + 1}
-                        </span>
-                        <span className="text-sm font-bold" style={{ color: NAVY }}>
-                          {cat.label}
-                        </span>
-                      </div>
-                      <span
-                        className="rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
-                        style={{ background: "#fff", color: prio.color, border: `1px solid ${prio.color}55` }}
-                      >
-                        {prio.label}
-                      </span>
-                    </div>
-                    <ul className="divide-y" style={{ borderColor: "#eef1f3" }}>
-                      {cat.items.map((it) => {
-                        const ip = PRIO[it.priority ?? "media"];
-                        return (
-                          <li key={it.id} className="flex items-start gap-3 px-4 py-3">
-                            <span
-                              className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full"
-                              style={{ background: ip.color }}
-                              aria-hidden
-                            />
-                            <div className="min-w-0">
-                              <p className="text-[15px] font-bold leading-snug" style={{ color: NAVY }}>
-                                {it.label}
-                              </p>
-                              {it.recommendation && (
-                                <p className="mt-0.5 text-sm leading-snug" style={{ color: "#4b5563" }}>
-                                  {it.recommendation}
-                                </p>
-                              )}
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        {/* --- Lados positivos + Plano da HostPro, lado a lado --- */}
-        <section className="mt-10 grid gap-4 lg:grid-cols-2 print:grid-cols-1">
-          {strengths.length > 0 && (
-            <div className="avoid-break rise">
-              <SectionTitle eyebrow="Lados Positivos do AL" title="O que já está bem" />
-              <ul className="mt-4 grid grid-cols-1 gap-2">
-                {strengths.map((it) => (
-                  <li
-                    key={it.id}
-                    className="flex items-start gap-2.5 rounded-xl border px-3.5 py-2.5 text-sm"
-                    style={{ borderColor: "#e6eaed", background: "#f6fdf9", color: "#374151" }}
-                  >
-                    <span
-                      className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
-                      style={{ background: "#16a34a" }}
-                    >
-                      ✓
-                    </span>
-                    {it.label}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {clientNotes && (
-            <div className="avoid-break rise rise-2">
-              <SectionTitle eyebrow="O nosso plano" title="O que a HostPro faz por si" />
+            <div className="mt-5 grid gap-4 lg:grid-cols-3 print:grid-cols-3">
               <div
-                className="mt-4 h-[calc(100%-4.5rem)] overflow-hidden rounded-2xl p-6"
-                style={{ background: `linear-gradient(135deg, ${NAVY} 0%, ${NAVY_DARK} 100%)` }}
+                className="lift flex flex-col items-center justify-center gap-3 rounded-3xl border p-6"
+                style={{
+                  borderColor: "#e6eaed",
+                  background: "linear-gradient(160deg,#ffffff, #f4f8fb)",
+                  boxShadow: "0 1px 3px rgba(16,24,40,0.05)",
+                }}
               >
-                <p className="whitespace-pre-line text-[15px] leading-relaxed" style={{ color: "#e8edf1" }}>
-                  {clientNotes}
+                <Donut score={audit.score} color={scoreColor} />
+                <span
+                  className="rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em]"
+                  style={{ color: scoreColor, background: `${scoreColor}14`, border: `1px solid ${scoreColor}33` }}
+                >
+                  {scoreBand}
+                </span>
+                <p className="text-xs font-semibold" style={{ color: "#6b7280" }}>
+                  Índice de otimização
                 </p>
               </div>
+
+              <div className="grid grid-cols-2 gap-3 lg:col-span-2">
+                <StatTile label="Pontos fortes" value={strengths.length} color="#16a34a" hint="já bem feitos" />
+                <StatTile label="A melhorar" value={audit.failCount} color={CYAN} hint="oportunidades" />
+                <StatTile label="Críticos" value={criticalCount} color="#dc2626" hint="prioridade máxima" />
+                <StatTile label="Por confirmar" value={audit.manualCount} color="#64748b" hint="análise HostPro" />
+              </div>
             </div>
+
+            {categoryPerf.length > 0 && (
+              <div
+                className="mt-4 rounded-3xl border bg-white p-6"
+                style={{ borderColor: "#e6eaed", boxShadow: "0 1px 3px rgba(16,24,40,0.04)" }}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="h-4 w-1.5 rounded-full" style={{ background: CYAN }} />
+                  <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: "#6b7280" }}>
+                    Desempenho por área
+                  </p>
+                </div>
+                <div className="mt-5 grid gap-x-10 gap-y-4 sm:grid-cols-2 print:grid-cols-2">
+                  {categoryPerf.map((c) => (
+                    <CategoryBar key={c.label} {...c} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* --- Roadmap de melhorias --- */}
+          {opportunities.length > 0 && (
+            <section className="mt-12 rise">
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <SectionHeader eyebrow="Plano de ação" title="Oportunidades de melhoria" />
+                <span
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-extrabold text-white"
+                  style={{ background: "#dc2626" }}
+                >
+                  <span aria-hidden>⚠</span> {audit.failCount} a corrigir
+                </span>
+              </div>
+
+              <div className="mt-5 grid items-start gap-4 sm:grid-cols-2 print:grid-cols-1">
+                {opportunities.map((cat, ci) => {
+                  const prio = PRIO[cat.priority];
+                  return (
+                    <div
+                      key={cat.label}
+                      className="lift avoid-break overflow-hidden rounded-3xl border bg-white"
+                      style={{ borderColor: "#e6eaed", boxShadow: "0 1px 3px rgba(16,24,40,0.05)" }}
+                    >
+                      <div
+                        className="flex items-center justify-between gap-2 px-4 py-3"
+                        style={{ background: prio.bg, borderBottom: `1px solid ${prio.color}22` }}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <span
+                            className="flex h-7 w-7 items-center justify-center rounded-full text-[12px] font-extrabold text-white"
+                            style={{ background: prio.color }}
+                          >
+                            {ci + 1}
+                          </span>
+                          <span className="text-sm font-bold" style={{ color: NAVY }}>
+                            {cat.label}
+                          </span>
+                        </div>
+                        <span
+                          className="rounded-full bg-white px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+                          style={{ color: prio.color, border: `1px solid ${prio.color}55` }}
+                        >
+                          {prio.label}
+                        </span>
+                      </div>
+                      <ul className="divide-y" style={{ borderColor: "#eef1f3" }}>
+                        {cat.items.map((it) => {
+                          const ip = PRIO[it.priority ?? "media"];
+                          return (
+                            <li key={it.id} className="flex items-start gap-3 px-4 py-3">
+                              <span
+                                className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full"
+                                style={{ background: ip.color }}
+                                aria-hidden
+                              />
+                              <div className="min-w-0">
+                                <p className="text-[15px] font-bold leading-snug" style={{ color: NAVY }}>
+                                  {it.label}
+                                </p>
+                                {it.recommendation && (
+                                  <p className="mt-0.5 text-sm leading-snug" style={{ color: "#4b5563" }}>
+                                    {it.recommendation}
+                                  </p>
+                                )}
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
           )}
-        </section>
 
-        {/* --- CTA --- */}
-        <section
-          className="mt-10 avoid-break overflow-hidden rounded-2xl p-8 text-center"
-          style={{ background: `radial-gradient(600px 300px at 50% -20%, rgba(0,181,226,0.25), transparent), ${NAVY}` }}
-        >
-          <p className="text-xl font-extrabold text-white sm:text-2xl">A HostPro trata de tudo isto por si.</p>
-          <p className="mx-auto mt-2 max-w-lg text-sm" style={{ color: "#c7d0d9" }}>
-            Gestão completa do seu alojamento local de Cascais a Lisboa — anúncio, fotos, preços
-            dinâmicos, automação e operações.
-          </p>
-          <a
-            href="tel:+351936535306"
-            className="no-print mt-5 inline-flex items-center gap-2 rounded-full bg-brand-cyan px-6 py-2.5 text-sm font-bold text-brand-navy transition hover:opacity-90"
+          {/* --- Lados positivos + Plano da HostPro --- */}
+          <section className="mt-12 grid gap-4 lg:grid-cols-2 print:grid-cols-1">
+            {strengths.length > 0 && (
+              <div className="avoid-break rise">
+                <SectionHeader eyebrow="Lados Positivos do AL" title="O que já está bem" />
+                <ul className="mt-4 grid grid-cols-1 gap-2">
+                  {strengths.map((it) => (
+                    <li
+                      key={it.id}
+                      className="flex items-start gap-2.5 rounded-xl border px-3.5 py-2.5 text-sm"
+                      style={{ borderColor: "#dcefe3", background: "#f4fcf7", color: "#374151" }}
+                    >
+                      <span
+                        className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+                        style={{ background: "#16a34a" }}
+                      >
+                        ✓
+                      </span>
+                      {it.label}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {clientNotes && (
+              <div className="avoid-break rise rise-2">
+                <SectionHeader eyebrow="O nosso plano" title="O que a HostPro faz por si" />
+                <div
+                  className="mt-4 h-[calc(100%-4.5rem)] overflow-hidden rounded-3xl p-6"
+                  style={{ background: `linear-gradient(135deg, ${NAVY} 0%, ${NAVY_DARK} 100%)` }}
+                >
+                  <p className="whitespace-pre-line text-[15px] leading-relaxed" style={{ color: "#e8edf1" }}>
+                    {clientNotes}
+                  </p>
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* --- CTA --- */}
+          <section
+            className="mt-12 avoid-break overflow-hidden rounded-3xl p-8 text-center"
+            style={{ background: `radial-gradient(700px 320px at 50% -30%, rgba(0,181,226,0.28), transparent), ${NAVY}` }}
           >
-            Falar com a HostPro →
-          </a>
-        </section>
+            <p className="text-xl font-extrabold text-white sm:text-2xl">A HostPro trata de tudo isto por si.</p>
+            <p className="mx-auto mt-2 max-w-lg text-sm" style={{ color: "#c7d0d9" }}>
+              Gestão completa do seu alojamento local de Cascais a Lisboa — anúncio, fotos, preços
+              dinâmicos, automação e operações.
+            </p>
+            <a
+              href="tel:+351936535306"
+              className="no-print mt-5 inline-flex items-center gap-2 rounded-full bg-brand-cyan px-6 py-2.5 text-sm font-bold text-brand-navy transition hover:opacity-90"
+            >
+              Falar com o André →
+            </a>
+          </section>
 
-        {/* --- Assinatura do fundador --- */}
-        <section
-          className="mt-8 avoid-break flex items-center gap-4 rounded-2xl border p-5"
-          style={{ borderColor: "#e6eaed", background: "#ffffff" }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/team/andre-pavlenco.jpg"
-            alt="André Pavlenco"
-            className="h-16 w-16 shrink-0 rounded-full object-cover"
-            style={{ border: `2px solid ${CYAN}` }}
-          />
-          <div className="min-w-0 flex-1">
-            <p className="text-[15px] font-extrabold" style={{ color: NAVY }}>
-              André Pavlenco
-            </p>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: CYAN }}>
-              Fundador HostPro
-            </p>
-            <p className="mt-1 text-sm" style={{ color: "#4b5563" }}>
-              hostpro.pt@gmail.com · 936 535 306
-            </p>
-          </div>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/hostpro-logo.png" alt="" className="hidden h-7 w-auto opacity-70 sm:block" />
-        </section>
+          {/* --- Assinatura --- */}
+          <section
+            className="mt-8 avoid-break flex items-center gap-4 rounded-3xl border bg-white p-5"
+            style={{ borderColor: "#e6eaed", boxShadow: "0 1px 3px rgba(16,24,40,0.04)" }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/team/andre-pavlenco.jpg"
+              alt="André Pavlenco"
+              className="h-16 w-16 shrink-0 rounded-full object-cover"
+              style={{ border: `2px solid ${CYAN}` }}
+            />
+            <div className="min-w-0 flex-1">
+              <p className="font-hand text-2xl leading-none" style={{ color: NAVY }}>
+                André Pavlenco
+              </p>
+              <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: CYAN }}>
+                Fundador HostPro
+              </p>
+              <p className="mt-1 text-sm" style={{ color: "#4b5563" }}>
+                hostpro.pt · hostpro.pt@gmail.com · 936 535 306
+              </p>
+            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/hostpro-logo.png" alt="" className="hidden h-7 w-auto opacity-70 sm:block" />
+          </section>
 
-        <p
-          className="mt-6 text-center text-[10px] uppercase tracking-[0.22em]"
-          style={{ color: "#9ca3af" }}
-        >
-          HostPro · With you all over Portugal
-        </p>
+          <p
+            className="mt-6 text-center text-[10px] uppercase tracking-[0.22em]"
+            style={{ color: "#9ca3af" }}
+          >
+            HostPro · hostpro.pt · With you all over Portugal
+          </p>
+        </div>
       </div>
     </main>
   );
@@ -438,24 +505,16 @@ export default async function ReportPage({
 
 /* ---------------- sub-componentes ---------------- */
 
-function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return (
-    <div
-      className={`rounded-2xl border bg-white p-5 ${className}`}
-      style={{ borderColor: "#e6eaed", boxShadow: "0 1px 3px rgba(16,24,40,0.04)" }}
-    >
-      {children}
-    </div>
-  );
-}
-
-function SectionTitle({ eyebrow, title }: { eyebrow: string; title: string }) {
+function SectionHeader({ eyebrow, title }: { eyebrow: string; title: string }) {
   return (
     <div>
-      <p className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: CYAN }}>
-        {eyebrow}
-      </p>
-      <h2 className="mt-1 text-2xl font-extrabold tracking-tight" style={{ color: NAVY }}>
+      <div className="flex items-center gap-2">
+        <span className="h-3 w-3 rounded-full" style={{ background: CYAN, boxShadow: `0 0 0 4px ${CYAN}22` }} />
+        <p className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: CYAN }}>
+          {eyebrow}
+        </p>
+      </div>
+      <h2 className="mt-1.5 text-2xl font-extrabold tracking-tight sm:text-3xl" style={{ color: NAVY }}>
         {title}
       </h2>
     </div>
@@ -475,13 +534,14 @@ function StatTile({
 }) {
   return (
     <div
-      className="rounded-2xl border bg-white p-4"
+      className="lift relative overflow-hidden rounded-3xl border bg-white p-4"
       style={{ borderColor: "#e6eaed", boxShadow: "0 1px 3px rgba(16,24,40,0.04)" }}
     >
-      <span className="text-3xl font-extrabold leading-none" style={{ color }}>
+      <span className="absolute inset-x-0 top-0 h-1" style={{ background: color }} />
+      <span className="text-4xl font-extrabold leading-none" style={{ color }}>
         <CountUp value={value} />
       </span>
-      <p className="mt-1.5 text-sm font-bold" style={{ color: NAVY }}>
+      <p className="mt-2 text-sm font-bold" style={{ color: NAVY }}>
         {label}
       </p>
       <p className="text-[11px]" style={{ color: "#9ca3af" }}>
@@ -527,10 +587,10 @@ function CategoryBar({
           {desc}
         </p>
       )}
-      <div className="mt-1.5 h-2.5 w-full overflow-hidden rounded-full" style={{ background: "#eceff2" }}>
+      <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full" style={{ background: "#eceff2" }}>
         <div
           className="animate-grow-x h-full rounded-full"
-          style={{ width: `${pct}%`, background: color }}
+          style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${color}cc, ${color})` }}
         />
       </div>
     </div>

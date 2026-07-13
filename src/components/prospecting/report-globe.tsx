@@ -1,118 +1,132 @@
-"use client";
+// Static SVG globe for the report hero. Pure server-rendered markup — no
+// WebGL, no client JS — so it always renders identically and never "bugs out".
+// An orthographic projection places the marker at the property's real
+// coordinates over an Atlantic-facing wireframe sphere.
 
-import { useEffect, useRef } from "react";
-import createGlobe from "cobe";
-import type { COBEOptions } from "cobe";
+const R = 168;
+const CX = 200;
+const CY = 200;
+const LAT0 = 20; // view centre latitude
+const LON0 = -24; // view centre longitude (Atlantic) → Iberia sits upper-right
 
-// cobe's runtime still accepts `onRender` (per its README) but its shipped
-// type definition omits it — extend the options type so TS is happy.
-type GlobeOptions = COBEOptions & {
-  onRender?: (state: Record<string, number>) => void;
-};
+function rad(d: number): number {
+  return (d * Math.PI) / 180;
+}
 
-// Interactive dotted globe for the report hero. Focus-locked on the property's
-// location with a glowing cyan marker front-and-centre; breathes gently and is
-// draggable. Bright steel-blue continents so the sphere is clearly visible on
-// the dark hero (earlier navy dots were too dark and read as a black ball).
+/** Orthographic projection of lat/lng onto the visible hemisphere. */
+function project(lat: number, lng: number): { x: number; y: number; visible: boolean } {
+  const dLon = rad(lng - LON0);
+  const la = rad(lat);
+  const la0 = rad(LAT0);
+  const cosC = Math.sin(la0) * Math.sin(la) + Math.cos(la0) * Math.cos(la) * Math.cos(dLon);
+  const x = R * Math.cos(la) * Math.sin(dLon);
+  const y = R * (Math.cos(la0) * Math.sin(la) - Math.sin(la0) * Math.cos(la) * Math.cos(dLon));
+  return { x: CX + x, y: CY - y, visible: cosC >= 0 };
+}
 
-const MARKER: [number, number, number] = [0.05, 0.75, 1]; // cyan
+export function ReportGlobe({
+  lat,
+  lng,
+  place,
+}: {
+  lat: number;
+  lng: number;
+  place: string;
+}) {
+  const m = project(lat, lng);
+  // Meridian ellipses (longitude) and parallel chords (latitude).
+  const meridians = [30, 60].map((a) => R * Math.cos(rad(a)));
+  const parallels = [30, 60].map((a) => ({ dy: R * Math.sin(rad(a)), w: R * Math.cos(rad(a)) }));
 
-export function ReportGlobe({ lat, lng }: { lat: number; lng: number; place?: string }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const pointerInteracting = useRef<number | null>(null);
-  const pointerMovement = useRef(0);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const reduce =
-      typeof window !== "undefined" &&
-      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-
-    // Bring the property longitude to the front; hold a fixed tilt that keeps
-    // northern-Portugal latitudes near the vertical centre.
-    const focusPhi = Math.PI - (lng * Math.PI) / 180 + Math.PI / 2;
-    const baseTheta = 0.42;
-
-    let width = canvas.offsetWidth || 460;
-    const measure = () => {
-      width = canvas.offsetWidth || width;
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(canvas);
-
-    let t = 0;
-    let globe: ReturnType<typeof createGlobe> | null = null;
-    try {
-      const options: GlobeOptions = {
-        devicePixelRatio: 2,
-        width: width * 2,
-        height: width * 2,
-        phi: focusPhi,
-        theta: baseTheta,
-        dark: 1,
-        diffuse: 1.2,
-        mapSamples: 20000,
-        mapBrightness: 7,
-        baseColor: [0.52, 0.65, 0.8],
-        markerColor: MARKER,
-        glowColor: [0.13, 0.22, 0.33],
-        markers: [{ location: [lat, lng], size: 0.1 }],
-        onRender: (state) => {
-          if (pointerInteracting.current === null && !reduce) {
-            t += 0.004;
-          }
-          state.phi = focusPhi + pointerMovement.current + (reduce ? 0 : Math.sin(t) * 0.22);
-          state.theta = baseTheta;
-          state.width = width * 2;
-          state.height = width * 2;
-        },
-      };
-      globe = createGlobe(canvas, options);
-    } catch {
-      // WebGL unavailable — the ambient glow still frames the hero.
-    }
-
-    return () => {
-      globe?.destroy();
-      ro.disconnect();
-    };
-  }, [lat, lng]);
+  // Label anchoring — flip the chip to the left if the marker is near the edge.
+  const labelRight = m.x < CX + 60;
 
   return (
-    <div className="relative mx-auto aspect-square w-full max-w-[500px]">
+    <div className="relative mx-auto aspect-square w-full max-w-[460px]">
+      {/* Atmosphere glow */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 rounded-full blur-3xl"
-        style={{ background: "radial-gradient(circle at 50% 45%, rgba(0,181,226,0.4), transparent 60%)" }}
+        className="pointer-events-none absolute inset-[4%] rounded-full blur-3xl"
+        style={{ background: "radial-gradient(circle at 50% 42%, rgba(0,181,226,0.45), transparent 62%)" }}
       />
-      <canvas
-        ref={canvasRef}
-        className="relative h-full w-full cursor-grab touch-none active:cursor-grabbing"
-        style={{ aspectRatio: "1", contain: "layout paint size" }}
-        onPointerDown={(e) => {
-          pointerInteracting.current = e.clientX - pointerMovement.current * 200;
-          e.currentTarget.style.cursor = "grabbing";
-        }}
-        onPointerUp={() => {
-          pointerInteracting.current = null;
-        }}
-        onPointerOut={() => {
-          pointerInteracting.current = null;
-        }}
-        onMouseMove={(e) => {
-          if (pointerInteracting.current !== null) {
-            pointerMovement.current = (e.clientX - pointerInteracting.current) / 200;
-          }
-        }}
-        onTouchMove={(e) => {
-          if (pointerInteracting.current !== null && e.touches[0]) {
-            pointerMovement.current = (e.touches[0].clientX - pointerInteracting.current) / 100;
-          }
-        }}
-      />
+      <svg viewBox="0 0 400 400" className="relative h-full w-full" role="img" aria-label={`Localização: ${place}`}>
+        <defs>
+          <radialGradient id="ocean" cx="38%" cy="32%" r="75%">
+            <stop offset="0%" stopColor="#2f6c9c" />
+            <stop offset="55%" stopColor="#1b3a55" />
+            <stop offset="100%" stopColor="#0b1826" />
+          </radialGradient>
+          <radialGradient id="shade" cx="68%" cy="72%" r="70%">
+            <stop offset="0%" stopColor="#000000" stopOpacity="0.55" />
+            <stop offset="60%" stopColor="#000000" stopOpacity="0" />
+          </radialGradient>
+          <radialGradient id="atmo" cx="50%" cy="50%" r="50%">
+            <stop offset="82%" stopColor="#00B5E2" stopOpacity="0" />
+            <stop offset="100%" stopColor="#00B5E2" stopOpacity="0.35" />
+          </radialGradient>
+          <clipPath id="sphere">
+            <circle cx={CX} cy={CY} r={R} />
+          </clipPath>
+        </defs>
+
+        {/* Outer atmosphere ring */}
+        <circle cx={CX} cy={CY} r={R + 10} fill="url(#atmo)" />
+
+        {/* Sphere */}
+        <circle cx={CX} cy={CY} r={R} fill="url(#ocean)" />
+
+        {/* Graticule */}
+        <g clipPath="url(#sphere)" fill="none" stroke="#8fd6ef" strokeOpacity="0.22" strokeWidth="1">
+          <line x1={CX} y1={CY - R} x2={CX} y2={CY + R} />
+          {meridians.map((rx, i) => (
+            <ellipse key={`m${i}`} cx={CX} cy={CY} rx={rx} ry={R} />
+          ))}
+          <line x1={CX - R} y1={CY} x2={CX + R} y2={CY} />
+          {parallels.map((p, i) => (
+            <g key={`p${i}`}>
+              <line x1={CX - p.w} y1={CY - p.dy} x2={CX + p.w} y2={CY - p.dy} />
+              <line x1={CX - p.w} y1={CY + p.dy} x2={CX + p.w} y2={CY + p.dy} />
+            </g>
+          ))}
+        </g>
+
+        {/* Day/night shading for depth + specular highlight */}
+        <circle cx={CX} cy={CY} r={R} fill="url(#shade)" />
+        <ellipse cx={CX - 52} cy={CY - 64} rx={46} ry={30} fill="#ffffff" opacity="0.08" />
+
+        {/* Rim light */}
+        <circle cx={CX} cy={CY} r={R} fill="none" stroke="#bfe9f7" strokeOpacity="0.25" strokeWidth="1.5" />
+
+        {/* Marker */}
+        {m.visible && (
+          <g>
+            <circle cx={m.x} cy={m.y} r="5" fill="#00B5E2" fillOpacity="0.35">
+              <animate attributeName="r" values="5;18;5" dur="2.4s" repeatCount="indefinite" />
+              <animate attributeName="fill-opacity" values="0.35;0;0.35" dur="2.4s" repeatCount="indefinite" />
+            </circle>
+            <circle cx={m.x} cy={m.y} r="5.5" fill="#00B5E2" stroke="#ffffff" strokeWidth="2" />
+          </g>
+        )}
+      </svg>
+
+      {/* Location chip anchored to the marker */}
+      {m.visible && (
+        <div
+          className="pointer-events-none absolute"
+          style={{
+            left: `${(m.x / 400) * 100}%`,
+            top: `${(m.y / 400) * 100}%`,
+            transform: `translate(${labelRight ? "12px" : "calc(-100% - 12px)"}, -50%)`,
+          }}
+        >
+          <span
+            className="whitespace-nowrap rounded-full px-3 py-1 text-[11px] font-semibold text-white backdrop-blur"
+            style={{ background: "rgba(0,181,226,0.18)", border: "1px solid rgba(0,181,226,0.5)" }}
+          >
+            {place}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

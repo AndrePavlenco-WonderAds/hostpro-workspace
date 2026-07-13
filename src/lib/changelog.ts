@@ -15,6 +15,18 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.18.0",
+    date: "2026-07-13",
+    title: "Relatório: globo estático fiável, resumo assinado à mão e polish geral",
+    highlights: [
+      "**🌍 Globo estático em SVG.** Deixámos o WebGL (que não renderizava em alguns browsers e ficava preto). Agora é um globo desenhado à mão em SVG — esfera com atmosfera, grelha de meridianos e o ponto na localização real do alojamento. Aparece sempre, sem bugs.",
+      "**✍️ Resumo redesenhado.** Bloco em estilo citação, com a assinatura do André movida para o fundo e escrita à mão (tipo de letra Caveat). O número do índice deixou de aparecer cinzento.",
+      "**💎 Upgrade visual do corpo.** Cartões arredondados com relevo e hover, faixa de cor nos tiles, donut com etiqueta de estado, fundo das secções com malha de pontos subtil e brilhos (deixou de ser plano).",
+      "**🔗 hostpro.pt** adicionado ao rodapé, à assinatura e ao cabeçalho do PDF.",
+      "**🏷️ Copy:** 'Partilhar' → **'Copiar Link'**; 'Falar com a HostPro' → **'Falar com o André'**.",
+    ],
+  },
+  {
     version: "0.17.0",
     date: "2026-07-13",
     title: "Relatório em modo dashboard — globo visível, animações e novo layout",
