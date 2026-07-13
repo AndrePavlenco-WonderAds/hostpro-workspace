@@ -62,6 +62,43 @@ body {
   animation: bar-line 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* Report dashboard — donut arc draw + generic fade-rise on open. */
+@keyframes donut-draw {
+  from {
+    stroke-dashoffset: var(--donut-dash, 0);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.animate-donut {
+  animation: donut-draw 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Horizontal fill bar that grows from the left on open. */
+@keyframes grow-x {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+.animate-grow-x {
+  transform-origin: left;
+  animation: grow-x 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media print {
+  .animate-donut,
+  .animate-grow-x,
+  .animate-bar-line {
+    animation: none !important;
+    stroke-dashoffset: 0 !important;
+    transform: none !important;
+  }
+}
+
 /* Shared dark form input — used by add/edit dialogs and the reserva form. */
 .form-input,
 .rsv-input {

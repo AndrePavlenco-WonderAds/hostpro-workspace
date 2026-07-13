@@ -5,10 +5,11 @@ import { resolveGeo } from "@/lib/prospecting/geo";
 import { ddmmyyyy } from "@/lib/dates";
 import { ReportGlobe } from "@/components/prospecting/report-globe";
 import { ReportActions } from "@/components/prospecting/report-actions";
+import { CountUp, Donut } from "@/components/prospecting/report-anim";
 import type { Priority } from "@/lib/prospecting/types";
 
 export const metadata = {
-  title: "Auditoria de Listing — HostPro",
+  title: "Auditoria de Alojamento Local — HostPro",
   robots: { index: false, follow: false },
 };
 
@@ -27,6 +28,22 @@ function healthColor(ratio: number): string {
   return ratio >= 0.7 ? "#16a34a" : ratio >= 0.4 ? "#d97706" : "#dc2626";
 }
 
+// Descrição curta de cada área — mostrada a cinzento claro por baixo do nome
+// para o cliente perceber o que está a ser avaliado. Chave = label da categoria.
+const CATEGORY_DESC: Record<string, string> = {
+  "Título & Descrição do Anúncio": "As palavras que aparecem na pesquisa e convencem a reservar.",
+  "Fotos do Anúncio": "Quantidade e ordem das fotos que mostram o espaço.",
+  "Qualidade das Fotos do Anúncio": "Luz, edição e apresentação de cada fotografia.",
+  Cobertura: "Todas as divisões e ângulos fotografados, sem nada por mostrar.",
+  "Configuração do listing": "Direções, check-in, WiFi e manual da casa na plataforma.",
+  Amenidades: "Comodidades listadas que ganham (ou perdem) reservas.",
+  "Extras de alta conversão": "Pormenores que fazem o hóspede escolher-vos (café, Netflix, praia).",
+  "Automação (TalkGuest)": "Mensagens automáticas, do check-in ao pedido de avaliação.",
+  "Preços & PriceLabs": "Preços dinâmicos por procura, época e eventos locais.",
+  Operações: "Limpezas, manutenção e reposição de stock nos bastidores.",
+  "Bónus (alto impacto)": "Detalhes que elevam a experiência e as avaliações.",
+};
+
 export default async function ReportPage({
   params,
 }: {
@@ -39,7 +56,6 @@ export default async function ReportPage({
   const audit = applyOverrides(p.audit, p.overrides);
   const geo = resolveGeo(p.listing.location, p.name);
 
-  // Oportunidades ordenadas por gravidade → roadmap prioritizado.
   const opportunities = audit.categories
     .map((c) => {
       const items = c.items.filter((i) => i.status === "fail");
@@ -57,7 +73,6 @@ export default async function ReportPage({
   const strengths = audit.categories.flatMap((c) => c.items.filter((i) => i.status === "pass"));
   const clientNotes = (p.clientNotes ?? "").trim();
 
-  // Desempenho por categoria — barras estilo dashboard.
   const categoryPerf = audit.categories
     .map((c) => {
       const pass = c.items.filter((i) => i.status === "pass").length;
@@ -79,29 +94,29 @@ export default async function ReportPage({
   const scoreColor = audit.score >= 70 ? "#16a34a" : audit.score >= 40 ? "#d97706" : "#dc2626";
 
   return (
-    <main style={{ background: "#ffffff", color: NAVY }} className="min-h-screen">
+    <main style={{ background: "#f4f6f8", color: NAVY }} className="min-h-screen">
       <style
         dangerouslySetInnerHTML={{
           __html: `
             .print-only { display: none; }
-            @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+            @keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
             .rise { animation: rise 0.7s cubic-bezier(0.22,1,0.36,1) both; }
+            .rise-2 { animation-delay: 0.08s; }
+            .rise-3 { animation-delay: 0.16s; }
             @media print {
               @page { size: A4 portrait; margin: 12mm; }
               html, body { background: #fff !important; }
               .no-print { display: none !important; }
               .print-only { display: block !important; }
               .avoid-break { break-inside: avoid; }
-              .rise { animation: none !important; }
+              .rise, .rise-2, .rise-3 { animation: none !important; opacity: 1 !important; transform: none !important; }
               * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             }
           `,
         }}
       />
 
-      {/* ======================= LIVE / WEB VERSION ======================= */}
-
-      {/* Barra de ações fixa (não imprime) */}
+      {/* ======================= BARRA DE AÇÕES (não imprime) ======================= */}
       <header
         className="no-print sticky top-0 z-30 flex items-center justify-between gap-3 px-5 py-3 sm:px-8"
         style={{ background: NAVY_DARK, borderBottom: "1px solid rgba(255,255,255,0.08)" }}
@@ -110,32 +125,31 @@ export default async function ReportPage({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/hostpro-logo-white.png" alt="HostPro" className="h-6 w-auto" />
           <span className="hidden text-[11px] font-semibold uppercase tracking-[0.2em] text-white/50 sm:inline">
-            Auditoria de Anúncio
+            Auditoria de Alojamento Local
           </span>
         </div>
         <ReportActions />
       </header>
 
-      {/* HERO com globo (só ecrã) */}
+      {/* ======================= HERO (só ecrã) ======================= */}
       <section
         className="no-print relative overflow-hidden px-5 pb-16 pt-10 sm:px-8 sm:pb-20 sm:pt-14"
         style={{
-          background: `radial-gradient(1200px 600px at 80% -10%, rgba(0,181,226,0.18), transparent 55%), linear-gradient(180deg, ${NAVY_DARK} 0%, ${NAVY} 100%)`,
+          background: `radial-gradient(1200px 600px at 82% -10%, rgba(0,181,226,0.2), transparent 55%), linear-gradient(180deg, ${NAVY_DARK} 0%, ${NAVY} 100%)`,
         }}
       >
-        {/* estrelas subtis */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-[0.5]"
+          className="pointer-events-none absolute inset-0 opacity-50"
           style={{
             backgroundImage:
               "radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.6), transparent), radial-gradient(1px 1px at 70% 20%, rgba(255,255,255,0.4), transparent), radial-gradient(1px 1px at 40% 70%, rgba(255,255,255,0.5), transparent), radial-gradient(1px 1px at 85% 60%, rgba(255,255,255,0.35), transparent), radial-gradient(1px 1px at 55% 45%, rgba(255,255,255,0.3), transparent)",
           }}
         />
-        <div className="relative mx-auto grid w-full max-w-5xl items-center gap-8 lg:grid-cols-[1.05fr_1fr]">
+        <div className="relative mx-auto grid w-full max-w-6xl items-center gap-8 lg:grid-cols-[1.05fr_1fr]">
           <div className="rise">
             <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-brand-cyan">
-              Auditoria de Anúncio · {p.platform} · {ddmmyyyy(p.createdAt)}
+              Auditoria de Alojamento Local · {p.platform} · {ddmmyyyy(p.createdAt)}
             </p>
             <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-white sm:text-5xl">
               {p.name}
@@ -143,7 +157,22 @@ export default async function ReportPage({
             <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-white/70">
               <PinIcon /> {geo.place} · de Cascais a Lisboa
             </p>
-            <p className="mt-4 max-w-md text-[15px] leading-relaxed text-white/80">{verdict}</p>
+
+            {/* Resumo assinado */}
+            <div
+              className="mt-6 max-w-lg rounded-2xl border p-5"
+              style={{ borderColor: "rgba(255,255,255,0.14)", background: "rgba(255,255,255,0.05)" }}
+            >
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">
+                Assinado por André Pavlenco · Fundador
+              </p>
+              <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.22em] text-brand-cyan">
+                Resumo
+              </p>
+              <p className="mt-1.5 text-lg font-semibold leading-relaxed text-white sm:text-xl">
+                {verdict}
+              </p>
+            </div>
 
             <div className="mt-6 flex flex-wrap gap-2.5">
               <HeroChip n={strengths.length} label="pontos fortes" color="#4ade80" />
@@ -152,15 +181,17 @@ export default async function ReportPage({
             </div>
           </div>
 
-          <div className="relative flex flex-col items-center gap-5">
+          <div className="relative flex flex-col items-center gap-5 rise rise-2">
             <ReportGlobe lat={geo.lat} lng={geo.lng} place={geo.place} />
             <div
               className="flex items-center gap-3 rounded-2xl border px-5 py-3 backdrop-blur"
               style={{ borderColor: "rgba(255,255,255,0.14)", background: "rgba(255,255,255,0.05)" }}
             >
-              <span className="text-4xl font-extrabold tabular-nums" style={{ color: scoreColor }}>
-                {audit.score}
-              </span>
+              <CountUp
+                value={audit.score}
+                duration={1200}
+                className="text-4xl font-extrabold tabular-nums"
+              />
               <div className="text-left">
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/50">
                   Índice de otimização
@@ -178,7 +209,7 @@ export default async function ReportPage({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/hostpro-logo.png" alt="HostPro" style={{ height: 32, width: "auto" }} />
           <div style={{ textAlign: "right", fontSize: 11, color: "#6b7280" }}>
-            <p>Auditoria de Anúncio · {p.platform}</p>
+            <p>Auditoria de Alojamento Local · {p.platform}</p>
             <p>{ddmmyyyy(p.createdAt)}</p>
           </div>
         </div>
@@ -186,61 +217,51 @@ export default async function ReportPage({
           <div>
             <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.02em", color: NAVY }}>{p.name}</h1>
             <p style={{ marginTop: 2, fontSize: 12, color: "#6b7280" }}>📍 {geo.place} · de Cascais a Lisboa</p>
-            <p style={{ marginTop: 8, maxWidth: 420, fontSize: 13, color: "#374151" }}>{verdict}</p>
+            <p style={{ marginTop: 10, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: "#9ca3af" }}>
+              Assinado por André Pavlenco · Fundador
+            </p>
+            <p style={{ marginTop: 4, maxWidth: 440, fontSize: 14, fontWeight: 600, color: "#1f2937" }}>{verdict}</p>
           </div>
           <div style={{ textAlign: "center", flexShrink: 0 }}>
             <div style={{ fontSize: 40, fontWeight: 800, lineHeight: 1, color: scoreColor }}>{audit.score}</div>
             <div style={{ fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: "#9ca3af" }}>de 100</div>
           </div>
         </div>
-        <div style={{ marginTop: 10, display: "flex", gap: 18, fontSize: 12, color: "#374151" }}>
-          <span><strong style={{ color: "#16a34a" }}>{strengths.length}</strong> pontos fortes</span>
-          <span><strong style={{ color: CYAN }}>{audit.failCount}</strong> a melhorar</span>
-          {criticalCount > 0 && <span><strong style={{ color: "#dc2626" }}>{criticalCount}</strong> críticos</span>}
-        </div>
       </section>
 
-      {/* ======================= CORPO (partilhado ecrã + impressão) ======================= */}
-      <div className="mx-auto w-full max-w-3xl px-5 py-10 sm:px-8 print:px-0 print:py-0">
-        {/* --- Painel de desempenho estilo dashboard --- */}
+      {/* ======================= CORPO DASHBOARD ======================= */}
+      <div className="mx-auto w-full max-w-6xl px-5 py-10 sm:px-8 print:px-0 print:py-0">
+        {/* --- Diagnóstico --- */}
         <section className="rise">
-          <SectionTitle eyebrow="Diagnóstico" title="Como está o seu anúncio" />
-          <div className="mt-5 grid gap-4 sm:grid-cols-[auto_1fr]">
-            {/* Donut do score */}
-            <div
-              className="flex flex-col items-center justify-center gap-2 rounded-2xl border p-5"
-              style={{ borderColor: "#e6eaed", background: "#fbfcfd" }}
-            >
-              <DonutScore score={audit.score} color={scoreColor} />
+          <SectionTitle eyebrow="Diagnóstico" title="Como está o seu Alojamento Local" />
+
+          <div className="mt-5 grid gap-4 lg:grid-cols-3 print:grid-cols-3">
+            <Card className="flex flex-col items-center justify-center gap-2">
+              <Donut score={audit.score} color={scoreColor} />
               <p className="text-xs font-semibold" style={{ color: "#6b7280" }}>
                 Índice de otimização
               </p>
-            </div>
+            </Card>
 
-            {/* Tiles */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 lg:col-span-2">
               <StatTile label="Pontos fortes" value={strengths.length} color="#16a34a" hint="já bem feitos" />
               <StatTile label="A melhorar" value={audit.failCount} color={CYAN} hint="oportunidades" />
               <StatTile label="Críticos" value={criticalCount} color="#dc2626" hint="prioridade máxima" />
-              <StatTile label="Por confirmar" value={audit.manualCount} color="#6b7280" hint="análise HostPro" />
+              <StatTile label="Por confirmar" value={audit.manualCount} color="#64748b" hint="análise HostPro" />
             </div>
           </div>
 
-          {/* Barras por categoria */}
           {categoryPerf.length > 0 && (
-            <div
-              className="mt-4 rounded-2xl border p-5"
-              style={{ borderColor: "#e6eaed", background: "#fbfcfd" }}
-            >
+            <Card className="mt-4">
               <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: "#6b7280" }}>
                 Desempenho por área
               </p>
-              <div className="mt-4 space-y-3.5">
+              <div className="mt-4 grid gap-x-8 gap-y-3.5 sm:grid-cols-2 print:grid-cols-2">
                 {categoryPerf.map((c) => (
                   <CategoryBar key={c.label} {...c} />
                 ))}
               </div>
-            </div>
+            </Card>
           )}
         </section>
 
@@ -257,14 +278,14 @@ export default async function ReportPage({
               </span>
             </div>
 
-            <div className="mt-5 space-y-4">
+            <div className="mt-5 grid items-start gap-4 sm:grid-cols-2 print:grid-cols-1">
               {opportunities.map((cat, ci) => {
                 const prio = PRIO[cat.priority];
                 return (
                   <div
                     key={cat.label}
-                    className="avoid-break overflow-hidden rounded-2xl border"
-                    style={{ borderColor: "#e6eaed" }}
+                    className="avoid-break overflow-hidden rounded-2xl border bg-white"
+                    style={{ borderColor: "#e6eaed", boxShadow: "0 1px 3px rgba(16,24,40,0.05)" }}
                   >
                     <div
                       className="flex items-center justify-between gap-2 px-4 py-3"
@@ -319,54 +340,53 @@ export default async function ReportPage({
           </section>
         )}
 
-        {/* --- Plano da HostPro (notas para o cliente) --- */}
-        {clientNotes && (
-          <section className="mt-10 avoid-break rise">
-            <div
-              className="overflow-hidden rounded-2xl p-6"
-              style={{ background: `linear-gradient(135deg, ${NAVY} 0%, ${NAVY_DARK} 100%)` }}
-            >
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em]" style={{ color: CYAN }}>
-                O que a HostPro faz por si
-              </p>
-              <p className="mt-3 whitespace-pre-line text-[15px] leading-relaxed" style={{ color: "#e8edf1" }}>
-                {clientNotes}
-              </p>
-            </div>
-          </section>
-        )}
-
-        {/* --- Pontos fortes --- */}
-        {strengths.length > 0 && (
-          <section className="mt-10 avoid-break rise">
-            <SectionTitle eyebrow="Já conquistado" title="O que já está bem" />
-            <ul className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {strengths.map((it) => (
-                <li
-                  key={it.id}
-                  className="flex items-start gap-2.5 rounded-xl border px-3.5 py-2.5 text-sm"
-                  style={{ borderColor: "#e6eaed", background: "#f6fdf9", color: "#374151" }}
-                >
-                  <span
-                    className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
-                    style={{ background: "#16a34a" }}
+        {/* --- Lados positivos + Plano da HostPro, lado a lado --- */}
+        <section className="mt-10 grid gap-4 lg:grid-cols-2 print:grid-cols-1">
+          {strengths.length > 0 && (
+            <div className="avoid-break rise">
+              <SectionTitle eyebrow="Lados Positivos do AL" title="O que já está bem" />
+              <ul className="mt-4 grid grid-cols-1 gap-2">
+                {strengths.map((it) => (
+                  <li
+                    key={it.id}
+                    className="flex items-start gap-2.5 rounded-xl border px-3.5 py-2.5 text-sm"
+                    style={{ borderColor: "#e6eaed", background: "#f6fdf9", color: "#374151" }}
                   >
-                    ✓
-                  </span>
-                  {it.label}
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
+                    <span
+                      className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+                      style={{ background: "#16a34a" }}
+                    >
+                      ✓
+                    </span>
+                    {it.label}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {clientNotes && (
+            <div className="avoid-break rise rise-2">
+              <SectionTitle eyebrow="O nosso plano" title="O que a HostPro faz por si" />
+              <div
+                className="mt-4 h-[calc(100%-4.5rem)] overflow-hidden rounded-2xl p-6"
+                style={{ background: `linear-gradient(135deg, ${NAVY} 0%, ${NAVY_DARK} 100%)` }}
+              >
+                <p className="whitespace-pre-line text-[15px] leading-relaxed" style={{ color: "#e8edf1" }}>
+                  {clientNotes}
+                </p>
+              </div>
+            </div>
+          )}
+        </section>
 
         {/* --- CTA --- */}
         <section
           className="mt-10 avoid-break overflow-hidden rounded-2xl p-8 text-center"
           style={{ background: `radial-gradient(600px 300px at 50% -20%, rgba(0,181,226,0.25), transparent), ${NAVY}` }}
         >
-          <p className="text-xl font-extrabold text-white">A HostPro trata de tudo isto por si.</p>
-          <p className="mx-auto mt-2 max-w-md text-sm" style={{ color: "#c7d0d9" }}>
+          <p className="text-xl font-extrabold text-white sm:text-2xl">A HostPro trata de tudo isto por si.</p>
+          <p className="mx-auto mt-2 max-w-lg text-sm" style={{ color: "#c7d0d9" }}>
             Gestão completa do seu alojamento local de Cascais a Lisboa — anúncio, fotos, preços
             dinâmicos, automação e operações.
           </p>
@@ -378,10 +398,10 @@ export default async function ReportPage({
           </a>
         </section>
 
-        {/* --- Assinatura do consultor --- */}
+        {/* --- Assinatura do fundador --- */}
         <section
           className="mt-8 avoid-break flex items-center gap-4 rounded-2xl border p-5"
-          style={{ borderColor: "#e6eaed", background: "#fbfcfd" }}
+          style={{ borderColor: "#e6eaed", background: "#ffffff" }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -395,7 +415,7 @@ export default async function ReportPage({
               André Pavlenco
             </p>
             <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: CYAN }}>
-              Consultor HostPro
+              Fundador HostPro
             </p>
             <p className="mt-1 text-sm" style={{ color: "#4b5563" }}>
               hostpro.pt@gmail.com · 936 535 306
@@ -418,6 +438,17 @@ export default async function ReportPage({
 
 /* ---------------- sub-componentes ---------------- */
 
+function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div
+      className={`rounded-2xl border bg-white p-5 ${className}`}
+      style={{ borderColor: "#e6eaed", boxShadow: "0 1px 3px rgba(16,24,40,0.04)" }}
+    >
+      {children}
+    </div>
+  );
+}
+
 function SectionTitle({ eyebrow, title }: { eyebrow: string; title: string }) {
   return (
     <div>
@@ -427,37 +458,6 @@ function SectionTitle({ eyebrow, title }: { eyebrow: string; title: string }) {
       <h2 className="mt-1 text-2xl font-extrabold tracking-tight" style={{ color: NAVY }}>
         {title}
       </h2>
-    </div>
-  );
-}
-
-function DonutScore({ score, color }: { score: number; color: string }) {
-  const r = 52;
-  const c = 2 * Math.PI * r;
-  const dash = (c * score) / 100;
-  return (
-    <div className="relative h-32 w-32">
-      <svg viewBox="0 0 128 128" className="h-32 w-32 -rotate-90">
-        <circle cx="64" cy="64" r={r} fill="none" stroke="#eceff2" strokeWidth="12" />
-        <circle
-          cx="64"
-          cy="64"
-          r={r}
-          fill="none"
-          stroke={color}
-          strokeWidth="12"
-          strokeLinecap="round"
-          strokeDasharray={`${dash} ${c - dash}`}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl font-extrabold tabular-nums" style={{ color }}>
-          {score}
-        </span>
-        <span className="text-[10px] font-semibold uppercase tracking-[0.15em]" style={{ color: "#9ca3af" }}>
-          / 100
-        </span>
-      </div>
     </div>
   );
 }
@@ -474,10 +474,13 @@ function StatTile({
   hint: string;
 }) {
   return (
-    <div className="rounded-2xl border p-4" style={{ borderColor: "#e6eaed", background: "#fbfcfd" }}>
-      <p className="text-3xl font-extrabold tabular-nums leading-none" style={{ color }}>
-        {value}
-      </p>
+    <div
+      className="rounded-2xl border bg-white p-4"
+      style={{ borderColor: "#e6eaed", boxShadow: "0 1px 3px rgba(16,24,40,0.04)" }}
+    >
+      <span className="text-3xl font-extrabold leading-none" style={{ color }}>
+        <CountUp value={value} />
+      </span>
       <p className="mt-1.5 text-sm font-bold" style={{ color: NAVY }}>
         {label}
       </p>
@@ -503,13 +506,14 @@ function CategoryBar({
 }) {
   const pct = Math.round(ratio * 100);
   const color = healthColor(ratio);
+  const desc = CATEGORY_DESC[label];
   return (
     <div>
-      <div className="flex items-center justify-between text-sm">
+      <div className="flex items-center justify-between gap-3 text-sm">
         <span className="font-semibold" style={{ color: NAVY }}>
           {label}
         </span>
-        <span className="tabular-nums font-semibold" style={{ color }}>
+        <span className="shrink-0 tabular-nums font-semibold" style={{ color }}>
           {pass}/{evaluated}
           {manual > 0 && (
             <span className="ml-1.5 text-[11px] font-medium" style={{ color: "#9ca3af" }}>
@@ -518,8 +522,16 @@ function CategoryBar({
           )}
         </span>
       </div>
+      {desc && (
+        <p className="mt-0.5 text-[11px] leading-snug" style={{ color: "#9ca3af" }}>
+          {desc}
+        </p>
+      )}
       <div className="mt-1.5 h-2.5 w-full overflow-hidden rounded-full" style={{ background: "#eceff2" }}>
-        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: color }} />
+        <div
+          className="animate-grow-x h-full rounded-full"
+          style={{ width: `${pct}%`, background: color }}
+        />
       </div>
     </div>
   );
@@ -532,7 +544,7 @@ function HeroChip({ n, label, color }: { n: number; label: string; color: string
       style={{ borderColor: "rgba(255,255,255,0.14)", background: "rgba(255,255,255,0.05)" }}
     >
       <span className="text-lg font-extrabold tabular-nums" style={{ color }}>
-        {n}
+        <CountUp value={n} />
       </span>
       <span className="text-xs font-medium text-white/70">{label}</span>
     </div>

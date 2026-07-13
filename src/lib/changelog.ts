@@ -15,6 +15,19 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.17.0",
+    date: "2026-07-13",
+    title: "Relatório em modo dashboard — globo visível, animações e novo layout",
+    highlights: [
+      "**🌍 Globo corrigido e maior.** Os continentes passaram a ver-se (as cores navy antigas eram escuras demais e o globo parecia uma bola preta). Agora é maior, azul-aço luminoso, focado na localização com o ponto cyan ao centro, e arrastável.",
+      "**📐 Layout tipo dashboard.** A partir do 'Diagnóstico' o relatório deixou de ser uma coluna estreita com margens enormes — passou a aproveitar a largura da folha com secções lado a lado (score + tiles, barras por área em 2 colunas, oportunidades em grelha, e 'Lados positivos' ao lado do plano da HostPro).",
+      "**🔢 Animações ao abrir.** Os números fazem count-up, o donut do score desenha-se e as barras horizontais crescem quando o relatório abre.",
+      "**📝 Descrições por área.** Cada área do 'Desempenho por área' ganhou uma linha cinzenta a explicar o que é.",
+      "**✍️ Resumo assinado.** O resumo ficou maior, com etiqueta 'Resumo' e 'Assinado por André Pavlenco · Fundador'.",
+      "**🏷️ Copy.** 'Auditoria de Anúncio' → 'Auditoria de Alojamento Local'; consultor → **Fundador**; 'Já conquistado' → **'Lados Positivos do AL'**.",
+    ],
+  },
+  {
     version: "0.16.1",
     date: "2026-07-13",
     title: "Globo do relatório: mais localidades de Cascais reconhecidas",
