@@ -15,6 +15,18 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.16.0",
+    date: "2026-07-13",
+    title: "Relatório de prospecting reimaginado — globo, dashboard e PDF dedicado",
+    highlights: [
+      "**🌍 Herói com globo interativo.** A primeira secção passou a mostrar um globo 3D animado (arrastável) com um ponto luminoso a marcar a localização do alojamento na costa de Cascais a Lisboa. Fundo escuro premium com o índice de otimização em destaque.",
+      "**📊 Painel de diagnóstico estilo dashboard.** Novo bloco com donut do score, tiles (pontos fortes / a melhorar / críticos / por confirmar) e **barras de desempenho por área** — vê-se num relance onde o anúncio está forte e onde falha.",
+      "**🗂️ Roadmap redesenhado.** As oportunidades passaram a cartões numerados por prioridade, com cabeçalho colorido (Crítico → Importante → Menor) e recomendações claras por item.",
+      "**✍️ Assinatura e CTA melhorados.** Bloco do consultor num cartão dedicado com logótipo, e CTA com botão de contacto direto.",
+      "**📄 Download de PDF dedicado.** O botão **Partilhar** copia o link da versão web; um botão separado **Download PDF** gera uma versão vertical A4 otimizada só para impressão (cabeçalho limpo sem WebGL, uma coluna, quebras de página controladas).",
+    ],
+  },
+  {
     version: "0.15.0",
     date: "2026-07-08",
     title: "Relatório de prospecting: roadmap prioritizado, plano de ação e assinatura",
