@@ -1,27 +1,24 @@
-// Static SVG globe for the report hero. Pure server-rendered markup — no
-// WebGL, no client JS — so it always renders identically and never "bugs out".
-// An orthographic projection places the marker at the property's real
-// coordinates over an Atlantic-facing wireframe sphere.
+"use client";
 
-const R = 168;
-const CX = 200;
-const CY = 200;
-const LAT0 = 20; // view centre latitude
-const LON0 = -24; // view centre longitude (Atlantic) → Iberia sits upper-right
+import { useEffect, useRef } from "react";
+
+// Realistic 3D earth for the report hero, recreated with Canvas 2D — NOT WebGL
+// (which rendered black in some browsers). We orthographically project a NASA
+// night-lights texture onto a sphere, so real continents and city lights show,
+// with an atmosphere glow and the property marker pinned to its coordinates.
+//
+// The view is centred a little south/east of the property so the location sits
+// in the upper hemisphere with Europe/Africa framed around it, like the
+// reference. A CSS sphere sits behind the canvas as a fallback if the texture
+// can't load — the globe is never blank.
+
+const BACKING = 720; // canvas backing resolution (square)
+const R_FRAC = 0.46; // sphere radius as a fraction of the container half-size
+const TEX_W = 1024;
+const TEX_H = 512;
 
 function rad(d: number): number {
   return (d * Math.PI) / 180;
-}
-
-/** Orthographic projection of lat/lng onto the visible hemisphere. */
-function project(lat: number, lng: number): { x: number; y: number; visible: boolean } {
-  const dLon = rad(lng - LON0);
-  const la = rad(lat);
-  const la0 = rad(LAT0);
-  const cosC = Math.sin(la0) * Math.sin(la) + Math.cos(la0) * Math.cos(la) * Math.cos(dLon);
-  const x = R * Math.cos(la) * Math.sin(dLon);
-  const y = R * (Math.cos(la0) * Math.sin(la) - Math.sin(la0) * Math.cos(la) * Math.cos(dLon));
-  return { x: CX + x, y: CY - y, visible: cosC >= 0 };
 }
 
 export function ReportGlobe({
@@ -33,100 +30,157 @@ export function ReportGlobe({
   lng: number;
   place: string;
 }) {
-  const m = project(lat, lng);
-  // Meridian ellipses (longitude) and parallel chords (latitude).
-  const meridians = [30, 60].map((a) => R * Math.cos(rad(a)));
-  const parallels = [30, 60].map((a) => ({ dy: R * Math.sin(rad(a)), w: R * Math.cos(rad(a)) }));
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Label anchoring — flip the chip to the left if the marker is near the edge.
-  const labelRight = m.x < CX + 60;
+  // View centre — pull down/west so the property frames upper-centre.
+  const cLat = lat - 20;
+  const cLon = lng - 4;
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let cancelled = false;
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = "/earth-night.jpg";
+
+    img.onload = () => {
+      if (cancelled) return;
+
+      // Sample the texture from a downscaled offscreen canvas.
+      const off = document.createElement("canvas");
+      off.width = TEX_W;
+      off.height = TEX_H;
+      const octx = off.getContext("2d");
+      if (!octx) return;
+      octx.drawImage(img, 0, 0, TEX_W, TEX_H);
+      const tex = octx.getImageData(0, 0, TEX_W, TEX_H).data;
+
+      const size = BACKING;
+      canvas.width = size;
+      canvas.height = size;
+      const out = ctx.createImageData(size, size);
+      const data = out.data;
+
+      const cx = size / 2;
+      const cy = size / 2;
+      const Rp = size * R_FRAC;
+      const sinP0 = Math.sin(rad(cLat));
+      const cosP0 = Math.cos(rad(cLat));
+      const lon0 = rad(cLon);
+
+      for (let py = 0; py < size; py++) {
+        for (let px = 0; px < size; px++) {
+          const X = (px - cx) / Rp; // right +
+          const Y = -(py - cy) / Rp; // up +
+          const rho = Math.sqrt(X * X + Y * Y);
+          const di = (py * size + px) * 4;
+
+          if (rho > 1) {
+            data[di + 3] = 0; // space → transparent (dark hero shows through)
+            continue;
+          }
+
+          const c = Math.asin(rho);
+          const sinC = Math.sin(c);
+          const cosC = Math.cos(c);
+
+          const phi =
+            rho === 0 ? rad(cLat) : Math.asin(cosC * sinP0 + (Y * sinC * cosP0) / rho);
+          const lam =
+            lon0 + Math.atan2(X * sinC, rho * cosC * cosP0 - Y * sinC * sinP0);
+
+          // Texture lookup (wrap longitude).
+          const u = (((lam / Math.PI) * 0.5 + 0.5) % 1 + 1) % 1;
+          const v = 0.5 - phi / Math.PI;
+          const tx = Math.min(TEX_W - 1, (u * TEX_W) | 0);
+          const ty = Math.min(TEX_H - 1, (v * TEX_H) | 0);
+          const ti = (ty * TEX_W + tx) * 4;
+
+          // Limb darkening + gentle cool lift so the sphere reads as 3D.
+          const shade = 0.42 + 0.58 * Math.sqrt(1 - rho * rho);
+          data[di] = Math.min(255, tex[ti] * shade * 1.05);
+          data[di + 1] = Math.min(255, tex[ti + 1] * shade * 1.08 + 4);
+          data[di + 2] = Math.min(255, tex[ti + 2] * shade * 1.2 + 12);
+          // Feather the rim to avoid jaggies.
+          data[di + 3] = rho > 0.99 ? 255 * (1 - (rho - 0.99) / 0.01) : 255;
+        }
+      }
+      ctx.putImageData(out, 0, 0);
+    };
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cLat, cLon]);
+
+  // Marker position (forward orthographic) as container percentages.
+  const dLon = rad(lng - cLon);
+  const p = rad(lat);
+  const p0 = rad(cLat);
+  const mX = Math.cos(p) * Math.sin(dLon);
+  const mY = Math.cos(p0) * Math.sin(p) - Math.sin(p0) * Math.cos(p) * Math.cos(dLon);
+  const markerLeft = 50 + mX * R_FRAC * 100;
+  const markerTop = 50 - mY * R_FRAC * 100;
+  const labelRight = markerLeft < 62;
 
   return (
     <div className="relative mx-auto aspect-square w-full max-w-[460px]">
-      {/* Atmosphere glow */}
+      {/* Fallback dark sphere (shows if the texture fails). */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-[4%] rounded-full blur-3xl"
-        style={{ background: "radial-gradient(circle at 50% 42%, rgba(0,181,226,0.45), transparent 62%)" }}
+        className="absolute rounded-full"
+        style={{
+          inset: "4%",
+          background: "radial-gradient(circle at 40% 34%, #24425f, #12263a 55%, #081420 100%)",
+        }}
       />
-      <svg viewBox="0 0 400 400" className="relative h-full w-full" role="img" aria-label={`Localização: ${place}`}>
-        <defs>
-          <radialGradient id="ocean" cx="38%" cy="32%" r="75%">
-            <stop offset="0%" stopColor="#2f6c9c" />
-            <stop offset="55%" stopColor="#1b3a55" />
-            <stop offset="100%" stopColor="#0b1826" />
-          </radialGradient>
-          <radialGradient id="shade" cx="68%" cy="72%" r="70%">
-            <stop offset="0%" stopColor="#000000" stopOpacity="0.55" />
-            <stop offset="60%" stopColor="#000000" stopOpacity="0" />
-          </radialGradient>
-          <radialGradient id="atmo" cx="50%" cy="50%" r="50%">
-            <stop offset="82%" stopColor="#00B5E2" stopOpacity="0" />
-            <stop offset="100%" stopColor="#00B5E2" stopOpacity="0.35" />
-          </radialGradient>
-          <clipPath id="sphere">
-            <circle cx={CX} cy={CY} r={R} />
-          </clipPath>
-        </defs>
+      {/* Atmosphere glow ring. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute rounded-full"
+        style={{
+          inset: "4%",
+          boxShadow:
+            "0 0 1px 1px rgba(120,200,240,0.55), 0 0 34px 6px rgba(0,181,226,0.35), inset 0 0 46px rgba(0,0,0,0.55)",
+        }}
+      />
+      <canvas
+        ref={canvasRef}
+        width={BACKING}
+        height={BACKING}
+        className="relative h-full w-full"
+        aria-label={`Localização: ${place}`}
+      />
 
-        {/* Outer atmosphere ring */}
-        <circle cx={CX} cy={CY} r={R + 10} fill="url(#atmo)" />
-
-        {/* Sphere */}
-        <circle cx={CX} cy={CY} r={R} fill="url(#ocean)" />
-
-        {/* Graticule */}
-        <g clipPath="url(#sphere)" fill="none" stroke="#8fd6ef" strokeOpacity="0.22" strokeWidth="1">
-          <line x1={CX} y1={CY - R} x2={CX} y2={CY + R} />
-          {meridians.map((rx, i) => (
-            <ellipse key={`m${i}`} cx={CX} cy={CY} rx={rx} ry={R} />
-          ))}
-          <line x1={CX - R} y1={CY} x2={CX + R} y2={CY} />
-          {parallels.map((p, i) => (
-            <g key={`p${i}`}>
-              <line x1={CX - p.w} y1={CY - p.dy} x2={CX + p.w} y2={CY - p.dy} />
-              <line x1={CX - p.w} y1={CY + p.dy} x2={CX + p.w} y2={CY + p.dy} />
-            </g>
-          ))}
-        </g>
-
-        {/* Day/night shading for depth + specular highlight */}
-        <circle cx={CX} cy={CY} r={R} fill="url(#shade)" />
-        <ellipse cx={CX - 52} cy={CY - 64} rx={46} ry={30} fill="#ffffff" opacity="0.08" />
-
-        {/* Rim light */}
-        <circle cx={CX} cy={CY} r={R} fill="none" stroke="#bfe9f7" strokeOpacity="0.25" strokeWidth="1.5" />
-
-        {/* Marker */}
-        {m.visible && (
-          <g>
-            <circle cx={m.x} cy={m.y} r="5" fill="#00B5E2" fillOpacity="0.35">
-              <animate attributeName="r" values="5;18;5" dur="2.4s" repeatCount="indefinite" />
-              <animate attributeName="fill-opacity" values="0.35;0;0.35" dur="2.4s" repeatCount="indefinite" />
-            </circle>
-            <circle cx={m.x} cy={m.y} r="5.5" fill="#00B5E2" stroke="#ffffff" strokeWidth="2" />
-          </g>
-        )}
-      </svg>
-
-      {/* Location chip anchored to the marker */}
-      {m.visible && (
-        <div
-          className="pointer-events-none absolute"
-          style={{
-            left: `${(m.x / 400) * 100}%`,
-            top: `${(m.y / 400) * 100}%`,
-            transform: `translate(${labelRight ? "12px" : "calc(-100% - 12px)"}, -50%)`,
-          }}
+      {/* Marker + label */}
+      <div
+        className="pointer-events-none absolute"
+        style={{ left: `${markerLeft}%`, top: `${markerTop}%`, transform: "translate(-50%,-50%)" }}
+      >
+        <span className="relative flex h-3.5 w-3.5">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-cyan opacity-60" />
+          <span className="relative inline-flex h-3.5 w-3.5 rounded-full bg-brand-cyan ring-2 ring-white" />
+        </span>
+      </div>
+      <div
+        className="pointer-events-none absolute"
+        style={{
+          left: `${markerLeft}%`,
+          top: `${markerTop}%`,
+          transform: `translate(${labelRight ? "16px" : "calc(-100% - 16px)"}, -50%)`,
+        }}
+      >
+        <span
+          className="whitespace-nowrap rounded-full px-3 py-1 text-[12px] font-semibold text-white backdrop-blur"
+          style={{ background: "rgba(8,20,32,0.72)", border: "1px solid rgba(0,181,226,0.6)" }}
         >
-          <span
-            className="whitespace-nowrap rounded-full px-3 py-1 text-[11px] font-semibold text-white backdrop-blur"
-            style={{ background: "rgba(0,181,226,0.18)", border: "1px solid rgba(0,181,226,0.5)" }}
-          >
-            {place}
-          </span>
-        </div>
-      )}
+          {place}
+        </span>
+      </div>
     </div>
   );
 }

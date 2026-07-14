@@ -15,6 +15,14 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.19.0",
+    date: "2026-07-14",
+    title: "Globo do relatório refeito: Terra 3D realista com continentes e luzes",
+    highlights: [
+      "**🌍 Terra realista.** O globo foi refeito de raiz. Deixou de ser um wireframe — agora é a **Terra a sério**, com continentes e luzes de cidade (textura NASA night-lights) projetada numa esfera com Canvas 2D, brilho de atmosfera e o ponto na localização real do alojamento. Sem WebGL, aparece sempre igual em qualquer browser.",
+    ],
+  },
+  {
     version: "0.18.0",
     date: "2026-07-13",
     title: "Relatório: globo estático fiável, resumo assinado à mão e polish geral",
