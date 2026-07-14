@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getProspectByToken } from "@/lib/prospecting/store";
 import { applyOverrides } from "@/lib/prospecting/audit";
-import { resolveGeo } from "@/lib/prospecting/geo";
+import { resolveGeo, getZone } from "@/lib/prospecting/geo";
 import { ddmmyyyy } from "@/lib/dates";
 import { ReportGlobe } from "@/components/prospecting/report-globe";
 import { ReportActions } from "@/components/prospecting/report-actions";
@@ -54,6 +54,10 @@ export default async function ReportPage({
 
   const audit = applyOverrides(p.audit, p.overrides);
   const geo = resolveGeo(p.listing.location, p.name);
+  const zone = await getZone(geo.lat, geo.lng, geo.zone);
+  // "São Domingos de Rana · Cascais" — but avoid "Cascais · Cascais".
+  const locationLine =
+    zone && zone.toLowerCase() !== geo.place.toLowerCase() ? `${geo.place} · ${zone}` : geo.place;
 
   const opportunities = audit.categories
     .map((c) => {
@@ -87,7 +91,7 @@ export default async function ReportPage({
     audit.score >= 70
       ? "O seu anúncio já está sólido — com uns ajustes finos passa a topo de mercado."
       : audit.score >= 40
-        ? "Há uma base boa, mas várias oportunidades claras para aumentar reservas e receita."
+        ? "Há uma base mínima, mas várias oportunidades claras para aumentar reservas e receita."
         : "Há margem significativa para otimizar — o potencial de crescimento é grande.";
 
   const scoreColor = audit.score >= 70 ? "#16a34a" : audit.score >= 40 ? "#d97706" : "#dc2626";
@@ -157,7 +161,7 @@ export default async function ReportPage({
               {p.name}
             </h1>
             <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-white/70">
-              <PinIcon /> {geo.place} · de Cascais a Lisboa
+              <PinIcon /> {locationLine}
             </p>
 
             {/* Resumo assinado */}
@@ -218,7 +222,7 @@ export default async function ReportPage({
         <div style={{ marginTop: 12, display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
           <div>
             <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.02em", color: NAVY }}>{p.name}</h1>
-            <p style={{ marginTop: 2, fontSize: 12, color: "#6b7280" }}>📍 {geo.place} · de Cascais a Lisboa</p>
+            <p style={{ marginTop: 2, fontSize: 12, color: "#6b7280" }}>📍 {locationLine}</p>
             <p style={{ marginTop: 8, maxWidth: 440, fontSize: 14, fontWeight: 600, color: "#1f2937" }}>{verdict}</p>
             <p style={{ marginTop: 6, fontSize: 12, color: "#6b7280" }}>— André Pavlenco, Fundador</p>
           </div>

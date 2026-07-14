@@ -15,6 +15,15 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.24.0",
+    date: "2026-07-14",
+    title: "Concelho automático (online) no cabeçalho + texto do resumo",
+    highlights: [
+      "**📍 Concelho automático.** A linha de localização deixou de dizer 'de Cascais a Lisboa' e passa a mostrar o **concelho real** do alojamento, obtido online por geocodificação (ex: São Domingos de Rana · **Cascais**). Se a app estiver offline, usa a tabela interna como recurso.",
+      "**✍️ Resumo.** 'Há uma base boa' passou a **'Há uma base mínima'** (mais honesto para pontuações intermédias).",
+    ],
+  },
+  {
     version: "0.23.1",
     date: "2026-07-14",
     title: "Card do globo: barras relativas e textos mais diretos",
