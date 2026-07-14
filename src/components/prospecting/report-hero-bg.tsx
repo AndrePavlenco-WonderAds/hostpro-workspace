@@ -43,14 +43,14 @@ export function HeroBackground() {
         style={{ backgroundImage: STAR_LAYER_2, animationDuration: "140s" }}
       />
 
-      {/* Shooting stars */}
+      {/* Shooting stars — start bottom-right, streak to the top-left */}
       <span
-        className="animate-shooting absolute left-[70%] top-[8%] h-px w-24"
-        style={{ background: "linear-gradient(90deg, rgba(255,255,255,0.9), transparent)" }}
+        className="animate-shooting absolute left-[78%] top-[82%] h-px w-28"
+        style={{ background: "linear-gradient(90deg, rgba(255,255,255,0.95), transparent)" }}
       />
       <span
-        className="animate-shooting absolute left-[40%] top-[24%] h-px w-16"
-        style={{ background: "linear-gradient(90deg, rgba(180,225,255,0.9), transparent)", animationDelay: "-5s" }}
+        className="animate-shooting absolute left-[92%] top-[62%] h-px w-20"
+        style={{ background: "linear-gradient(90deg, rgba(180,225,255,0.95), transparent)", animationDelay: "-5.5s" }}
       />
 
       {/* Vignette for depth/focus */}

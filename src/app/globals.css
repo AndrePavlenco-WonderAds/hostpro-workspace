@@ -188,16 +188,17 @@ body {
     transform: translate3d(-40px, 20px, 0);
   }
 }
+/* Shooting stars travel bottom-right → top-left (45° up-left). */
 @keyframes shooting {
   0% {
-    transform: translate3d(0, 0, 0) rotate(18deg);
+    transform: translate3d(0, 0, 0) rotate(45deg);
     opacity: 0;
   }
-  3% {
+  6% {
     opacity: 1;
   }
-  12% {
-    transform: translate3d(-420px, 150px, 0) rotate(18deg);
+  20% {
+    transform: translate3d(-520px, -520px, 0) rotate(45deg);
     opacity: 0;
   }
   100% {

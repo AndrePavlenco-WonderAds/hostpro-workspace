@@ -15,6 +15,16 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.23.0",
+    date: "2026-07-14",
+    title: "Globo em alta resolução (bilinear + texturas 4K) e mais zoom",
+    highlights: [
+      "**🔎 Muito mais nitidez.** Texturas NASA 4K (dia + luzes de cidade), amostragem **bilinear** e resolução de render muito maior — acabou o aspeto pixelado, mesmo com zoom.",
+      "**🇵🇹 Mais zoom em Portugal** — o país fica maior e mais central no globo.",
+      "**☄️ Estrelas cadentes** passaram a atravessar de baixo-direita para cima-esquerda.",
+    ],
+  },
+  {
     version: "0.22.0",
     date: "2026-07-14",
     title: "Globo HD com dia/noite + hero com fundo espacial animado",
