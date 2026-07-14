@@ -2,11 +2,13 @@
 
 import { useEffect, useRef } from "react";
 
-// Starlink-style hero globe (à la wonder-ads): a bright DAYTIME earth projected
-// onto a sphere with Canvas 2D (no WebGL — that rendered black in some
-// browsers), a latitude/longitude graticule, and an emphasised cyan crosshair
-// whose meridian + parallel intersect exactly on the property. A glass data
-// card with the key audit figures sits beside the marker.
+// Hero globe — a genuinely 3D-lit Earth rendered with Canvas 2D (no WebGL,
+// which rendered black in some browsers). The realism comes from a directional
+// light: every pixel's surface normal is dotted with a light vector, giving a
+// bright lit limb (upper-left), a soft terminator into shadow (lower-right), a
+// fresnel atmosphere rim and a sun glint. A latitude/longitude graticule and a
+// glowing cyan crosshair intersect exactly on the property, and a glass data
+// card sits beside the marker.
 
 export type GlobeStats = {
   platform: string;
@@ -19,10 +21,16 @@ export type GlobeStats = {
   criticals: number;
 };
 
-const BACKING = 760;
-const R_FRAC = 0.62; // sphere radius vs container half — >0.5 zooms in / crops
+const BACKING = 800;
+const R_FRAC = 0.42; // sphere radius vs container half-size (leaves room for atmosphere)
+const ATMO = 0.16; // atmosphere thickness beyond the sphere (fraction of R)
 const TEX_W = 1024;
 const TEX_H = 512;
+
+// Light direction (view space): upper-left, tilted toward the viewer.
+const LX = -0.6;
+const LY = 0.55;
+const LZ = 0.58;
 
 function rad(d: number): number {
   return (d * Math.PI) / 180;
@@ -41,10 +49,10 @@ export function ReportGlobe({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // View centre — east + south of the property, so Portugal frames upper-left
-  // and the data card has room on the right (like the reference).
-  const cLat = lat - 10;
-  const cLon = lng + 12;
+  // View centre — east + south of the property so Portugal frames upper-left
+  // and the data card has room to its right.
+  const cLat = lat - 14;
+  const cLon = lng + 8;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -59,27 +67,29 @@ export function ReportGlobe({
     const cy = BACKING / 2;
     const Rp = BACKING * R_FRAC;
 
-    // Forward orthographic projection (used for the graticule + crosshair).
     const projF = (latD: number, lonD: number) => {
-      const p = rad(latD);
+      const pp = rad(latD);
       const dl = rad(lonD) - lon0;
-      const cosc = sinP0 * Math.sin(p) + cosP0 * Math.cos(p) * Math.cos(dl);
-      const X = Math.cos(p) * Math.sin(dl);
-      const Y = cosP0 * Math.sin(p) - sinP0 * Math.cos(p) * Math.cos(dl);
+      const cosc = sinP0 * Math.sin(pp) + cosP0 * Math.cos(pp) * Math.cos(dl);
+      const X = Math.cos(pp) * Math.sin(dl);
+      const Y = cosP0 * Math.sin(pp) - sinP0 * Math.cos(pp) * Math.cos(dl);
       return { x: cx + X * Rp, y: cy - Y * Rp, front: cosc >= 0 };
     };
 
     const drawGraticule = () => {
-      const line = (
-        pts: Array<{ lat: number; lon: number }>,
+      const stroke = (
+        pts: Array<[number, number]>,
         color: string,
         width: number,
+        glow = 0,
       ) => {
         ctx.strokeStyle = color;
         ctx.lineWidth = width;
+        ctx.shadowBlur = glow;
+        ctx.shadowColor = glow ? "rgba(0,181,226,0.9)" : "transparent";
         ctx.beginPath();
         let started = false;
-        for (const { lat: la, lon: lo } of pts) {
+        for (const [la, lo] of pts) {
           const q = projF(la, lo);
           if (q.front) {
             if (!started) {
@@ -89,27 +99,96 @@ export function ReportGlobe({
           } else started = false;
         }
         ctx.stroke();
+        ctx.shadowBlur = 0;
       };
 
-      // Faint graticule every 15°.
       for (let lo = -180; lo < 180; lo += 15) {
-        const pts = [];
-        for (let la = -85; la <= 85; la += 2) pts.push({ lat: la, lon: lo });
-        line(pts, "rgba(150,205,235,0.22)", 1);
+        const pts: Array<[number, number]> = [];
+        for (let la = -85; la <= 85; la += 2) pts.push([la, lo]);
+        stroke(pts, "rgba(150,205,235,0.16)", 1);
       }
       for (let la = -75; la <= 75; la += 15) {
-        const pts = [];
-        for (let lo = -180; lo <= 180; lo += 2) pts.push({ lat: la, lon: lo });
-        line(pts, "rgba(150,205,235,0.22)", 1);
+        const pts: Array<[number, number]> = [];
+        for (let lo = -180; lo <= 180; lo += 2) pts.push([la, lo]);
+        stroke(pts, "rgba(150,205,235,0.16)", 1);
       }
+      // Emphasised crosshair through the property (glowing).
+      const mer: Array<[number, number]> = [];
+      for (let la = -88; la <= 88; la += 2) mer.push([la, lng]);
+      stroke(mer, "rgba(120,225,255,0.95)", 1.8, 10);
+      const par: Array<[number, number]> = [];
+      for (let lo = -180; lo <= 180; lo += 2) par.push([lat, lo]);
+      stroke(par, "rgba(120,225,255,0.95)", 1.8, 10);
+    };
 
-      // Emphasised crosshair through the property.
-      const mer = [];
-      for (let la = -85; la <= 85; la += 2) mer.push({ lat: la, lon: lng });
-      line(mer, "rgba(0,181,226,0.85)", 2);
-      const par = [];
-      for (let lo = -180; lo <= 180; lo += 2) par.push({ lat, lon: lo });
-      line(par, "rgba(0,181,226,0.85)", 2);
+    const renderSphere = (tex: Uint8ClampedArray | null) => {
+      canvas.width = BACKING;
+      canvas.height = BACKING;
+      const out = ctx.createImageData(BACKING, BACKING);
+      const data = out.data;
+      const atmoOuter = 1 + ATMO;
+
+      for (let py = 0; py < BACKING; py++) {
+        for (let px = 0; px < BACKING; px++) {
+          const X = (px - cx) / Rp;
+          const Y = -(py - cy) / Rp;
+          const rho = Math.hypot(X, Y);
+          const di = (py * BACKING + px) * 4;
+
+          if (rho <= 1) {
+            const Z = Math.sqrt(1 - rho * rho);
+            const ndotl = Math.max(0, X * LX + Y * LY + Z * LZ);
+
+            let r: number, g: number, b: number;
+            if (tex) {
+              // Inverse orthographic → (lat, lon) → texture sample.
+              const c = Math.asin(rho);
+              const sinC = Math.sin(c);
+              const cosC = Math.cos(c);
+              const latR =
+                rho === 0 ? rad(cLat) : Math.asin(cosC * sinP0 + (Y * sinC * cosP0) / rho);
+              const lam = lon0 + Math.atan2(X * sinC, rho * cosC * cosP0 - Y * sinC * sinP0);
+              const u = ((((lam / Math.PI) * 0.5 + 0.5) % 1) + 1) % 1;
+              const v = 0.5 - latR / Math.PI;
+              const tx = Math.min(TEX_W - 1, (u * TEX_W) | 0);
+              const ty = Math.min(TEX_H - 1, (v * TEX_H) | 0);
+              const ti = (ty * TEX_W + tx) * 4;
+              r = tex[ti];
+              g = tex[ti + 1];
+              b = tex[ti + 2];
+            } else {
+              // Fallback ocean tint when texture is missing.
+              r = 26;
+              g = 58;
+              b = 86;
+            }
+
+            const light = 0.26 + 1.05 * ndotl;
+            const fres = Math.pow(1 - Z, 2.6) * (0.35 + 0.65 * ndotl);
+            const spec = Math.pow(ndotl, 34) * 0.6;
+
+            data[di] = Math.min(255, r * light + fres * 60 + spec * 230);
+            data[di + 1] = Math.min(255, g * light + fres * 150 + spec * 240);
+            data[di + 2] = Math.min(255, b * light + fres * 220 + spec * 255);
+            data[di + 3] = rho > 0.992 ? 255 * (1 - (rho - 0.992) / 0.008) : 255;
+          } else if (rho <= atmoOuter) {
+            // Atmospheric halo — brighter on the lit limb.
+            const ox = X / rho;
+            const oy = Y / rho;
+            const lit = 0.35 + 0.65 * Math.max(0, ox * LX + oy * LY);
+            const t = (rho - 1) / ATMO;
+            const a = Math.pow(1 - t, 1.8) * lit;
+            data[di] = 90;
+            data[di + 1] = 200;
+            data[di + 2] = 240;
+            data[di + 3] = Math.min(255, a * 235);
+          } else {
+            data[di + 3] = 0;
+          }
+        }
+      }
+      ctx.putImageData(out, 0, 0);
+      if (tex) drawGraticule();
     };
 
     let cancelled = false;
@@ -121,47 +200,12 @@ export function ReportGlobe({
       off.width = TEX_W;
       off.height = TEX_H;
       const octx = off.getContext("2d");
-      if (!octx) return;
+      if (!octx) return renderSphere(null);
       octx.drawImage(img, 0, 0, TEX_W, TEX_H);
-      const tex = octx.getImageData(0, 0, TEX_W, TEX_H).data;
-
-      canvas.width = BACKING;
-      canvas.height = BACKING;
-      const out = ctx.createImageData(BACKING, BACKING);
-      const data = out.data;
-
-      for (let py = 0; py < BACKING; py++) {
-        for (let px = 0; px < BACKING; px++) {
-          const X = (px - cx) / Rp;
-          const Y = -(py - cy) / Rp;
-          const rho = Math.sqrt(X * X + Y * Y);
-          const di = (py * BACKING + px) * 4;
-          if (rho > 1) {
-            data[di + 3] = 0;
-            continue;
-          }
-          const c = Math.asin(rho);
-          const sinC = Math.sin(c);
-          const cosC = Math.cos(c);
-          const phi =
-            rho === 0 ? rad(cLat) : Math.asin(cosC * sinP0 + (Y * sinC * cosP0) / rho);
-          const lam = lon0 + Math.atan2(X * sinC, rho * cosC * cosP0 - Y * sinC * sinP0);
-          const u = ((((lam / Math.PI) * 0.5 + 0.5) % 1) + 1) % 1;
-          const v = 0.5 - phi / Math.PI;
-          const tx = Math.min(TEX_W - 1, (u * TEX_W) | 0);
-          const ty = Math.min(TEX_H - 1, (v * TEX_H) | 0);
-          const ti = (ty * TEX_W + tx) * 4;
-          // Keep it bright (day earth), soft limb darkening + a cool rim.
-          const shade = 0.72 + 0.28 * Math.sqrt(1 - rho * rho);
-          const rim = rho > 0.85 ? (rho - 0.85) / 0.15 : 0;
-          data[di] = Math.min(255, tex[ti] * shade + rim * 20);
-          data[di + 1] = Math.min(255, tex[ti + 1] * shade + rim * 55);
-          data[di + 2] = Math.min(255, tex[ti + 2] * shade + rim * 90);
-          data[di + 3] = rho > 0.99 ? 255 * (1 - (rho - 0.99) / 0.01) : 255;
-        }
-      }
-      ctx.putImageData(out, 0, 0);
-      drawGraticule();
+      renderSphere(octx.getImageData(0, 0, TEX_W, TEX_H).data);
+    };
+    img.onerror = () => {
+      if (!cancelled) renderSphere(null);
     };
 
     return () => {
@@ -169,7 +213,7 @@ export function ReportGlobe({
     };
   }, [cLat, cLon, lat, lng]);
 
-  // Marker position as container percentages.
+  // Marker position as container percentages (same projection).
   const dLon = rad(lng - cLon);
   const p = rad(lat);
   const p0 = rad(cLat);
@@ -179,24 +223,31 @@ export function ReportGlobe({
   const markerTop = 50 - mY * R_FRAC * 100;
 
   return (
-    <div className="relative mx-auto w-full max-w-[440px] lg:max-w-none">
-      <div className="relative mx-auto aspect-square w-full max-w-[440px]">
-        {/* Space fallback + atmosphere */}
+    <div className="relative mx-auto w-full max-w-[440px] lg:max-w-[540px]">
+      {/* Ambient space glow */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -inset-6 rounded-full blur-3xl"
+        style={{ background: "radial-gradient(circle at 40% 36%, rgba(0,181,226,0.28), transparent 62%)" }}
+      />
+      {/* Twinkling stars */}
+      <div
+        aria-hidden
+        className="animate-twinkle pointer-events-none absolute -inset-8"
+        style={{
+          backgroundImage:
+            "radial-gradient(1.2px 1.2px at 12% 22%, #fff, transparent), radial-gradient(1px 1px at 82% 16%, #cfefff, transparent), radial-gradient(1px 1px at 68% 82%, #fff, transparent), radial-gradient(1.4px 1.4px at 24% 74%, #bfe6ff, transparent), radial-gradient(1px 1px at 90% 60%, #fff, transparent), radial-gradient(1px 1px at 46% 8%, #fff, transparent)",
+        }}
+      />
+
+      <div className="animate-float relative mx-auto aspect-square w-full">
+        {/* Fallback lit sphere (shows only if the texture fails to load) */}
         <div
           aria-hidden
           className="absolute rounded-full"
           style={{
-            inset: "6%",
-            background: "radial-gradient(circle at 42% 36%, #35638a, #16324a 55%, #0a1826 100%)",
-          }}
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute rounded-full"
-          style={{
-            inset: "6%",
-            boxShadow:
-              "0 0 2px 1px rgba(150,215,245,0.6), 0 0 44px 8px rgba(0,181,226,0.4), inset 0 0 40px rgba(0,0,0,0.4)",
+            inset: "8%",
+            background: "radial-gradient(circle at 32% 30%, #3a6a92, #1a3a56 46%, #08182a 100%)",
           }}
         />
         <canvas
@@ -214,14 +265,14 @@ export function ReportGlobe({
         >
           <span className="relative flex h-4 w-4">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-cyan opacity-60" />
-            <span className="relative inline-flex h-4 w-4 rounded-full bg-brand-cyan ring-[3px] ring-white" />
+            <span className="relative inline-flex h-4 w-4 rounded-full bg-brand-cyan ring-[3px] ring-white shadow-[0_0_12px_rgba(0,181,226,0.9)]" />
           </span>
         </div>
 
         {/* Data card — floats beside the marker on large screens */}
         <div
           className="pointer-events-none absolute hidden lg:block"
-          style={{ left: `${markerLeft}%`, top: `${markerTop}%`, transform: "translate(22px,-50%)" }}
+          style={{ left: `${markerLeft}%`, top: `${markerTop}%`, transform: "translate(24px,-50%)" }}
         >
           <GlobeCard place={place} stats={stats} />
         </div>
@@ -240,9 +291,9 @@ function GlobeCard({ place, stats }: { place: string; stats: GlobeStats }) {
     <div
       className="w-[248px] overflow-hidden rounded-2xl border p-4 backdrop-blur-md"
       style={{
-        background: "linear-gradient(160deg, rgba(20,32,48,0.92), rgba(10,20,32,0.92))",
+        background: "linear-gradient(160deg, rgba(20,32,48,0.94), rgba(10,20,32,0.94))",
         borderColor: "rgba(0,181,226,0.4)",
-        boxShadow: "0 20px 50px -20px rgba(0,0,0,0.8)",
+        boxShadow: "0 24px 60px -22px rgba(0,0,0,0.85)",
       }}
     >
       <div className="flex items-center gap-2">

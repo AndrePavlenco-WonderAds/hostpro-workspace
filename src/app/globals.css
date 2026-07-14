@@ -99,6 +99,38 @@ body {
   }
 }
 
+/* Report hero globe — gentle float + soft twinkle for ambient life. */
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+.animate-float {
+  animation: float-y 7s ease-in-out infinite;
+}
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+.animate-twinkle {
+  animation: twinkle 4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-float,
+  .animate-twinkle {
+    animation: none;
+  }
+}
+
 /* Shared dark form input — used by add/edit dialogs and the reserva form. */
 .form-input,
 .rsv-input {

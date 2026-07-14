@@ -15,6 +15,16 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.21.0",
+    date: "2026-07-14",
+    title: "Globo do hero refeito: Terra 3D com luz real, atmosfera e estrelas",
+    highlights: [
+      "**🌍 Terra verdadeiramente 3D.** Refiz o globo de raiz com iluminação direcional (normal · luz por pixel): limbo iluminado em cima à esquerda, terminador a escurecer para a sombra, brilho de fresnel e reflexo do sol. Deixou de parecer plano/2D.",
+      "**🌫️ Atmosfera integrada + estrelas.** Halo azul desenhado no próprio canvas (alinhado ao globo, sem o 'bloco' desalinhado de antes), campo de estrelas a cintilar e flutuação suave — sem WebGL, funciona em qualquer browser.",
+      "**➕ Grelha + cruzamento a brilhar** sobre o ponto do alojamento, com o card de dados ao lado.",
+    ],
+  },
+  {
     version: "0.20.0",
     date: "2026-07-14",
     title: "Globo estilo Starlink: Terra de dia, grelha com foco e card de dados",
