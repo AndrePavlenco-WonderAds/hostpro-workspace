@@ -15,6 +15,16 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.23.1",
+    date: "2026-07-14",
+    title: "Card do globo: barras relativas e textos mais diretos",
+    highlights: [
+      "**📊 Barras relativas.** As barras de Pontos fortes / A melhorar / Críticos deixaram de estar todas cheias — a de maior número enche a barra e as outras ficam proporcionais a essa.",
+      "**🏷️ Título e local mais limpos.** O card mostra só o primeiro nome (ex: 'Diana') e por baixo apenas a localização (sem 'Airbnb').",
+      "**💸 Banda mais vendedora.** 'A otimizar' passou a **'A perder €'** (e 'Perde muito €' abaixo de 40, 'Competitivo' acima de 70).",
+    ],
+  },
+  {
     version: "0.23.0",
     date: "2026-07-14",
     title: "Globo em alta resolução (bilinear + texturas 4K) e mais zoom",

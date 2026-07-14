@@ -341,6 +341,11 @@ export function ReportGlobe({
 }
 
 function GlobeCard({ place, stats }: { place: string; stats: GlobeStats }) {
+  // First word of the listing name for a tight title (e.g. "Diana - Vivenda…" → "Diana").
+  const firstName = stats.name.trim().split(/\s+/)[0] || stats.name;
+  // Bars are relative — the highest count fills the bar, the others scale to it.
+  const maxVal = Math.max(stats.strengths, stats.fails, stats.criticals, 1);
+
   return (
     <div
       className="w-[248px] overflow-hidden rounded-2xl border p-4 backdrop-blur-md"
@@ -358,10 +363,8 @@ function GlobeCard({ place, stats }: { place: string; stats: GlobeStats }) {
           <HomeIcon />
         </span>
         <div className="min-w-0">
-          <p className="truncate text-sm font-bold leading-tight text-white">{stats.name}</p>
-          <p className="truncate text-[10px] uppercase tracking-[0.14em] text-white/45">
-            {stats.platform} · {place}
-          </p>
+          <p className="truncate text-base font-bold leading-tight text-white">{firstName}</p>
+          <p className="truncate text-[10px] uppercase tracking-[0.14em] text-white/45">{place}</p>
         </div>
       </div>
 
@@ -379,15 +382,18 @@ function GlobeCard({ place, stats }: { place: string; stats: GlobeStats }) {
       </div>
 
       <div className="mt-3 space-y-2.5">
-        <MetricRow label="Pontos fortes" value={stats.strengths} color="#4ade80" />
-        <MetricRow label="A melhorar" value={stats.fails} color="#00B5E2" />
-        {stats.criticals > 0 && <MetricRow label="Críticos" value={stats.criticals} color="#f87171" />}
+        <MetricRow label="Pontos fortes" value={stats.strengths} max={maxVal} color="#4ade80" />
+        <MetricRow label="A melhorar" value={stats.fails} max={maxVal} color="#00B5E2" />
+        {stats.criticals > 0 && (
+          <MetricRow label="Críticos" value={stats.criticals} max={maxVal} color="#f87171" />
+        )}
       </div>
     </div>
   );
 }
 
-function MetricRow({ label, value, color }: { label: string; value: number; color: string }) {
+function MetricRow({ label, value, max, color }: { label: string; value: number; max: number; color: string }) {
+  const pct = value > 0 ? Math.max(6, (value / max) * 100) : 0;
   return (
     <div>
       <div className="flex items-center justify-between text-[13px]">
@@ -397,7 +403,7 @@ function MetricRow({ label, value, color }: { label: string; value: number; colo
         </span>
       </div>
       <div className="mt-1 h-[3px] w-full rounded-full" style={{ background: `${color}55` }}>
-        <div className="h-full rounded-full" style={{ width: `${Math.min(100, value * 12 + 12)}%`, background: color }} />
+        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: color }} />
       </div>
     </div>
   );

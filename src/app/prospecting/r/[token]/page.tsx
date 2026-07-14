@@ -91,7 +91,7 @@ export default async function ReportPage({
         : "Há margem significativa para otimizar — o potencial de crescimento é grande.";
 
   const scoreColor = audit.score >= 70 ? "#16a34a" : audit.score >= 40 ? "#d97706" : "#dc2626";
-  const scoreBand = audit.score >= 70 ? "Bom" : audit.score >= 40 ? "A otimizar" : "Grande potencial";
+  const scoreBand = audit.score >= 70 ? "Competitivo" : audit.score >= 40 ? "A perder €" : "Perde muito €";
 
   const globeStats = {
     platform: p.platform,
