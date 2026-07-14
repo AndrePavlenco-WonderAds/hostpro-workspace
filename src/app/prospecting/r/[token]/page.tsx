@@ -92,6 +92,17 @@ export default async function ReportPage({
   const scoreColor = audit.score >= 70 ? "#16a34a" : audit.score >= 40 ? "#d97706" : "#dc2626";
   const scoreBand = audit.score >= 70 ? "Bom" : audit.score >= 40 ? "A otimizar" : "Grande potencial";
 
+  const globeStats = {
+    platform: p.platform,
+    name: p.name,
+    score: audit.score,
+    scoreColor,
+    band: scoreBand,
+    strengths: strengths.length,
+    fails: audit.failCount,
+    criticals: criticalCount,
+  };
+
   return (
     <main style={{ background: "linear-gradient(180deg,#f7f9fb 0%,#eef2f6 100%)", color: NAVY }} className="min-h-screen">
       <style
@@ -197,34 +208,10 @@ export default async function ReportPage({
                 />
               </figcaption>
             </figure>
-
-            <div className="mt-6 flex flex-wrap gap-2.5">
-              <HeroChip n={strengths.length} label="pontos fortes" color="#4ade80" />
-              <HeroChip n={audit.failCount} label="a melhorar" color={CYAN} />
-              {criticalCount > 0 && <HeroChip n={criticalCount} label="críticos" color="#f87171" />}
-            </div>
           </div>
 
-          <div className="relative flex flex-col items-center gap-5 rise rise-2">
-            <ReportGlobe lat={geo.lat} lng={geo.lng} place={geo.place} />
-            <div
-              className="flex items-center gap-3 rounded-2xl border px-5 py-3 backdrop-blur"
-              style={{ borderColor: "rgba(255,255,255,0.14)", background: "rgba(255,255,255,0.05)" }}
-            >
-              <span style={{ color: scoreColor }}>
-                <CountUp
-                  value={audit.score}
-                  duration={1200}
-                  className="text-4xl font-extrabold tabular-nums"
-                />
-              </span>
-              <div className="text-left">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/50">
-                  Índice de otimização
-                </p>
-                <p className="text-xs font-semibold text-white/80">de 100 pontos</p>
-              </div>
-            </div>
+          <div className="relative rise rise-2">
+            <ReportGlobe lat={geo.lat} lng={geo.lng} place={geo.place} stats={globeStats} />
           </div>
         </div>
       </section>
@@ -593,20 +580,6 @@ function CategoryBar({
           style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${color}cc, ${color})` }}
         />
       </div>
-    </div>
-  );
-}
-
-function HeroChip({ n, label, color }: { n: number; label: string; color: string }) {
-  return (
-    <div
-      className="flex items-center gap-2 rounded-xl border px-3 py-2 backdrop-blur"
-      style={{ borderColor: "rgba(255,255,255,0.14)", background: "rgba(255,255,255,0.05)" }}
-    >
-      <span className="text-lg font-extrabold tabular-nums" style={{ color }}>
-        <CountUp value={n} />
-      </span>
-      <span className="text-xs font-medium text-white/70">{label}</span>
     </div>
   );
 }

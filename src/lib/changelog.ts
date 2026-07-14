@@ -15,6 +15,16 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.20.0",
+    date: "2026-07-14",
+    title: "Globo estilo Starlink: Terra de dia, grelha com foco e card de dados",
+    highlights: [
+      "**🌞 Terra de dia, mais clara e 3D.** Trocámos a textura noturna (ficava escura) por Blue Marble de dia, com mais zoom sobre Portugal e brilho de atmosfera — estilo do site da Wonder Ads.",
+      "**➕ Grelha de latitude/longitude com foco.** O globo tem agora uma grelha e um **cruzamento cyan realçado que se cruza exatamente no ponto do alojamento**.",
+      "**🪪 Card de dados ao lado do ponto.** Junto ao marcador aparece um cartão em vidro escuro com o essencial da auditoria: nome, plataforma, índice /100, banda, e pontos fortes / a melhorar / críticos.",
+    ],
+  },
+  {
     version: "0.19.0",
     date: "2026-07-14",
     title: "Globo do relatório refeito: Terra 3D realista com continentes e luzes",
