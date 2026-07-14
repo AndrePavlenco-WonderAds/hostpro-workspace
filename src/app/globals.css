@@ -124,9 +124,111 @@ body {
 .animate-twinkle {
   animation: twinkle 4s ease-in-out infinite;
 }
+/* Marker heartbeat (lub-dub) for the crosshair focus point. */
+@keyframes heartbeat {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.9;
+  }
+  12% {
+    transform: scale(2.1);
+    opacity: 0;
+  }
+  24% {
+    transform: scale(0.9);
+    opacity: 0.9;
+  }
+  36% {
+    transform: scale(2.1);
+    opacity: 0;
+  }
+  60%,
+  100% {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+}
+.animate-heartbeat {
+  animation: heartbeat 2.6s ease-out infinite;
+}
+
+/* Hero space background — drifting nebulae, parallax stars, shooting stars. */
+@keyframes nebula-a {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(6%, 4%, 0) scale(1.15);
+  }
+}
+@keyframes nebula-b {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1.1);
+  }
+  50% {
+    transform: translate3d(-7%, -3%, 0) scale(0.95);
+  }
+}
+@keyframes nebula-hue {
+  0%,
+  100% {
+    filter: blur(60px) hue-rotate(0deg);
+  }
+  50% {
+    filter: blur(60px) hue-rotate(26deg);
+  }
+}
+@keyframes star-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-40px, 20px, 0);
+  }
+}
+@keyframes shooting {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(18deg);
+    opacity: 0;
+  }
+  3% {
+    opacity: 1;
+  }
+  12% {
+    transform: translate3d(-420px, 150px, 0) rotate(18deg);
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.animate-nebula-a {
+  animation: nebula-a 26s ease-in-out infinite;
+}
+.animate-nebula-b {
+  animation: nebula-b 32s ease-in-out infinite;
+}
+.animate-nebula-hue {
+  animation: nebula-hue 40s ease-in-out infinite;
+}
+.animate-star-drift {
+  animation: star-drift 90s linear infinite alternate;
+}
+.animate-shooting {
+  animation: shooting 9s ease-in infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-float,
-  .animate-twinkle {
+  .animate-twinkle,
+  .animate-heartbeat,
+  .animate-nebula-a,
+  .animate-nebula-b,
+  .animate-nebula-hue,
+  .animate-star-drift,
+  .animate-shooting {
     animation: none;
   }
 }

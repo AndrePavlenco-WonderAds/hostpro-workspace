@@ -2,13 +2,14 @@
 
 import { useEffect, useRef } from "react";
 
-// Hero globe — a genuinely 3D-lit Earth rendered with Canvas 2D (no WebGL,
-// which rendered black in some browsers). The realism comes from a directional
-// light: every pixel's surface normal is dotted with a light vector, giving a
-// bright lit limb (upper-left), a soft terminator into shadow (lower-right), a
-// fresnel atmosphere rim and a sun glint. A latitude/longitude graticule and a
-// glowing cyan crosshair intersect exactly on the property, and a glass data
-// card sits beside the marker.
+// Hero globe — a high-detail, genuinely 3D Earth rendered with Canvas 2D (no
+// WebGL, which rendered black in some browsers). Three NASA textures are
+// blended per pixel: the DAY map on the sunlit side, NIGHT city-lights on the
+// dark side (blended across the terminator), and CLOUDS on top. A directional
+// light gives the lit limb / shadow terminator / fresnel rim / sun glint that
+// make it read as a real sphere. A dotted graticule and a glowing dashed
+// crosshair intersect on the property, where a heart-beat marker pulses beside
+// a glass data card.
 
 export type GlobeStats = {
   platform: string;
@@ -21,19 +22,23 @@ export type GlobeStats = {
   criticals: number;
 };
 
-const BACKING = 800;
-const R_FRAC = 0.42; // sphere radius vs container half-size (leaves room for atmosphere)
-const ATMO = 0.16; // atmosphere thickness beyond the sphere (fraction of R)
-const TEX_W = 1024;
-const TEX_H = 512;
+const BACKING = 1024; // HD backing resolution
+const R_FRAC = 0.47; // sphere radius vs container half-size (a touch more zoom)
+const ATMO = 0.08;
+const TEX_W = 2048;
+const TEX_H = 1024;
 
 // Light direction (view space): upper-left, tilted toward the viewer.
-const LX = -0.6;
-const LY = 0.55;
-const LZ = 0.58;
+const LX = -0.58;
+const LY = 0.5;
+const LZ = 0.64;
 
 function rad(d: number): number {
   return (d * Math.PI) / 180;
+}
+function smoothstep(a: number, b: number, x: number): number {
+  const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
 }
 
 export function ReportGlobe({
@@ -49,10 +54,10 @@ export function ReportGlobe({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // View centre — east + south of the property so Portugal frames upper-left
-  // and the data card has room to its right.
-  const cLat = lat - 14;
-  const cLon = lng + 8;
+  // View centre — a little south/east of the property so the country sits
+  // large near the middle with room for the card on the right.
+  const cLat = lat - 6;
+  const cLon = lng + 3;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -81,12 +86,14 @@ export function ReportGlobe({
         pts: Array<[number, number]>,
         color: string,
         width: number,
+        dash: number[],
         glow = 0,
       ) => {
         ctx.strokeStyle = color;
         ctx.lineWidth = width;
+        ctx.setLineDash(dash);
         ctx.shadowBlur = glow;
-        ctx.shadowColor = glow ? "rgba(0,181,226,0.9)" : "transparent";
+        ctx.shadowColor = glow ? "rgba(80,220,255,0.95)" : "transparent";
         ctx.beginPath();
         let started = false;
         for (const [la, lo] of pts) {
@@ -100,120 +107,169 @@ export function ReportGlobe({
         }
         ctx.stroke();
         ctx.shadowBlur = 0;
+        ctx.setLineDash([]);
       };
 
       for (let lo = -180; lo < 180; lo += 15) {
         const pts: Array<[number, number]> = [];
         for (let la = -85; la <= 85; la += 2) pts.push([la, lo]);
-        stroke(pts, "rgba(150,205,235,0.16)", 1);
+        stroke(pts, "rgba(160,210,240,0.22)", 1.1, [1.5, 7]);
       }
       for (let la = -75; la <= 75; la += 15) {
         const pts: Array<[number, number]> = [];
         for (let lo = -180; lo <= 180; lo += 2) pts.push([la, lo]);
-        stroke(pts, "rgba(150,205,235,0.16)", 1);
+        stroke(pts, "rgba(160,210,240,0.22)", 1.1, [1.5, 7]);
       }
-      // Emphasised crosshair through the property (glowing).
+      // Emphasised dashed crosshair through the property (glowing).
       const mer: Array<[number, number]> = [];
       for (let la = -88; la <= 88; la += 2) mer.push([la, lng]);
-      stroke(mer, "rgba(120,225,255,0.95)", 1.8, 10);
+      stroke(mer, "rgba(120,230,255,0.95)", 2, [7, 6], 12);
       const par: Array<[number, number]> = [];
       for (let lo = -180; lo <= 180; lo += 2) par.push([lat, lo]);
-      stroke(par, "rgba(120,225,255,0.95)", 1.8, 10);
+      stroke(par, "rgba(120,230,255,0.95)", 2, [7, 6], 12);
     };
 
-    const renderSphere = (tex: Uint8ClampedArray | null) => {
+    const toData = (img: HTMLImageElement): Uint8ClampedArray | null => {
+      if (!img.complete || !img.naturalWidth) return null;
+      const off = document.createElement("canvas");
+      off.width = TEX_W;
+      off.height = TEX_H;
+      const o = off.getContext("2d");
+      if (!o) return null;
+      o.drawImage(img, 0, 0, TEX_W, TEX_H);
+      return o.getImageData(0, 0, TEX_W, TEX_H).data;
+    };
+
+    const render = (day: Uint8ClampedArray | null, night: Uint8ClampedArray | null, clouds: Uint8ClampedArray | null) => {
       canvas.width = BACKING;
       canvas.height = BACKING;
       const out = ctx.createImageData(BACKING, BACKING);
       const data = out.data;
       const atmoOuter = 1 + ATMO;
+      const bands = 8;
+      let band = 0;
 
-      for (let py = 0; py < BACKING; py++) {
-        for (let px = 0; px < BACKING; px++) {
-          const X = (px - cx) / Rp;
-          const Y = -(py - cy) / Rp;
-          const rho = Math.hypot(X, Y);
-          const di = (py * BACKING + px) * 4;
+      const sample = (tex: Uint8ClampedArray, u: number, v: number, i = 0) => {
+        const tx = Math.min(TEX_W - 1, (u * TEX_W) | 0);
+        const ty = Math.min(TEX_H - 1, (v * TEX_H) | 0);
+        return tex[(ty * TEX_W + tx) * 4 + i];
+      };
 
-          if (rho <= 1) {
-            const Z = Math.sqrt(1 - rho * rho);
-            const ndotl = Math.max(0, X * LX + Y * LY + Z * LZ);
+      const step = () => {
+        if (cancelled) return;
+        const y0 = Math.floor((band * BACKING) / bands);
+        const y1 = Math.floor(((band + 1) * BACKING) / bands);
+        for (let py = y0; py < y1; py++) {
+          for (let px = 0; px < BACKING; px++) {
+            const X = (px - cx) / Rp;
+            const Y = -(py - cy) / Rp;
+            const rho = Math.hypot(X, Y);
+            const di = (py * BACKING + px) * 4;
 
-            let r: number, g: number, b: number;
-            if (tex) {
-              // Inverse orthographic → (lat, lon) → texture sample.
+            if (rho <= 1) {
+              const Z = Math.sqrt(1 - rho * rho);
+              const ndotl = X * LX + Y * LY + Z * LZ;
+              const dayAmt = smoothstep(-0.08, 0.32, ndotl);
+              const litD = Math.max(0, ndotl);
+
               const c = Math.asin(rho);
               const sinC = Math.sin(c);
               const cosC = Math.cos(c);
-              const latR =
-                rho === 0 ? rad(cLat) : Math.asin(cosC * sinP0 + (Y * sinC * cosP0) / rho);
+              const latR = rho === 0 ? rad(cLat) : Math.asin(cosC * sinP0 + (Y * sinC * cosP0) / rho);
               const lam = lon0 + Math.atan2(X * sinC, rho * cosC * cosP0 - Y * sinC * sinP0);
               const u = ((((lam / Math.PI) * 0.5 + 0.5) % 1) + 1) % 1;
               const v = 0.5 - latR / Math.PI;
-              const tx = Math.min(TEX_W - 1, (u * TEX_W) | 0);
-              const ty = Math.min(TEX_H - 1, (v * TEX_H) | 0);
-              const ti = (ty * TEX_W + tx) * 4;
-              r = tex[ti];
-              g = tex[ti + 1];
-              b = tex[ti + 2];
+
+              let r: number, g: number, b: number;
+              if (day) {
+                const dl = 0.32 + 1.02 * litD;
+                const dr = sample(day, u, v, 0) * dl;
+                const dg = sample(day, u, v, 1) * dl;
+                const db = sample(day, u, v, 2) * dl;
+                if (night) {
+                  // City lights glow on the dark side; faint blue ocean ambient.
+                  const nr = sample(night, u, v, 0) * 1.25 + 5;
+                  const ng = sample(night, u, v, 1) * 1.2 + 9;
+                  const nb = sample(night, u, v, 2) * 1.1 + 16;
+                  r = nr + (dr - nr) * dayAmt;
+                  g = ng + (dg - ng) * dayAmt;
+                  b = nb + (db - nb) * dayAmt;
+                } else {
+                  r = dr;
+                  g = dg;
+                  b = db;
+                }
+              } else {
+                r = 22;
+                g = 52;
+                b = 82;
+              }
+
+              // Clouds — lit, mostly on the day side, faint at night.
+              if (clouds) {
+                const cv = sample(clouds, u, v, 0) / 255;
+                const cover = cv * (0.22 + 0.78 * dayAmt);
+                const litCloud = 235 * (0.3 + 0.85 * litD);
+                r = r * (1 - cover) + litCloud * cover;
+                g = g * (1 - cover) + litCloud * cover;
+                b = b * (1 - cover) + litCloud * cover;
+              }
+
+              // Fresnel atmosphere rim + specular sun-glint.
+              const fres = Math.pow(1 - Z, 2.6) * (0.3 + 0.7 * Math.max(0, ndotl));
+              const spec = Math.pow(Math.max(0, ndotl), 40) * 0.5;
+              data[di] = Math.min(255, r + fres * 55 + spec * 220);
+              data[di + 1] = Math.min(255, g + fres * 150 + spec * 235);
+              data[di + 2] = Math.min(255, b + fres * 225 + spec * 255);
+              data[di + 3] = rho > 0.993 ? 255 * (1 - (rho - 0.993) / 0.007) : 255;
+            } else if (rho <= atmoOuter) {
+              const ox = X / rho;
+              const oy = Y / rho;
+              const lit = 0.32 + 0.68 * Math.max(0, ox * LX + oy * LY);
+              const t = (rho - 1) / ATMO;
+              const a = Math.pow(1 - t, 1.7) * lit;
+              data[di] = 90;
+              data[di + 1] = 200;
+              data[di + 2] = 240;
+              data[di + 3] = Math.min(255, a * 235);
             } else {
-              // Fallback ocean tint when texture is missing.
-              r = 26;
-              g = 58;
-              b = 86;
+              data[di + 3] = 0;
             }
-
-            const light = 0.26 + 1.05 * ndotl;
-            const fres = Math.pow(1 - Z, 2.6) * (0.35 + 0.65 * ndotl);
-            const spec = Math.pow(ndotl, 34) * 0.6;
-
-            data[di] = Math.min(255, r * light + fres * 60 + spec * 230);
-            data[di + 1] = Math.min(255, g * light + fres * 150 + spec * 240);
-            data[di + 2] = Math.min(255, b * light + fres * 220 + spec * 255);
-            data[di + 3] = rho > 0.992 ? 255 * (1 - (rho - 0.992) / 0.008) : 255;
-          } else if (rho <= atmoOuter) {
-            // Atmospheric halo — brighter on the lit limb.
-            const ox = X / rho;
-            const oy = Y / rho;
-            const lit = 0.35 + 0.65 * Math.max(0, ox * LX + oy * LY);
-            const t = (rho - 1) / ATMO;
-            const a = Math.pow(1 - t, 1.8) * lit;
-            data[di] = 90;
-            data[di + 1] = 200;
-            data[di + 2] = 240;
-            data[di + 3] = Math.min(255, a * 235);
-          } else {
-            data[di + 3] = 0;
           }
         }
-      }
-      ctx.putImageData(out, 0, 0);
-      if (tex) drawGraticule();
+        band++;
+        if (band < bands) requestAnimationFrame(step);
+        else {
+          ctx.putImageData(out, 0, 0);
+          if (day) drawGraticule();
+        }
+      };
+      requestAnimationFrame(step);
     };
 
     let cancelled = false;
-    const img = new Image();
-    img.src = "/earth-day.jpg";
-    img.onload = () => {
-      if (cancelled) return;
-      const off = document.createElement("canvas");
-      off.width = TEX_W;
-      off.height = TEX_H;
-      const octx = off.getContext("2d");
-      if (!octx) return renderSphere(null);
-      octx.drawImage(img, 0, 0, TEX_W, TEX_H);
-      renderSphere(octx.getImageData(0, 0, TEX_W, TEX_H).data);
+    const day = new Image();
+    const night = new Image();
+    const clouds = new Image();
+    let pending = 3;
+    const done = () => {
+      if (--pending > 0 || cancelled) return;
+      render(toData(day), toData(night), toData(clouds));
     };
-    img.onerror = () => {
-      if (!cancelled) renderSphere(null);
-    };
+    for (const im of [day, night, clouds]) {
+      im.onload = done;
+      im.onerror = done;
+    }
+    day.src = "/earth-day.jpg";
+    night.src = "/earth-night.jpg";
+    clouds.src = "/earth-clouds.jpg";
 
     return () => {
       cancelled = true;
     };
   }, [cLat, cLon, lat, lng]);
 
-  // Marker position as container percentages (same projection).
+  // Marker position as container percentages.
   const dLon = rad(lng - cLon);
   const p = rad(lat);
   const p0 = rad(cLat);
@@ -223,32 +279,23 @@ export function ReportGlobe({
   const markerTop = 50 - mY * R_FRAC * 100;
 
   return (
-    <div className="relative mx-auto w-full max-w-[440px] lg:max-w-[540px]">
-      {/* Ambient space glow */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -inset-6 rounded-full blur-3xl"
-        style={{ background: "radial-gradient(circle at 40% 36%, rgba(0,181,226,0.28), transparent 62%)" }}
-      />
-      {/* Twinkling stars */}
+    <div className="relative mx-auto w-full max-w-[440px] lg:max-w-[560px]">
+      {/* Twinkling stars close to the globe */}
       <div
         aria-hidden
         className="animate-twinkle pointer-events-none absolute -inset-8"
         style={{
           backgroundImage:
-            "radial-gradient(1.2px 1.2px at 12% 22%, #fff, transparent), radial-gradient(1px 1px at 82% 16%, #cfefff, transparent), radial-gradient(1px 1px at 68% 82%, #fff, transparent), radial-gradient(1.4px 1.4px at 24% 74%, #bfe6ff, transparent), radial-gradient(1px 1px at 90% 60%, #fff, transparent), radial-gradient(1px 1px at 46% 8%, #fff, transparent)",
+            "radial-gradient(1.2px 1.2px at 14% 22%, #fff, transparent), radial-gradient(1px 1px at 82% 16%, #cfefff, transparent), radial-gradient(1px 1px at 68% 82%, #fff, transparent), radial-gradient(1.4px 1.4px at 24% 74%, #bfe6ff, transparent), radial-gradient(1px 1px at 90% 60%, #fff, transparent)",
         }}
       />
 
       <div className="animate-float relative mx-auto aspect-square w-full">
-        {/* Fallback lit sphere (shows only if the texture fails to load) */}
+        {/* Fallback lit sphere (only shows if textures fail to load) */}
         <div
           aria-hidden
           className="absolute rounded-full"
-          style={{
-            inset: "8%",
-            background: "radial-gradient(circle at 32% 30%, #3a6a92, #1a3a56 46%, #08182a 100%)",
-          }}
+          style={{ inset: "5%", background: "radial-gradient(circle at 34% 30%, #35648c, #163650 46%, #08182a 100%)" }}
         />
         <canvas
           ref={canvasRef}
@@ -258,21 +305,21 @@ export function ReportGlobe({
           aria-label={`Localização: ${place}`}
         />
 
-        {/* Marker */}
+        {/* Heart-beat marker */}
         <div
           className="pointer-events-none absolute"
           style={{ left: `${markerLeft}%`, top: `${markerTop}%`, transform: "translate(-50%,-50%)" }}
         >
-          <span className="relative flex h-4 w-4">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-cyan opacity-60" />
-            <span className="relative inline-flex h-4 w-4 rounded-full bg-brand-cyan ring-[3px] ring-white shadow-[0_0_12px_rgba(0,181,226,0.9)]" />
+          <span className="relative flex h-4 w-4 items-center justify-center">
+            <span className="animate-heartbeat absolute h-4 w-4 rounded-full bg-brand-cyan" />
+            <span className="relative h-3 w-3 rounded-full bg-brand-cyan ring-2 ring-white shadow-[0_0_14px_rgba(0,181,226,1)]" />
           </span>
         </div>
 
         {/* Data card — floats beside the marker on large screens */}
         <div
           className="pointer-events-none absolute hidden lg:block"
-          style={{ left: `${markerLeft}%`, top: `${markerTop}%`, transform: "translate(24px,-50%)" }}
+          style={{ left: `${markerLeft}%`, top: `${markerTop}%`, transform: "translate(26px,-50%)" }}
         >
           <GlobeCard place={place} stats={stats} />
         </div>

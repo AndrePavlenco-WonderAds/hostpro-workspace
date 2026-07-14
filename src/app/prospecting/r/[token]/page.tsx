@@ -5,6 +5,7 @@ import { resolveGeo } from "@/lib/prospecting/geo";
 import { ddmmyyyy } from "@/lib/dates";
 import { ReportGlobe } from "@/components/prospecting/report-globe";
 import { ReportActions } from "@/components/prospecting/report-actions";
+import { HeroBackground } from "@/components/prospecting/report-hero-bg";
 import { CountUp, Donut } from "@/components/prospecting/report-anim";
 import type { Priority } from "@/lib/prospecting/types";
 
@@ -145,21 +146,9 @@ export default async function ReportPage({
       </header>
 
       {/* ======================= HERO ======================= */}
-      <section
-        className="no-print relative overflow-hidden px-5 pb-16 pt-10 sm:px-8 sm:pb-20 sm:pt-14"
-        style={{
-          background: `radial-gradient(1200px 620px at 82% -10%, rgba(0,181,226,0.22), transparent 55%), linear-gradient(180deg, ${NAVY_DARK} 0%, ${NAVY} 100%)`,
-        }}
-      >
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-50"
-          style={{
-            backgroundImage:
-              "radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.6), transparent), radial-gradient(1px 1px at 70% 20%, rgba(255,255,255,0.4), transparent), radial-gradient(1px 1px at 40% 70%, rgba(255,255,255,0.5), transparent), radial-gradient(1px 1px at 85% 60%, rgba(255,255,255,0.35), transparent), radial-gradient(1px 1px at 55% 45%, rgba(255,255,255,0.3), transparent)",
-          }}
-        />
-        <div className="relative mx-auto grid w-full max-w-6xl items-center gap-8 lg:grid-cols-[1.05fr_1fr]">
+      <section className="no-print relative overflow-hidden px-5 pb-16 pt-10 sm:px-8 sm:pb-20 sm:pt-14">
+        <HeroBackground />
+        <div className="relative z-10 mx-auto grid w-full max-w-6xl items-center gap-8 lg:grid-cols-[1.05fr_1fr]">
           <div className="rise">
             <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-brand-cyan">
               Auditoria de Alojamento Local · {p.platform} · {ddmmyyyy(p.createdAt)}

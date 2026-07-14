@@ -15,6 +15,16 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.22.0",
+    date: "2026-07-14",
+    title: "Globo HD com dia/noite + hero com fundo espacial animado",
+    highlights: [
+      "**🛰️ Globo HD (dia + noite + nuvens).** Resolução muito maior e três texturas NASA misturadas por pixel: mapa de dia no lado ao sol, **luzes de cidade no lado escuro** (a fundir no terminador) e nuvens por cima. Mais zoom sobre Portugal.",
+      "**💓 Ponto a pulsar (heartbeat) + linhas tracejadas.** O cruzamento das linhas no ponto do alojamento pulsa como um batimento cardíaco e a grelha/cruz passou a tracejada e a brilhar.",
+      "**✨ Fundo da hero 1000x melhor.** Deixou de ser estático — agora tem nebulosas a derivar e a mudar de cor, duas camadas de estrelas com paralaxe, estrelas cadentes e vinheta. Tudo respeita 'reduzir movimento'.",
+    ],
+  },
+  {
     version: "0.21.0",
     date: "2026-07-14",
     title: "Globo do hero refeito: Terra 3D com luz real, atmosfera e estrelas",
