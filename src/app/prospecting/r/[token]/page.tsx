@@ -185,20 +185,11 @@ export default async function ReportPage({
               <blockquote className="relative mt-2 text-lg font-semibold leading-relaxed text-white sm:text-xl">
                 {verdict}
               </blockquote>
-              <figcaption className="relative mt-4 flex items-end justify-between gap-3 border-t border-white/10 pt-3">
-                <div>
-                  <p className="font-hand text-3xl leading-none text-brand-cyan">André Pavlenco</p>
-                  <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/45">
-                    Fundador · HostPro
-                  </p>
-                </div>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/team/andre-pavlenco.jpg"
-                  alt=""
-                  className="h-11 w-11 rounded-full object-cover"
-                  style={{ border: "2px solid rgba(0,181,226,0.6)" }}
-                />
+              <figcaption className="relative mt-4 border-t border-white/10 pt-3">
+                <p className="font-hand text-3xl leading-none text-brand-cyan">André Pavlenco</p>
+                <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/45">
+                  Fundador · HostPro
+                </p>
               </figcaption>
             </figure>
           </div>

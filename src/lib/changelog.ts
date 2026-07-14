@@ -15,6 +15,14 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.24.1",
+    date: "2026-07-14",
+    title: "Resumo do hero sem foto duplicada",
+    highlights: [
+      "**🧹 Foto do André removida do resumo no topo** — já aparece na assinatura no fundo do relatório. Fica só a assinatura manuscrita 'André Pavlenco · Fundador'.",
+    ],
+  },
+  {
     version: "0.24.0",
     date: "2026-07-14",
     title: "Concelho automático (online) no cabeçalho + texto do resumo",
