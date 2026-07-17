@@ -5,7 +5,8 @@
 // All mutations go through src/lib/pnl-store.ts which is server-only.
 
 import { revalidatePath, updateTag } from "next/cache";
-import { addEntry, deleteEntry, updateEntry } from "./pnl-store";
+import { addEntry, addEntries, deleteEntry, updateEntry } from "./pnl-store";
+import { getAllProperties } from "./properties-store";
 
 // Centralised cache invalidation. Every mutation calls this AFTER the
 // Blob write succeeds so the cached `getAllEntries` result is dropped
@@ -173,6 +174,69 @@ export async function addEntryAction(formData: FormData): Promise<ActionResult> 
 
   // Refresh the property page + admin overview.
   invalidatePnlCaches(property);
+  return { ok: true };
+}
+
+// ---------- add shared expense (split across every alojamento) ----------
+
+/** Reparte cêntimos de forma exacta: divide `total` por `n` em euros e
+ *  distribui o resto (1 cêntimo) pelas primeiras parcelas, de modo a que a
+ *  soma das parcelas seja SEMPRE igual ao total. Ex.: 100 / 3 →
+ *  [33,34, 33,33, 33,33]. */
+function splitCents(total: number, n: number): number[] {
+  const totalCents = Math.round(total * 100);
+  const base = Math.floor(totalCents / n);
+  const remainder = totalCents - base * n;
+  return Array.from({ length: n }, (_, i) =>
+    (base + (i < remainder ? 1 : 0)) / 100,
+  );
+}
+
+/** Adiciona um custo repartido por TODOS os alojamentos: o valor é dividido
+ *  pelo número de alojamentos e cria-se uma linha de custo (despesa) em cada
+ *  um, com a mesma descrição e data. Uma única escrita no Blob. */
+export async function addSharedExpenseAction(
+  formData: FormData,
+): Promise<ActionResult> {
+  const date = asString(formData.get("date"));
+  const description = asString(formData.get("description"));
+  const person = asString(formData.get("person"));
+  const amount = asNumber(formData.get("amount"));
+  const outOfAccount = formData.get("outOfAccount") === "on";
+
+  if (!isISODate(date)) return { ok: false, error: "Data inválida (YYYY-MM-DD)" };
+  if (!description) return { ok: false, error: "Descrição obrigatória" };
+  if (!isPerson(person)) return { ok: false, error: "Pessoa inválida" };
+  if (amount <= 0) return { ok: false, error: "Valor tem de ser positivo" };
+
+  const properties = await getAllProperties();
+  if (properties.length === 0) {
+    return { ok: false, error: "Não há alojamentos para repartir o custo" };
+  }
+
+  const shares = splitCents(amount, properties.length);
+
+  try {
+    await addEntries(
+      properties.map((p, i) => ({
+        kind: "despesa" as const,
+        property: p.slug,
+        date,
+        amount: shares[i],
+        description,
+        person,
+        outOfAccount,
+      })),
+    );
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Erro" };
+  }
+
+  // Custo entrou em cada alojamento — refresca todas as páginas afectadas.
+  updateTag("hostpro-pnl");
+  for (const p of properties) revalidatePath(`/alojamentos/${p.slug}`);
+  revalidatePath("/admin");
+  revalidatePath("/");
   return { ok: true };
 }
 

@@ -179,6 +179,27 @@ export async function addEntry(input: NewEntryInput): Promise<PnLEntry> {
   return entry;
 }
 
+/** Append several entries in a SINGLE Blob read + write. Used by the shared
+ *  expense flow (one cost split across every alojamento) so we don't pay the
+ *  Blob ops budget once per row. IDs are assigned sequentially off the same
+ *  snapshot so they don't collide. */
+export async function addEntries(inputs: NewEntryInput[]): Promise<PnLEntry[]> {
+  if (inputs.length === 0) return [];
+  const stored = await readBlob();
+  const all = stored?.entries ?? [...SEED_ENTRIES];
+  const created: PnLEntry[] = [];
+  // Running copy so nextId sees the entries we've already assigned this batch.
+  const running = [...all];
+  for (const input of inputs) {
+    const id = input.id ?? nextId(running, input.kind);
+    const entry = { ...input, id } as PnLEntry;
+    created.push(entry);
+    running.push(entry);
+  }
+  await writeBlob(running, stored?.existing);
+  return created;
+}
+
 export async function deleteEntry(id: string): Promise<void> {
   const stored = await readBlob();
   const all = stored?.entries ?? [...SEED_ENTRIES];

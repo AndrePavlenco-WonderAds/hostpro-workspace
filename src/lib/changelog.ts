@@ -15,6 +15,15 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.25.0",
+    date: "2026-07-17",
+    title: "Custo partilhado pelos 3 alojamentos",
+    highlights: [
+      "**🧾 Botão 'Custo partilhado' na home.** Introduz um valor uma vez e a app divide-o pelos alojamentos, criando uma linha de custo em cada um com a mesma descrição e data — ideal para internet, seguros ou contabilidade.",
+      "**🪙 Cêntimos repartidos ao certo.** 90 € → 30,00 € em cada um; 100 € → 33,34 € + 33,33 € + 33,33 €, para a soma bater sempre no total.",
+    ],
+  },
+  {
     version: "0.24.1",
     date: "2026-07-14",
     title: "Resumo do hero sem foto duplicada",

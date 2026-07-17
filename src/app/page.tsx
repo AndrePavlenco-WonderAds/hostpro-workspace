@@ -18,6 +18,7 @@ import { eur } from "@/lib/money";
 import { PropertyCard } from "@/components/property-card";
 import { MonthPicker } from "@/components/month-picker";
 import { Typewriter } from "@/components/typewriter";
+import { SharedExpenseButton } from "@/components/shared-expense-button";
 
 function kg(value: number): string {
   return `${value.toLocaleString("pt-PT", {
@@ -136,6 +137,7 @@ export default async function Home({
             Visão Geral
             <span aria-hidden>→</span>
           </Link>
+          <SharedExpenseButton propertyCount={properties.length} />
           <Link
             href="/marketing"
             className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.06] px-6 py-2.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-brand-cyan hover:text-white"
